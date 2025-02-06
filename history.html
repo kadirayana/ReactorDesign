@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Hesaplama Geçmişi</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    nav a { margin-right: 15px; text-decoration: none; font-weight: bold; color: #005; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px; border: 1px solid #ccc; text-align: center; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Ana Sayfa</a>
+    <a href="reactor.html">Reaktör Tasarım</a>
+    <a href="chemical.html">Kimyasal Denge</a>
+    <a href="heattransfer.html">Isı Transferi</a>
+    <a href="dynamics.html">Dinamik Simülasyon</a>
+    <a href="history.html">Hesaplama Geçmişi</a>
+  </nav>
+  <h2>Hesaplama Geçmişi</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Tarih</th>
+        <th>Modül</th>
+        <th>Parametreler</th>
+        <th>Sonuç</th>
+      </tr>
+    </thead>
+    <tbody id="historyTable">
+    </tbody>
+  </table>
+  
+  <script>
+    function formatDate(isoString) {
+      let date = new Date(isoString);
+      return date.toLocaleString();
+    }
+    
+    window.onload = function() {
+      let hesaplamalar = JSON.parse(localStorage.getItem("hesaplamalar")) || [];
+      let tableBody = document.getElementById("historyTable");
+      if(hesaplamalar.length === 0) {
+        tableBody.innerHTML = "<tr><td colspan='4'>Henüz kayıt bulunmamaktadır.</td></tr>";
+      } else {
+        hesaplamalar.reverse().forEach(function(item) {
+          let params = "";
+          if(item.tip === "PFR" || item.tip === "CSTR" || item.tip === "Batch" || item.tip === "PBR"){
+            params = `F_A0: ${item.F_A0}, C_A0: ${item.C_A0}, k: ${item.k}, X: ${item.X}`;
+            if(item.tip === "PBR") { params += `, k_eff: ${item.k_eff}`; }
+          } else if(item.tip === "Kimyasal Denge"){
+            params = `A0: ${item.A0}, K: ${item.K}`;
+          } else if(item.tip === "Isı Transferi"){
+            params = `L: ${item.L}, k: ${item.kVal}, T₁: ${item.T1}, T₂: ${item.T2}`;
+          } else if(item.tip === "Dinamik Simülasyon"){
+            params = `C0: ${item.C0}, k: ${item.kDyn}, Süre: ${item.simTime}`;
+          }
+          let sonuc = (item.sonuc !== undefined) ? item.sonuc.toFixed(3) : "-";
+          let row = `<tr>
+                      <td>${formatDate(item.tarih)}</td>
+                      <td>${item.tip}</td>
+                      <td>${params}</td>
+                      <td>${sonuc}</td>
+                    </tr>`;
+          tableBody.innerHTML += row;
+        });
+      }
+    };
+  </script>
+</body>
+</html>

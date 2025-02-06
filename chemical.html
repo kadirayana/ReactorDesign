@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Kimyasal Denge Hesaplaması</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    nav a { margin-right: 15px; text-decoration: none; font-weight: bold; color: #005; }
+    .controls { max-width: 400px; margin-bottom: 20px; }
+    .controls input, .controls button { width: 100%; padding: 8px; margin: 6px 0; }
+    #result { padding: 10px; background-color: #eef; border: 1px solid #99c; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Ana Sayfa</a>
+    <a href="reactor.html">Reaktör Tasarım</a>
+    <a href="chemical.html">Kimyasal Denge</a>
+    <a href="heattransfer.html">Isı Transferi</a>
+    <a href="dynamics.html">Dinamik Simülasyon</a>
+    <a href="history.html">Hesaplama Geçmişi</a>
+  </nav>
+  <h2>Kimyasal Denge Hesaplaması</h2>
+  <div class="controls">
+    <label for="A0">Başlangıç Konsantrasyonu (A₀ = B₀) [mol/L]:</label>
+    <input type="number" id="A0" placeholder="Örn: 1.0" step="any">
+    
+    <label for="K">Denge Sabiti (K):</label>
+    <input type="number" id="K" placeholder="Örn: 2.0" step="any">
+    
+    <button id="calcEquilibriumBtn">Hesapla</button>
+    
+    <div id="result"></div>
+  </div>
+  
+  <script>
+    document.getElementById("calcEquilibriumBtn").addEventListener("click", function() {
+      let A0 = parseFloat(document.getElementById("A0").value);
+      let K = parseFloat(document.getElementById("K").value);
+      let resultDiv = document.getElementById("result");
+      
+      if(isNaN(A0) || isNaN(K) || A0 <= 0 || K <= 0){
+        resultDiv.innerText = "Lütfen geçerli pozitif sayısal değerler giriniz.";
+        return;
+      }
+      
+      // Quadratic denklem: K*(A0 - x)^2 - x = 0  =>  K*x^2 - (2*K*A0 + 1)x + K*A0^2 = 0
+      let a = K;
+      let b = -(2*K*A0 + 1);
+      let c = K*A0*A0;
+      
+      let discriminant = b*b - 4*a*c;
+      if(discriminant < 0){
+        resultDiv.innerText = "Gerçek çözümler bulunamadı.";
+        return;
+      }
+      let sqrtD = Math.sqrt(discriminant);
+      let x1 = (-b + sqrtD) / (2*a);
+      let x2 = (-b - sqrtD) / (2*a);
+      
+      let x = (x1 >= 0 && x1 <= A0) ? x1 : (x2 >= 0 && x2 <= A0 ? x2 : null);
+      if(x === null){
+        resultDiv.innerText = "Fiziksel olarak anlamlı bir çözüm bulunamadı.";
+        return;
+      }
+      
+      let A_eq = A0 - x;
+      let message = `Denge noktasında: [C] = ${x.toFixed(3)} mol/L, [A] = [B] = ${A_eq.toFixed(3)} mol/L.`;
+      resultDiv.innerText = message;
+      
+      // Sonucu localStorage’a kaydedelim.
+      let kayit = {
+        tip: "Kimyasal Denge",
+        A0: A0,
+        K: K,
+        x: x,
+        tarih: new Date().toISOString()
+      };
+      let hesaplamalar = JSON.parse(localStorage.getItem("hesaplamalar")) || [];
+      hesaplamalar.push(kayit);
+      localStorage.setItem("hesaplamalar", JSON.stringify(hesaplamalar));
+    });
+  </script>
+</body>
+</html>

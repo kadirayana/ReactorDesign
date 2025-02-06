@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Reaktör Tasarım ve Görselleştirme</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    nav a { margin-right: 15px; text-decoration: none; font-weight: bold; color: #005; }
+    .container { display: flex; flex-wrap: wrap; }
+    .controls { flex: 1; min-width: 300px; margin-right: 20px; }
+    .controls input, .controls select, .controls button { width: 100%; padding: 8px; margin: 6px 0; }
+    #result { margin-top: 10px; padding: 10px; background-color: #eef; border: 1px solid #99c; }
+    .canvas-container { flex: 2; min-width: 400px; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Ana Sayfa</a>
+    <a href="reactor.html">Reaktör Tasarım</a>
+    <a href="chemical.html">Kimyasal Denge</a>
+    <a href="heattransfer.html">Isı Transferi</a>
+    <a href="dynamics.html">Dinamik Simülasyon</a>
+    <a href="history.html">Hesaplama Geçmişi</a>
+  </nav>
+  <h2>Reaktör Tasarım ve Görselleştirme</h2>
+  <div class="container">
+    <div class="controls">
+      <label for="reactorType">Reaktör Tipi:</label>
+      <select id="reactorType">
+        <option value="PFR">Plug Flow Reactor (PFR)</option>
+        <option value="CSTR">Continuous Stirred Tank Reactor (CSTR)</option>
+        <option value="PBR">Packed Bed Reactor (PBR)</option>
+        <option value="Batch">Batch Reactor</option>
+      </select>
+
+      <label for="F_A0">Mol Akış Hızı, F<sub>A0</sub> [mol/s]:</label>
+      <input type="number" id="F_A0" placeholder="Örn: 1.0" step="any">
+
+      <label for="C_A0">Başlangıç Konsantrasyonu, C<sub>A0</sub> [mol/m³]:</label>
+      <input type="number" id="C_A0" placeholder="Örn: 1000" step="any">
+
+      <label for="k">Hız Sabiti, k [1/s]:</label>
+      <input type="number" id="k" placeholder="Örn: 0.1" step="any">
+
+      <label for="X">Hedef Dönüşüm, X (0 &lt; X &lt; 1):</label>
+      <input type="number" id="X" placeholder="Örn: 0.5" step="any" min="0" max="1">
+
+      <!-- PBR için ek alan -->
+      <div id="pbrParam" style="display:none;">
+        <label for="k_eff">Katalizöre Özgü Hız Sabiti, k<sub>eff</sub> [1/s.g]:</label>
+        <input type="number" id="k_eff" placeholder="Örn: 0.001" step="any">
+      </div>
+
+      <button id="computeBtn">Hesapla ve Görselleştir</button>
+      <div id="result"></div>
+    </div>
+    <div class="canvas-container">
+      <div id="sketch-holder"></div>
+    </div>
+  </div>
+
+  <!-- p5.js kütüphanesi -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+  <script>
+    let reactorType = "PFR";
+    let computedValue = null;
+    let errorMessage = "";
+
+    function hesaplaPFR(F_A0, k, X) {
+      if(X <= 0 || X >= 1) throw "Dönüşüm (X) 0 ile 1 arasında olmalıdır!";
+      return (F_A0 / k) * Math.log(1 / (1 - X));
+    }
+    function hesaplaCSTR(F_A0, C_A0, k, X) {
+      if(X <= 0 || X >= 1) throw "Dönüşüm (X) 0 ile 1 arasında olmalıdır!";
+      return (F_A0 * X) / (k * C_A0 * (1 - X));
+    }
+    function hesaplaPBR(F_A0, k_eff, X) {
+      if(X <= 0 || X >= 1) throw "Dönüşüm (X) 0 ile 1 arasında olmalıdır!";
+      return (F_A0 / k_eff) * Math.log(1 / (1 - X));
+    }
+    function hesaplaBatch(k, X) {
+      if(X <= 0 || X >= 1) throw "Dönüşüm (X) 0 ile 1 arasında olmalıdır!";
+      return (1 / k) * Math.log(1 / (1 - X));
+    }
+    
+    let sketch = function(p) {
+      p.setup = function() {
+        let canvas = p.createCanvas(500, 400);
+        canvas.parent('sketch-holder');
+        p.noLoop();
+      };
+      
+      p.draw = function() {
+        p.background(255);
+        p.textSize(16);
+        p.fill(0);
+        p.text("Reaktör Tasarım Görselleştirmesi", 10, 25);
+        if(errorMessage) {
+          p.fill(255, 0, 0);
+          p.text(errorMessage, 10, 50);
+          return;
+        }
+        if(reactorType === "PFR") {
+          let V = computedValue;
+          let L = V; // A=1 m² kabul
+          p.fill(200, 230, 255);
+          p.stroke(0);
+          let scaleL = 400 / 10;  // 10 m -> 400px
+          let drawL = Math.min(L * scaleL, 400);
+          p.rect(50, 100, drawL, 50);
+          p.fill(0);
+          p.text("PFR", 10, 130);
+          p.text("Hacim V = " + V.toFixed(3) + " m³", 50, 180);
+          p.text("Uzunluk L = " + L.toFixed(3) + " m", 50, 200);
+        } else if(reactorType === "CSTR") {
+          let V = computedValue;
+          let d = Math.pow((4 * V / Math.PI), 1/3);
+          let scaleD = 50;
+          let drawD = d * scaleD;
+          p.fill(200, 255, 200);
+          p.stroke(0);
+          p.ellipse(p.width/2, 200, drawD, drawD);
+          p.fill(0);
+          p.text("CSTR", p.width/2 - drawD/2, 200 - drawD/2 - 10);
+          p.text("Hacim V = " + V.toFixed(3) + " m³", 10, 350);
+        } else if(reactorType === "PBR") {
+          let W = computedValue;
+          p.fill(255, 230, 200);
+          p.stroke(0);
+          p.rect(225, 50, 50, 300);
+          p.fill(0);
+          p.text("PBR", 220, 40);
+          p.text("Katalizör Ağırlığı W = " + W.toFixed(3) + " g", 150, 370);
+        } else if(reactorType === "Batch") {
+          let t_val = computedValue;
+          p.fill(230, 200, 255);
+          p.stroke(0);
+          p.ellipse(p.width/2, 200, 150, 150);
+          p.fill(0);
+          p.text("Batch Reactor", p.width/2 - 60, 140);
+          p.text("Reaksiyon Süresi t = " + t_val.toFixed(3) + " s", p.width/2 - 70, 250);
+        }
+      };
+    };
+    
+    let myp5 = new p5(sketch);
+    
+    document.getElementById("reactorType").addEventListener("change", function() {
+      reactorType = this.value;
+      document.getElementById("pbrParam").style.display = (reactorType === "PBR") ? "block" : "none";
+    });
+    
+    document.getElementById("computeBtn").addEventListener("click", function() {
+      errorMessage = "";
+      let F_A0 = parseFloat(document.getElementById("F_A0").value);
+      let C_A0 = parseFloat(document.getElementById("C_A0").value);
+      let k = parseFloat(document.getElementById("k").value);
+      let X = parseFloat(document.getElementById("X").value);
+      let resultDiv = document.getElementById("result");
+      
+      if(isNaN(F_A0) || isNaN(C_A0) || isNaN(k) || isNaN(X)) {
+        errorMessage = "Lütfen tüm parametreler için geçerli sayılar giriniz.";
+        resultDiv.innerText = errorMessage;
+        myp5.redraw();
+        return;
+      }
+      
+      try {
+        let resultText = "";
+        if(reactorType === "PFR") {
+          computedValue = hesaplaPFR(F_A0, k, X);
+          resultText = "PFR Hacmi (V) = " + computedValue.toFixed(3) + " m³";
+        } else if(reactorType === "CSTR") {
+          computedValue = hesaplaCSTR(F_A0, C_A0, k, X);
+          resultText = "CSTR Hacmi (V) = " + computedValue.toFixed(3) + " m³";
+        } else if(reactorType === "PBR") {
+          let k_eff = parseFloat(document.getElementById("k_eff").value);
+          if(isNaN(k_eff)) throw "Lütfen k_eff için geçerli bir sayı giriniz.";
+          computedValue = hesaplaPBR(F_A0, k_eff, X);
+          resultText = "PBR Katalizör Ağırlığı (W) = " + computedValue.toFixed(3) + " g";
+        } else if(reactorType === "Batch") {
+          computedValue = hesaplaBatch(k, X);
+          resultText = "Batch Reactor Reaksiyon Süresi (t) = " + computedValue.toFixed(3) + " s";
+        }
+        resultDiv.innerText = resultText;
+        
+        // localStorage veri kaydı
+        let kayit = {
+          tip: reactorType,
+          F_A0: F_A0,
+          C_A0: C_A0,
+          k: k,
+          X: X,
+          k_eff: (reactorType === "PBR") ? parseFloat(document.getElementById("k_eff").value) : null,
+          sonuc: computedValue,
+          tarih: new Date().toISOString()
+        };
+        let hesaplamalar = JSON.parse(localStorage.getItem("hesaplamalar")) || [];
+        hesaplamalar.push(kayit);
+        localStorage.setItem("hesaplamalar", JSON.stringify(hesaplamalar));
+        
+      } catch (err) {
+        errorMessage = err;
+        resultDiv.innerText = errorMessage;
+      }
+      myp5.redraw();
+    });
+  </script>
+</body>
+</html>

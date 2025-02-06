@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Dinamik Sistem Simülasyonu</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    nav a { margin-right: 15px; text-decoration: none; font-weight: bold; color: #005; }
+    .controls { max-width: 400px; margin-bottom: 20px; }
+    .controls input, .controls button { width: 100%; padding: 8px; margin: 6px 0; }
+    #result { padding: 10px; background-color: #eef; border: 1px solid #99c; }
+    .canvas-container { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Ana Sayfa</a>
+    <a href="reactor.html">Reaktör Tasarım</a>
+    <a href="chemical.html">Kimyasal Denge</a>
+    <a href="heattransfer.html">Isı Transferi</a>
+    <a href="dynamics.html">Dinamik Simülasyon</a>
+    <a href="history.html">Hesaplama Geçmişi</a>
+  </nav>
+  <h2>Dinamik Sistem Simülasyonu</h2>
+  <div class="controls">
+    <label for="C0">Başlangıç Konsantrasyonu C₀:</label>
+    <input type="number" id="C0" placeholder="Örn: 1.0" step="any">
+    
+    <label for="kDyn">Hız Sabiti k [1/s]:</label>
+    <input type="number" id="kDyn" placeholder="Örn: 0.1" step="any">
+    
+    <label for="simTime">Simülasyon Süresi [s]:</label>
+    <input type="number" id="simTime" placeholder="Örn: 50" step="any">
+    
+    <button id="startSimBtn">Simülasyonu Başlat</button>
+    <div id="result"></div>
+  </div>
+  
+  <div class="canvas-container" id="sketch-holder"></div>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+  <script>
+    let C0, kDyn, simTime;
+    let timeData = [], concData = [];
+    let simStarted = false;
+    let simDt = 0.1;
+    let currentTime = 0;
+    let currentC = 0;
+    
+    document.getElementById("startSimBtn").addEventListener("click", function() {
+      C0 = parseFloat(document.getElementById("C0").value);
+      kDyn = parseFloat(document.getElementById("kDyn").value);
+      simTime = parseFloat(document.getElementById("simTime").value);
+      let resultDiv = document.getElementById("result");
+      
+      if(isNaN(C0) || isNaN(kDyn) || isNaN(simTime) || C0<=0 || kDyn<=0 || simTime<=0){
+        resultDiv.innerText = "Lütfen geçerli pozitif sayısal değerler giriniz.";
+        return;
+      }
+      
+      timeData = [];
+      concData = [];
+      currentTime = 0;
+      currentC = C0;
+      simStarted = true;
+      resultDiv.innerText = "Simülasyon başladı...";
+      
+      let kayit = {
+        tip: "Dinamik Simülasyon",
+        C0: C0,
+        kDyn: kDyn,
+        simTime: simTime,
+        tarih: new Date().toISOString()
+      };
+      let hesaplamalar = JSON.parse(localStorage.getItem("hesaplamalar")) || [];
+      hesaplamalar.push(kayit);
+      localStorage.setItem("hesaplamalar", JSON.stringify(hesaplamalar));
+    });
+    
+    let sketch = function(p) {
+      p.setup = function() {
+        p.createCanvas(500, 300).parent('sketch-holder');
+        p.frameRate(30);
+      };
+      
+      p.draw = function() {
+        p.background(255);
+        p.fill(0);
+        p.textSize(16);
+        p.text("Dinamik Sistem Simülasyonu: C(t) = C₀ e^(–k t)", 10, 20);
+        p.stroke(0);
+        p.line(50, 250, 450, 250);
+        p.line(50, 250, 50, 50);
+        
+        if(simStarted && currentTime < simTime) {
+          currentC = currentC - kDyn * currentC * simDt;
+          currentTime += simDt;
+          timeData.push(currentTime);
+          concData.push(currentC);
+        }
+        
+        p.noFill();
+        p.stroke(255, 0, 0);
+        p.beginShape();
+        for(let i = 0; i < timeData.length; i++){
+          let x = p.map(timeData[i], 0, simTime, 50, 450);
+          let y = p.map(concData[i], 0, C0, 250, 50);
+          p.vertex(x, y);
+        }
+        p.endShape();
+        
+        if(currentTime >= simTime){
+          simStarted = false;
+          p.fill(0);
+          p.text("Simülasyon tamamlandı.", 60, 270);
+        }
+      };
+    };
+    
+    let myp5 = new p5(sketch);
+  </script>
+</body>
+</html>
