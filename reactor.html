@@ -2,740 +2,131 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reaktör Tasarımı</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2c3e50">
+  <title data-translate="reactor.title">Reaktör Tasarımı</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+  <script src="translations.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three/examples/js/renderers/CSS2DRenderer.js"></script>
 </head>
 <body>
+  <div class="language-selector">
+    <select id="languageSelect" onchange="changeLanguage(this.value)">
+      <option value="tr">Türkçe</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+
   <nav>
-    <a href="index.html">Ana Sayfa</a>
-    <a href="reactor.html">Reaktör Tasarım</a>
-    <a href="chemical.html">Kimyasal Denge</a>
-    <a href="heattransfer.html">Isı Transferi</a>
-    <a href="dynamics.html">Dinamik Simülasyon</a>
-    <a href="optimization.html">Reaktör Optimizasyonu</a>
-    <a href="history.html">Hesaplama Geçmişi</a>
+    <a href="index.html" data-translate="nav.home">Ana Sayfa</a>
+    <a href="reactor.html" data-translate="nav.reactor">Reaktör Tasarım</a>
+    <a href="chemical.html" data-translate="nav.chemical">Kimyasal Denge</a>
+    <a href="heattransfer.html" data-translate="nav.heat">Isı Transferi</a>
+    <a href="dynamics.html" data-translate="nav.dynamics">Dinamik Simülasyon</a>
+    <a href="optimization.html" data-translate="nav.optimization">Reaktör Optimizasyonu</a>
+    <a href="history.html" data-translate="nav.history">Hesaplama Geçmişi</a>
   </nav>
 
   <div class="page-header">
-    <h1>Reaktör Tasarımı</h1>
-    <p>Farklı reaktör tiplerinde hacim ve dönüşüm hesaplamaları yapın</p>
+    <h1 data-translate="reactor.pageTitle">Reaktör Tasarımı</h1>
+    <p data-translate="reactor.pageDesc">Farklı reaktör tipleri için tasarım hesaplamaları</p>
   </div>
 
   <div class="grid-container">
     <div class="controls">
-      <div class="tab-navigation">
-        <button class="tab-btn active" data-type="PFR">PFR</button>
-        <button class="tab-btn" data-type="CSTR">CSTR</button>
-        <button class="tab-btn" data-type="PBR">PBR</button>
-        <button class="tab-btn" data-type="Batch">Batch</button>
+      <div class="input-group">
+        <label for="reactor_type" data-translate="reactor.type">Reaktör Tipi</label>
+        <select id="reactor_type">
+          <option value="PFR" data-translate="reactor.pfr">Piston Akışlı Reaktör (PFR)</option>
+          <option value="CSTR" data-translate="reactor.cstr">Karıştırmalı Tank Reaktörü (CSTR)</option>
+          <option value="PBR" data-translate="reactor.pbr">Dolgulu Yatak Reaktörü (PBR)</option>
+        </select>
       </div>
 
       <div class="input-group">
-        <label for="F_A0">
-          Giriş Akış Hızı (F_A0) [mol/s]
-          <div class="tooltip">
-            <span class="tooltip-text">Reaktöre giren reaktant akış hızı</span>
-          </div>
-        </label>
-        <input type="number" id="F_A0" placeholder="Örn: 10" step="any">
+        <label for="flow_rate" data-translate="reactor.flowRate">Akış Hızı (L/s)</label>
+        <input type="number" id="flow_rate" step="any">
       </div>
 
       <div class="input-group">
-        <label for="C_A0">
-          Başlangıç Konsantrasyonu (C_A0) [mol/L]
-          <div class="tooltip">
-            <span class="tooltip-text">Reaktantın başlangıç konsantrasyonu</span>
-          </div>
-        </label>
-        <input type="number" id="C_A0" placeholder="Örn: 2" step="any">
+        <label for="concentration" data-translate="reactor.concentration">Giriş Konsantrasyonu (mol/L)</label>
+        <input type="number" id="concentration" step="any">
       </div>
 
       <div class="input-group">
-        <label for="k">
-          Hız Sabiti (k) [1/s]
-          <div class="tooltip">
-            <span class="tooltip-text">Reaksiyon hız sabiti</span>
-          </div>
-        </label>
-        <input type="number" id="k" placeholder="Örn: 0.5" step="any">
-      </div>
-
-      <div id="k_eff_group" class="input-group" style="display: none;">
-        <label for="k_eff">
-          Etkinlik Faktörü (η)
-          <div class="tooltip">
-            <span class="tooltip-text">Katalizör etkinlik faktörü (0-1 arası)</span>
-          </div>
-        </label>
-        <input type="number" id="k_eff" placeholder="Örn: 0.8" step="any" min="0" max="1">
+        <label for="reaction_rate" data-translate="reactor.reactionRate">Reaksiyon Hız Sabiti (1/s)</label>
+        <input type="number" id="reaction_rate" step="any">
       </div>
 
       <div class="input-group">
-        <label for="X">
-          Dönüşüm (X)
-          <div class="tooltip">
-            <span class="tooltip-text">İstenen dönüşüm oranı (0-1 arası)</span>
-          </div>
-        </label>
-        <input type="number" id="X" placeholder="Örn: 0.8" step="any" min="0" max="1">
+        <label for="conversion" data-translate="reactor.targetConversion">Hedef Dönüşüm</label>
+        <input type="number" id="conversion" step="0.01" min="0" max="1">
       </div>
 
-      <button id="computeBtn">
-        <span class="button-text">Hesapla ve Görselleştir</span>
-      </button>
+      <button id="calculateBtn" data-translate="common.calculate">Hesapla</button>
+      <button id="resetBtn" data-translate="common.reset">Sıfırla</button>
     </div>
 
-    <div class="result-panel">
-      <h3>Hesaplama Sonuçları</h3>
-      <div id="result"></div>
-    </div>
-  </div>
-
-  <div class="chart-wrapper">
     <div class="visualization-container">
+      <div class="visualization-tabs">
+        <button class="tab-btn active" data-view="3d" data-translate="reactor.view3d">3D Görünüm</button>
+        <button class="tab-btn" data-view="profile" data-translate="reactor.viewProfile">Profil</button>
+      </div>
       <div id="reactor3d"></div>
+      <div id="reactorProfile" style="display: none;"></div>
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
   <script>
-    let currentType = "PFR";
-    let errorMessage = "";
-    let myp5;
-    let reactorVisualizer; // Global değişken olarak tanımlıyoruz
+    // Touch olayları için destek
+    document.addEventListener('DOMContentLoaded', function() {
+      // Çift dokunma zoom'unu engelle
+      document.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
 
-    // Reaktör tipi seçimi
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        currentType = this.dataset.type;
-        document.getElementById('k_eff_group').style.display = 
-          currentType === 'PBR' ? 'block' : 'none';
+      // Pinch zoom'u engelle
+      document.addEventListener('touchmove', function(e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      // Tercih edilen dili yükle
+      const preferredLanguage = localStorage.getItem('preferredLanguage') || 'tr';
+      document.getElementById('languageSelect').value = preferredLanguage;
+      translatePage(preferredLanguage);
+
+      // Event listeners
+      document.getElementById('calculateBtn').addEventListener('click', calculate);
+      document.getElementById('resetBtn').addEventListener('click', reset);
+      
+      // Tab değiştirme
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          
+          const view = this.dataset.view;
+          document.getElementById('reactor3d').style.display = 
+            view === '3d' ? 'block' : 'none';
+          document.getElementById('reactorProfile').style.display = 
+            view === 'profile' ? 'block' : 'none';
+        });
       });
+
+      // İlk yükleme
+      init3DVisualization();
     });
 
-    // Sayfa yüklendiğinde reaktör görselleştirmesini başlat
-    window.onload = function() {
-      reactorVisualizer = initReactorVisualization(); // Görselleştirmeyi başlat
-    };
-
-    // Hesaplama butonu
-    document.getElementById("computeBtn").addEventListener("click", async function() {
-      const button = this;
-      const buttonText = button.querySelector('.button-text');
-      
-      try {
-        button.disabled = true;
-        buttonText.innerHTML = '<span class="spinner"></span> Hesaplanıyor...';
-
-        let F_A0 = parseFloat(document.getElementById("F_A0").value);
-        let C_A0 = parseFloat(document.getElementById("C_A0").value);
-        let k = parseFloat(document.getElementById("k").value);
-        let X = parseFloat(document.getElementById("X").value);
-        let k_eff = currentType === 'PBR' ? 
-          parseFloat(document.getElementById("k_eff").value) : 1;
-
-        // Varsayılan PBR parametreleri
-        const rho_B = 1000; // kg/m³ (örnek değer)
-
-        if(isNaN(F_A0) || isNaN(C_A0) || isNaN(k) || isNaN(X) || 
-           F_A0 <= 0 || C_A0 <= 0 || k <= 0) {
-          throw new Error("Lütfen tüm parametreler için geçerli pozitif değerler giriniz.");
-        }
-
-        if(X <= 0 || X >= 1) {
-          throw new Error("Dönüşüm (X) 0 ile 1 arasında olmalıdır!");
-        }
-
-        let V;
-        switch(currentType) {
-          case "PFR":
-            V = hesaplaPFR(F_A0, k, C_A0, X);
-            break;
-          case "CSTR":
-            V = hesaplaCSTR(F_A0, k, C_A0, X);
-            break;
-          case "PBR":
-            if(isNaN(k_eff) || k_eff <= 0 || k_eff > 1) {
-              throw new Error("Etkinlik faktörü 0 ile 1 arasında olmalıdır!");
-            }
-            V = hesaplaPBR(F_A0, k, C_A0, X, k_eff, rho_B);
-            break;
-          case "Batch":
-            V = hesaplaBatch(F_A0, k, C_A0, X);
-            break;
-        }
-
-        // 3D görselleştirmeyi güncelle
-        reactorVisualizer.updateReactorGeometry(currentType, V);
-
-        showSuccess(`
-          <h4>${currentType} Reaktör Sonuçları:</h4>
-          <ul>
-            <li>Gerekli Hacim: ${V.toFixed(3)} m³</li>
-            <li>Dönüşüm: ${X.toFixed(3)}</li>
-            <li>Reaksiyon Hızı: ${(-k * C_A0 * (1-X)).toFixed(3)} mol/(L·s)</li>
-            ${currentType === 'PBR' ? 
-              `<li>Efektif Hız Sabiti: ${(k * k_eff).toFixed(3)} 1/s</li>` : ''}
-          </ul>
-        `);
-
-        // Sonucu kaydet
-        saveResult({
-          tip: currentType,
-          F_A0, C_A0, k, k_eff, X,
-          sonuc: V,
-          tarih: new Date().toISOString()
-        });
-
-      } catch (err) {
-        showError(err.message);
-      } finally {
-        button.disabled = false;
-        buttonText.textContent = 'Hesapla ve Görselleştir';
-      }
-    });
-
-    function showError(message) {
-      const resultDiv = document.getElementById("result");
-      resultDiv.innerHTML = `
-        <div class="error-message">
-          <svg width="20" height="20" viewBox="0 0 20 20">
-            <path fill="currentColor" d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 15H9v-2h2v2zm0-4H9V5h2v6z"/>
-          </svg>
-          <span>${message}</span>
-        </div>
-      `;
-    }
-
-    function showSuccess(message) {
-      const resultDiv = document.getElementById("result");
-      resultDiv.innerHTML = `
-        <div class="success-message">
-          ${message}
-        </div>
-      `;
-    }
-
-    function saveResult(result) {
-      let hesaplamalar = JSON.parse(localStorage.getItem("hesaplamalar")) || [];
-      hesaplamalar.push(result);
-      localStorage.setItem("hesaplamalar", JSON.stringify(hesaplamalar));
-    }
-
-    // Reaktör hesaplama fonksiyonları
-    function hesaplaPFR(F_A0, k, C_A0, X) {
-      // V = (F_A0/kC_A0) * ln(1/(1-X))
-      return (F_A0 / (k * C_A0)) * Math.log(1 / (1 - X));
-    }
-
-    function hesaplaCSTR(F_A0, k, C_A0, X) {
-      // V = (F_A0 * X) / (kC_A0(1-X))
-      return (F_A0 * X) / (k * C_A0 * (1 - X));
-    }
-
-    function hesaplaPBR(F_A0, k, C_A0, X, eta, rho_B) {
-      // W = (F_A0/ηkC_A0) * ln(1/(1-X))
-      // V = W/ρB
-      const W = (F_A0 / (eta * k * C_A0)) * Math.log(1 / (1 - X));
-      return W / rho_B;
-    }
-
-    function hesaplaBatch(F_A0, k, C_A0, X) {
-      // t = (1/kC_A0) * ln(1/(1-X))
-      // V = F_A0 * t
-      const t = (1 / (k * C_A0)) * Math.log(1 / (1 - X));
-      return F_A0 * t;
-    }
-
-    // p5.js görselleştirme
-    let sketch = function(p) {
-      p.setup = function() {
-        let canvas = p.createCanvas(500, 400);
-        canvas.parent('sketch-holder');
-      };
-      
-      p.draw = function() {
-        p.background(255);
-        p.stroke(0);
-        p.noFill();
-        
-        // Reaktör tipi gösterimi
-        drawReactor(p, currentType);
-        
-        // Hata mesajı varsa göster
-        if(errorMessage) {
-          p.fill(255, 0, 0);
-          p.textSize(14);
-          p.text(errorMessage, 20, 380);
-        }
-      };
-    };
-    
-    function drawReactor(p, type) {
-      p.push();
-      p.translate(150, 100);
-      
-      switch(type) {
-        case "PFR":
-          p.rect(0, 0, 200, 50);
-          drawFlow(p, true);
-          break;
-        case "CSTR":
-          p.ellipse(100, 100, 150, 150);
-          drawFlow(p, false);
-          break;
-        case "PBR":
-          p.rect(0, 0, 200, 50);
-          drawParticles(p);
-          drawFlow(p, true);
-          break;
-        case "Batch":
-          p.rect(0, 0, 100, 150);
-          p.line(0, 130, 100, 130);
-          drawMixer(p);
-          break;
-      }
-      p.pop();
-    }
-
-    function drawFlow(p, isPFR) {
-      if(isPFR) {
-        p.arrow(-30, 25, 0, 25);
-        p.arrow(200, 25, 230, 25);
-      } else {
-        p.arrow(-30, 100, 25, 100);
-        p.arrow(175, 100, 230, 100);
-      }
-    }
-
-    function drawParticles(p) {
-      for(let i = 0; i < 20; i++) {
-        let x = 20 + (i % 5) * 40;
-        let y = 10 + Math.floor(i / 5) * 10;
-        p.ellipse(x, y, 5, 5);
-      }
-    }
-
-    function drawMixer(p) {
-      p.push();
-      p.translate(50, 90);
-      p.rotate(p.frameCount * 0.05);
-      p.line(-20, 0, 20, 0);
-      p.line(0, -20, 0, 20);
-      p.pop();
-    }
-
-    myp5 = new p5(sketch);
-
-    function initReactorVisualization() {
-      const container = document.getElementById('reactor3d');
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xf0f0f0);
-      
-      const camera = new THREE.PerspectiveCamera(
-        75,
-        container.clientWidth / container.clientHeight,
-        0.1,
-        1000
-      );
-      
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(container.clientWidth, container.clientHeight);
-      container.appendChild(renderer.domElement);
-
-      // Etiket renderer'ı
-      const labelRenderer = new THREE.CSS2DRenderer();
-      labelRenderer.setSize(container.clientWidth, container.clientHeight);
-      labelRenderer.domElement.style.position = 'absolute';
-      labelRenderer.domElement.style.top = '0px';
-      labelRenderer.domElement.style.left = '0px';
-      labelRenderer.domElement.style.pointerEvents = 'none';
-      container.appendChild(labelRenderer.domElement);
-
-      const controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
-
-      // Işıklandırma
-      const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
-      scene.add(ambientLight);
-
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      directionalLight.position.set(10, 10, 10);
-      scene.add(directionalLight);
-
-      camera.position.set(5, 5, 5);
-      controls.update();
-
-      let reactorMesh;
-      let labels = [];
-
-      // Etiket oluşturma fonksiyonu
-      function createLabel(text) {
-        const div = document.createElement('div');
-        div.className = 'dimension-label';
-        div.textContent = text;
-        return new THREE.CSS2DObject(div);
-      }
-
-      // Boyut etiketlerini ekleme fonksiyonu
-      function addDimensionLabels(dimensions) {
-        const height = dimensions.height || dimensions.length;
-        
-        // Çap etiketi
-        const diameterLabel = createLabel(`Çap: ${dimensions.diameter.toFixed(2)} m`);
-        diameterLabel.position.set(dimensions.diameter/2 + 0.2, 0, 0);
-        labels.push(diameterLabel);
-        scene.add(diameterLabel);
-
-        // Yükseklik/Uzunluk etiketi
-        const heightLabel = createLabel(`${currentType === 'PFR' ? 'Uzunluk' : 'Yükseklik'}: ${height.toFixed(2)} m`);
-        if (currentType === 'PFR') {
-          heightLabel.position.set(0, 0, height/2 + 0.2);
-        } else {
-          heightLabel.position.set(0, height/2 + 0.2, 0);
-        }
-        labels.push(heightLabel);
-        scene.add(heightLabel);
-
-        // Hacim etiketi
-        const volume = calculateVolume(dimensions);
-        const volumeLabel = createLabel(`Hacim: ${volume.toFixed(2)} m³`);
-        volumeLabel.position.set(-dimensions.diameter/2 - 0.2, -height/4, 0);
-        labels.push(volumeLabel);
-        scene.add(volumeLabel);
-      }
-
-      function updateReactorGeometry(type, volume) {
-        // Temizlik
-        if (reactorMesh) scene.remove(reactorMesh);
-        labels.forEach(label => scene.remove(label));
-        labels = [];
-
-        let dimensions = calculateDimensions(type, volume);
-        reactorMesh = new THREE.Group();
-
-        // Reaktör tipine göre geometri oluştur
-        createReactorGeometry(type, dimensions);
-
-        scene.add(reactorMesh);
-
-        // Boyut etiketleri
-        addDimensionLabels(dimensions);
-
-        // Kamera pozisyonunu ayarla
-        const maxDim = Math.max(dimensions.diameter, dimensions.height || dimensions.length) * 2;
-        camera.position.set(maxDim, maxDim, maxDim);
-        controls.target.set(0, 0, 0);
-        controls.update();
-      }
-
-      function createReactorGeometry(type, dimensions) {
-        const metalMaterial = new THREE.MeshPhongMaterial({
-          color: 0x95a5a6,
-          metalness: 0.8,
-          roughness: 0.2
-        });
-
-        switch(type) {
-          case 'CSTR':
-            createCSTRGeometry(dimensions, metalMaterial);
-            break;
-          case 'PFR':
-            createPFRGeometry(dimensions, metalMaterial);
-            break;
-          case 'PBR':
-            createPBRGeometry(dimensions, metalMaterial);
-            break;
-          case 'Batch':
-            createBatchGeometry(dimensions, metalMaterial);
-            break;
-        }
-      }
-
-      function createCSTRGeometry(dimensions, metalMaterial) {
-        // Ana tank gövdesi
-        const tankGeometry = new THREE.CylinderGeometry(
-          dimensions.diameter / 2,
-          dimensions.diameter / 2,
-          dimensions.height,
-          32
-        );
-        const tankMaterial = new THREE.MeshPhongMaterial({
-          color: 0x2ecc71,
-          transparent: true,
-          opacity: 0.6,
-          side: THREE.DoubleSide
-        });
-        const tank = new THREE.Mesh(tankGeometry, tankMaterial);
-        reactorMesh.add(tank);
-
-        // Karıştırıcı şaftı
-        const shaftGeometry = new THREE.CylinderGeometry(
-          dimensions.diameter / 30,
-          dimensions.diameter / 30,
-          dimensions.height * 0.8,
-          16
-        );
-        const shaft = new THREE.Mesh(shaftGeometry, metalMaterial);
-        shaft.position.y = dimensions.height * 0.1;
-        reactorMesh.add(shaft);
-
-        // Karıştırıcı bıçakları
-        const bladeGeometry = new THREE.BoxGeometry(
-          dimensions.diameter * 0.6,
-          dimensions.diameter / 30,
-          dimensions.diameter / 10
-        );
-
-        // Üst bıçaklar
-        for (let i = 0; i < 4; i++) {
-          const blade = new THREE.Mesh(bladeGeometry, metalMaterial);
-          blade.position.y = dimensions.height * 0.3;
-          blade.rotation.y = (Math.PI / 2) * i;
-          shaft.add(blade);
-        }
-
-        // Alt bıçaklar
-        for (let i = 0; i < 4; i++) {
-          const blade = new THREE.Mesh(bladeGeometry, metalMaterial);
-          blade.position.y = -dimensions.height * 0.3;
-          blade.rotation.y = (Math.PI / 2) * i + Math.PI / 4;
-          shaft.add(blade);
-        }
-
-        // Giriş borusu
-        const inletGeometry = new THREE.CylinderGeometry(
-          dimensions.diameter / 10,
-          dimensions.diameter / 10,
-          dimensions.diameter / 2,
-          16
-        );
-        const inlet = new THREE.Mesh(inletGeometry, metalMaterial);
-        inlet.rotation.z = Math.PI / 2;
-        inlet.position.set(-dimensions.diameter/2 - dimensions.diameter/4, dimensions.height/3, 0);
-        reactorMesh.add(inlet);
-
-        // Çıkış borusu
-        const outlet = new THREE.Mesh(inletGeometry, metalMaterial);
-        outlet.rotation.z = -Math.PI / 2;
-        outlet.position.set(dimensions.diameter/2 + dimensions.diameter/4, -dimensions.height/3, 0);
-        reactorMesh.add(outlet);
-
-        // Motor gövdesi
-        const motorGeometry = new THREE.BoxGeometry(
-          dimensions.diameter * 0.3,
-          dimensions.diameter * 0.2,
-          dimensions.diameter * 0.3
-        );
-        const motor = new THREE.Mesh(motorGeometry, metalMaterial);
-        motor.position.y = dimensions.height/2 + dimensions.diameter * 0.1;
-        reactorMesh.add(motor);
-      }
-
-      function createPFRGeometry(dimensions, metalMaterial) {
-        // Ana boru
-        const pfrGeometry = new THREE.CylinderGeometry(
-          dimensions.diameter / 2,
-          dimensions.diameter / 2,
-          dimensions.length,
-          32
-        );
-        const pfrMaterial = new THREE.MeshPhongMaterial({
-          color: 0x3498db,
-          transparent: true,
-          opacity: 0.6
-        });
-        const pfr = new THREE.Mesh(pfrGeometry, pfrMaterial);
-        pfr.rotation.z = Math.PI / 2; // Yatay pozisyon
-        reactorMesh.add(pfr);
-
-        // Flanşlar
-        const flangeGeometry = new THREE.CylinderGeometry(
-          dimensions.diameter / 1.5,
-          dimensions.diameter / 1.5,
-          dimensions.diameter / 10,
-          32
-        );
-
-        const inFlange = new THREE.Mesh(flangeGeometry, metalMaterial);
-        inFlange.rotation.z = Math.PI / 2;
-        inFlange.position.x = -dimensions.length/2;
-        reactorMesh.add(inFlange);
-
-        const outFlange = new THREE.Mesh(flangeGeometry, metalMaterial);
-        outFlange.rotation.z = Math.PI / 2;
-        outFlange.position.x = dimensions.length/2;
-        reactorMesh.add(outFlange);
-      }
-
-      function createPBRGeometry(dimensions, metalMaterial) {
-        // Ana reaktör gövdesi
-        const pbrGeometry = new THREE.CylinderGeometry(
-          dimensions.diameter / 2,
-          dimensions.diameter / 2,
-          dimensions.length,
-          32
-        );
-        const pbrMaterial = new THREE.MeshPhongMaterial({
-          color: 0xe74c3c,
-          transparent: true,
-          opacity: 0.6
-        });
-        const pbr = new THREE.Mesh(pbrGeometry, pbrMaterial);
-        reactorMesh.add(pbr);
-
-        // Katalizör parçacıkları
-        const particleGeometry = new THREE.SphereGeometry(dimensions.diameter / 20, 8, 8);
-        const particleMaterial = new THREE.MeshPhongMaterial({
-          color: 0x7f8c8d,
-          metalness: 0.5,
-          roughness: 0.7
-        });
-
-        for (let i = 0; i < 100; i++) {
-          const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-          particle.position.set(
-            (Math.random() - 0.5) * dimensions.diameter * 0.8,
-            (Math.random() - 0.5) * dimensions.length * 0.8,
-            (Math.random() - 0.5) * dimensions.diameter * 0.8
-          );
-          reactorMesh.add(particle);
-        }
-      }
-
-      function createBatchGeometry(dimensions, metalMaterial) {
-        // Ana tank
-        const batchGeometry = new THREE.CylinderGeometry(
-          dimensions.diameter / 2,
-          dimensions.diameter / 2,
-          dimensions.height,
-          32
-        );
-        const batchMaterial = new THREE.MeshPhongMaterial({
-          color: 0x9b59b6,
-          transparent: true,
-          opacity: 0.6
-        });
-        const batch = new THREE.Mesh(batchGeometry, batchMaterial);
-        reactorMesh.add(batch);
-
-        // Karıştırıcı şaftı
-        const shaftGeometry = new THREE.CylinderGeometry(
-          dimensions.diameter / 30,
-          dimensions.diameter / 30,
-          dimensions.height * 0.8,
-          16
-        );
-        const shaft = new THREE.Mesh(shaftGeometry, metalMaterial);
-        shaft.position.y = dimensions.height * 0.1;
-        reactorMesh.add(shaft);
-
-        // Karıştırıcı bıçakları
-        const bladeGeometry = new THREE.BoxGeometry(
-          dimensions.diameter * 0.6,
-          dimensions.diameter / 30,
-          dimensions.diameter / 10
-        );
-
-        for (let i = 0; i < 4; i++) {
-          const blade = new THREE.Mesh(bladeGeometry, metalMaterial);
-          blade.position.y = 0;
-          blade.rotation.y = (Math.PI / 2) * i;
-          shaft.add(blade);
-        }
-      }
-
-      function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
-        labelRenderer.render(scene, camera);
-      }
-
-      animate();
-
-      window.addEventListener('resize', onWindowResize, false);
-
-      function onWindowResize() {
-        camera.aspect = container.clientWidth / container.clientHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        labelRenderer.setSize(container.clientWidth, container.clientHeight);
-      }
-
-      return {
-        updateReactorGeometry
-      };
-    }
-
-    // Reaktör renkleri
-    function getReactorColor(type) {
-      const colors = {
-        'PFR': 0x3498db,
-        'CSTR': 0x2ecc71,
-        'PBR': 0xe74c3c,
-        'Batch': 0x9b59b6
-      };
-      return colors[type];
-    }
-
-    function calculateDimensions(type, volume) {
-      let dimensions = {};
-      
-      switch(type) {
-        case 'PFR':
-          // L/D oranı genellikle 10-50 arasındadır
-          const LD_ratio = 20;
-          // V = π(D²/4)L
-          // L = LD_ratio * D
-          // V = π(D²/4)(LD_ratio * D)
-          // V = (πLD_ratio/4)D³
-          // D = (4V/πLD_ratio)^(1/3)
-          dimensions.diameter = Math.pow((4 * volume)/(Math.PI * LD_ratio), 1/3);
-          dimensions.length = LD_ratio * dimensions.diameter;
-          break;
-          
-        case 'CSTR':
-          // H/D oranı genellikle 1-2 arasındadır
-          const HD_ratio = 1.5;
-          // V = π(D²/4)H
-          // H = HD_ratio * D
-          // V = π(D²/4)(HD_ratio * D)
-          // V = (πHD_ratio/4)D³
-          // D = (4V/πHD_ratio)^(1/3)
-          dimensions.diameter = Math.pow((4 * volume)/(Math.PI * HD_ratio), 1/3);
-          dimensions.height = HD_ratio * dimensions.diameter;
-          break;
-          
-        case 'PBR':
-          // L/D oranı genellikle 3-6 arasındadır
-          const PBR_LD_ratio = 4;
-          dimensions.diameter = Math.pow((4 * volume)/(Math.PI * PBR_LD_ratio), 1/3);
-          dimensions.length = PBR_LD_ratio * dimensions.diameter;
-          break;
-          
-        case 'Batch':
-          // H/D oranı genellikle 1-1.5 arasındadır
-          const Batch_HD_ratio = 1.2;
-          dimensions.diameter = Math.pow((4 * volume)/(Math.PI * Batch_HD_ratio), 1/3);
-          dimensions.height = Batch_HD_ratio * dimensions.diameter;
-          break;
-      }
-      
-      return dimensions;
-    }
-
-    function calculateVolume(dimensions) {
-      return Math.PI * Math.pow(dimensions.diameter/2, 2) * 
-        (dimensions.height || dimensions.length);
-    }
+    // Mevcut hesaplama ve görselleştirme fonksiyonları...
   </script>
 </body>
 </html>

@@ -2,73 +2,82 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dinamik Simülasyon</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2c3e50">
+  <title data-translate="dynamics.title">Dinamik Simülasyon</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+  <script src="translations.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+  <div class="language-selector">
+    <select id="languageSelect" onchange="changeLanguage(this.value)">
+      <option value="tr">Türkçe</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+
   <nav>
-    <a href="index.html">Ana Sayfa</a>
-    <a href="reactor.html">Reaktör Tasarım</a>
-    <a href="chemical.html">Kimyasal Denge</a>
-    <a href="heattransfer.html">Isı Transferi</a>
-    <a href="dynamics.html">Dinamik Simülasyon</a>
-    <a href="optimization.html">Reaktör Optimizasyonu</a>
-    <a href="history.html">Hesaplama Geçmişi</a>
+    <a href="index.html" data-translate="nav.home">Ana Sayfa</a>
+    <a href="reactor.html" data-translate="nav.reactor">Reaktör Tasarım</a>
+    <a href="chemical.html" data-translate="nav.chemical">Kimyasal Denge</a>
+    <a href="heattransfer.html" data-translate="nav.heat">Isı Transferi</a>
+    <a href="dynamics.html" data-translate="nav.dynamics">Dinamik Simülasyon</a>
+    <a href="optimization.html" data-translate="nav.optimization">Reaktör Optimizasyonu</a>
+    <a href="history.html" data-translate="nav.history">Hesaplama Geçmişi</a>
   </nav>
 
   <div class="page-header">
-    <h1>Dinamik Simülasyon</h1>
-    <p>Birinci dereceden reaksiyon kinetiklerinin zamana bağlı davranışını inceleyin</p>
+    <h1 data-translate="dynamics.pageTitle">Dinamik Simülasyon</h1>
+    <p data-translate="dynamics.pageDesc">Reaktör sistemlerinin zamana bağlı davranışı</p>
   </div>
 
   <div class="grid-container">
     <div class="controls">
       <div class="input-group">
-        <label for="reactor_type">Reaktör Tipi</label>
+        <label for="reactor_type" data-translate="dynamics.reactorType">Reaktör Tipi</label>
         <select id="reactor_type">
-          <option value="CSTR">CSTR</option>
-          <option value="PFR">PFR</option>
+          <option value="CSTR" data-translate="dynamics.cstr">CSTR</option>
+          <option value="PFR" data-translate="dynamics.pfr">PFR</option>
         </select>
       </div>
 
       <div class="input-group">
-        <label for="F_in">Giriş Akış Hızı (L/s)</label>
-        <input type="number" id="F_in" step="any">
+        <label for="k_forward" data-translate="dynamics.k1">İleri Reaksiyon Sabiti (k₁)</label>
+        <input type="number" id="k_forward" step="any">
       </div>
 
       <div class="input-group">
-        <label for="C_in">Giriş Konsantrasyonu (mol/L)</label>
-        <input type="number" id="C_in" step="any">
+        <label for="initial_conc" data-translate="dynamics.initialConc">Başlangıç Konsantrasyonu</label>
+        <input type="number" id="initial_conc" step="any">
       </div>
 
       <div class="input-group">
-        <label for="k">Reaksiyon Hız Sabiti (1/s)</label>
-        <input type="number" id="k" step="any">
+        <label for="flow_rate" data-translate="dynamics.flowRate">Akış Hızı (L/s)</label>
+        <input type="number" id="flow_rate" step="any">
       </div>
 
-      <div class="input-group">
-        <label for="V">Reaktör Hacmi (L)</label>
-        <input type="number" id="V" step="any">
+      <div class="simulation-controls">
+        <button id="startBtn" data-translate="common.start">Başlat</button>
+        <button id="pauseBtn" data-translate="common.pause">Duraklat</button>
+        <button id="resetBtn" data-translate="common.reset">Sıfırla</button>
       </div>
-
-      <div class="input-group">
-        <label for="sim_time">Simülasyon Süresi (s)</label>
-        <input type="number" id="sim_time" value="100" step="any">
-      </div>
-
-      <button id="startBtn">Simülasyonu Başlat</button>
-      <button id="pauseBtn" disabled>Duraklat</button>
-      <button id="resetBtn" disabled>Sıfırla</button>
     </div>
 
     <div class="visualization-container">
-      <div class="visualization-tabs">
-        <button class="tab-btn active" data-view="concentration">Konsantrasyon</button>
-        <button class="tab-btn" data-view="conversion">Dönüşüm</button>
-        <button class="tab-btn" data-view="3d">3D Görünüm</button>
+      <div class="tab-navigation">
+        <button class="tab-btn active" data-view="concentration" data-translate="dynamics.concTab">
+          Konsantrasyon
+        </button>
+        <button class="tab-btn" data-view="conversion" data-translate="dynamics.convTab">
+          Dönüşüm
+        </button>
+        <button class="tab-btn" data-view="3d" data-translate="dynamics.view3d">
+          3D Görünüm
+        </button>
       </div>
       <div id="concentrationPlot"></div>
       <div id="conversionPlot" style="display: none;"></div>
@@ -77,6 +86,28 @@
   </div>
 
   <script>
+    // Touch olayları ve dil desteği
+    document.addEventListener('DOMContentLoaded', function() {
+      // Çift dokunma zoom'unu engelle
+      document.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      // Pinch zoom'u engelle
+      document.addEventListener('touchmove', function(e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      // Tercih edilen dili yükle
+      const preferredLanguage = localStorage.getItem('preferredLanguage') || 'tr';
+      document.getElementById('languageSelect').value = preferredLanguage;
+      translatePage(preferredLanguage);
+    });
+
     let simulation = null;
     let animationId = null;
     let timeData = [];
@@ -114,9 +145,9 @@
 
     function initSimulation() {
       const type = document.getElementById('reactor_type').value;
-      const F_in = parseFloat(document.getElementById('F_in').value);
-      const C_in = parseFloat(document.getElementById('C_in').value);
-      const k = parseFloat(document.getElementById('k').value);
+      const F_in = parseFloat(document.getElementById('flow_rate').value);
+      const C_in = parseFloat(document.getElementById('initial_conc').value);
+      const k = parseFloat(document.getElementById('k_forward').value);
       const V = parseFloat(document.getElementById('V').value);
 
       simulation = new ReactorSimulation(type, F_in, C_in, k, V);

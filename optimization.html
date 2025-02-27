@@ -2,107 +2,107 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reaktör Optimizasyonu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2c3e50">
+  <title data-translate="optimization.title">Reaktör Optimizasyonu</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+  <script src="translations.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
+  <div class="language-selector">
+    <select id="languageSelect" onchange="changeLanguage(this.value)">
+      <option value="tr">Türkçe</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+
   <nav>
-    <a href="index.html">Ana Sayfa</a>
-    <a href="reactor.html">Reaktör Tasarım</a>
-    <a href="chemical.html">Kimyasal Denge</a>
-    <a href="heattransfer.html">Isı Transferi</a>
-    <a href="dynamics.html">Dinamik Simülasyon</a>
-    <a href="optimization.html">Reaktör Optimizasyonu</a>
-    <a href="history.html">Hesaplama Geçmişi</a>
+    <a href="index.html" data-translate="nav.home">Ana Sayfa</a>
+    <a href="reactor.html" data-translate="nav.reactor">Reaktör Tasarım</a>
+    <a href="chemical.html" data-translate="nav.chemical">Kimyasal Denge</a>
+    <a href="heattransfer.html" data-translate="nav.heat">Isı Transferi</a>
+    <a href="dynamics.html" data-translate="nav.dynamics">Dinamik Simülasyon</a>
+    <a href="optimization.html" data-translate="nav.optimization">Reaktör Optimizasyonu</a>
+    <a href="history.html" data-translate="nav.history">Hesaplama Geçmişi</a>
   </nav>
 
   <div class="page-header">
-    <h1>Reaktör Optimizasyonu</h1>
-    <p>Farklı reaktör tiplerinde optimum hacim ve çalışma koşullarını belirleyin</p>
+    <h1 data-translate="optimization.pageTitle">Reaktör Optimizasyonu</h1>
+    <p data-translate="optimization.pageDesc">Çok parametreli reaktör optimizasyonu</p>
   </div>
 
   <div class="grid-container">
     <div class="controls">
       <div class="input-group">
-        <label for="objective">Optimizasyon Hedefi</label>
+        <label for="objective" data-translate="optimization.objective">Optimizasyon Hedefi</label>
         <select id="objective">
-          <option value="conversion">Maksimum Dönüşüm</option>
-          <option value="selectivity">Maksimum Seçicilik</option>
-          <option value="cost">Minimum Maliyet</option>
+          <option value="conversion" data-translate="optimization.maxConversion">Maksimum Dönüşüm</option>
+          <option value="selectivity" data-translate="optimization.maxSelectivity">Maksimum Seçicilik</option>
+          <option value="cost" data-translate="optimization.minCost">Minimum Maliyet</option>
         </select>
       </div>
 
       <div class="input-group">
-        <label for="reactor_type">Reaktör Tipi</label>
-        <select id="reactor_type">
-          <option value="CSTR">CSTR</option>
-          <option value="PFR">PFR</option>
-          <option value="cascade">CSTR Kaskadı</option>
-        </select>
-      </div>
-
-      <div class="parameter-ranges">
-        <h3>Parametre Aralıkları</h3>
-        
-        <div class="input-group">
-          <label for="temp_min">Minimum Sıcaklık (°C)</label>
-          <input type="number" id="temp_min" step="any">
-        </div>
-        
-        <div class="input-group">
-          <label for="temp_max">Maksimum Sıcaklık (°C)</label>
-          <input type="number" id="temp_max" step="any">
-        </div>
-
-        <div class="input-group">
-          <label for="volume_min">Minimum Hacim (L)</label>
-          <input type="number" id="volume_min" step="any">
-        </div>
-
-        <div class="input-group">
-          <label for="volume_max">Maksimum Hacim (L)</label>
-          <input type="number" id="volume_max" step="any">
+        <label for="constraints" data-translate="optimization.constraints">Kısıtlamalar</label>
+        <div class="constraint-inputs">
+          <label>
+            <input type="checkbox" id="temp_constraint">
+            <span data-translate="optimization.tempLimit">Sıcaklık Limiti</span>
+          </label>
+          <label>
+            <input type="checkbox" id="pressure_constraint">
+            <span data-translate="optimization.pressLimit">Basınç Limiti</span>
+          </label>
         </div>
       </div>
 
-      <div class="constraints">
-        <h3>Kısıtlamalar</h3>
-        
-        <div class="input-group">
-          <label for="min_conversion">Minimum Dönüşüm</label>
-          <input type="number" id="min_conversion" step="0.01" min="0" max="1">
-        </div>
-
-        <div class="input-group">
-          <label for="max_cost">Maksimum Maliyet ($)</label>
-          <input type="number" id="max_cost" step="any">
-        </div>
-      </div>
-
-      <button id="optimizeBtn">Optimize Et</button>
+      <button id="optimizeBtn" data-translate="optimization.optimize">Optimize Et</button>
     </div>
 
     <div class="visualization-container">
-      <div class="visualization-tabs">
-        <button class="tab-btn active" data-view="pareto">Pareto Grafiği</button>
-        <button class="tab-btn" data-view="surface">Yüzey Grafiği</button>
-        <button class="tab-btn" data-view="sensitivity">Duyarlılık Analizi</button>
+      <div class="tab-navigation">
+        <button class="tab-btn active" data-view="pareto" data-translate="optimization.paretoTab">
+          Pareto
+        </button>
+        <button class="tab-btn" data-view="surface" data-translate="optimization.surfaceTab">
+          Yüzey
+        </button>
+        <button class="tab-btn" data-view="sensitivity" data-translate="optimization.sensitivityTab">
+          Duyarlılık
+        </button>
       </div>
-      
       <div id="paretoPlot"></div>
       <div id="surfacePlot" style="display: none;"></div>
       <div id="sensitivityPlot" style="display: none;"></div>
-
-      <div id="optimizationResults" class="results-panel">
-        <h3>Optimizasyon Sonuçları</h3>
-        <div id="results"></div>
-      </div>
     </div>
   </div>
 
   <script>
+    // Touch olayları ve dil desteği
+    document.addEventListener('DOMContentLoaded', function() {
+      // Çift dokunma zoom'unu engelle
+      document.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      // Pinch zoom'u engelle
+      document.addEventListener('touchmove', function(e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      // Tercih edilen dili yükle
+      const preferredLanguage = localStorage.getItem('preferredLanguage') || 'tr';
+      document.getElementById('languageSelect').value = preferredLanguage;
+      translatePage(preferredLanguage);
+    });
+
     // Optimizasyon algoritması
     class ReactorOptimizer {
       constructor(objective, type, constraints, ranges) {

@@ -2,9 +2,13 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ana Sayfa - Kimya Mühendisliği Hesaplama Platformu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2c3e50">
+  <title data-translate="common.title">Kimya Mühendisliği Hesaplamaları</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+  <script src="translations.js"></script>
   <style>
     .features-grid {
       display: grid;
@@ -79,15 +83,53 @@
   </style>
 </head>
 <body>
+  <div class="language-selector">
+    <select id="languageSelect" onchange="changeLanguage(this.value)">
+      <option value="tr">Türkçe</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+
   <nav>
-    <a href="index.html">Ana Sayfa</a>
-    <a href="reactor.html">Reaktör Tasarım</a>
-    <a href="chemical.html">Kimyasal Denge</a>
-    <a href="heattransfer.html">Isı Transferi</a>
-    <a href="dynamics.html">Dinamik Simülasyon</a>
-    <a href="optimization.html">Reaktör Optimizasyonu</a>
-    <a href="history.html">Hesaplama Geçmişi</a>
+    <a href="index.html" data-translate="nav.home">Ana Sayfa</a>
+    <a href="reactor.html" data-translate="nav.reactor">Reaktör Tasarım</a>
+    <a href="chemical.html" data-translate="nav.chemical">Kimyasal Denge</a>
+    <a href="heattransfer.html" data-translate="nav.heat">Isı Transferi</a>
+    <a href="dynamics.html" data-translate="nav.dynamics">Dinamik Simülasyon</a>
+    <a href="optimization.html" data-translate="nav.optimization">Reaktör Optimizasyonu</a>
+    <a href="history.html" data-translate="nav.history">Hesaplama Geçmişi</a>
   </nav>
+
+  <div class="page-header">
+    <h1 data-translate="index.mainTitle">Kimya Mühendisliği Hesaplamaları</h1>
+    <p data-translate="index.subtitle">Reaktör tasarımı, kimyasal denge ve ısı transferi hesaplamaları için araçlar</p>
+  </div>
+
+  <div class="grid-container">
+    <div class="feature-card" onclick="window.location.href='reactor.html'">
+      <img src="images/reactor.svg" alt="Reactor" class="feature-icon">
+      <h2 data-translate="index.reactorTitle">Reaktör Tasarımı</h2>
+      <p data-translate="index.reactorDesc">PFR, CSTR ve diğer reaktör tipleri için tasarım hesaplamaları</p>
+    </div>
+
+    <div class="feature-card" onclick="window.location.href='chemical.html'">
+      <img src="images/chemical.svg" alt="Chemical" class="feature-icon">
+      <h2 data-translate="index.chemicalTitle">Kimyasal Denge</h2>
+      <p data-translate="index.chemicalDesc">Denge sabitleri ve konsantrasyon hesaplamaları</p>
+    </div>
+
+    <div class="feature-card" onclick="window.location.href='heattransfer.html'">
+      <img src="images/heat.svg" alt="Heat" class="feature-icon">
+      <h2 data-translate="index.heatTitle">Isı Transferi</h2>
+      <p data-translate="index.heatDesc">Isı değiştiricileri ve reaktör ısı transferi hesaplamaları</p>
+    </div>
+
+    <div class="feature-card" onclick="window.location.href='dynamics.html'">
+      <img src="images/dynamics.svg" alt="Dynamics" class="feature-icon">
+      <h2 data-translate="index.dynamicsTitle">Dinamik Simülasyon</h2>
+      <p data-translate="index.dynamicsDesc">Reaktör sistemlerinin dinamik davranış analizi</p>
+    </div>
+  </div>
 
   <div class="welcome-section">
     <h1>Kimya Mühendisliği Hesaplama Platformu</h1>
@@ -169,18 +211,24 @@
   </div>
 
   <script>
-    // Sayfa yüklendiğinde animasyon efekti
     document.addEventListener('DOMContentLoaded', function() {
-      const cards = document.querySelectorAll('.feature-card');
-      cards.forEach((card, index) => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(20px)';
-        setTimeout(() => {
-          card.style.transition = 'all 0.5s ease';
-          card.style.opacity = '1';
-          card.style.transform = 'translateY(0)';
-        }, index * 100);
-      });
+      // Touch olayları için destek
+      document.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      document.addEventListener('touchmove', function(e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      // Tercih edilen dili yükle
+      const preferredLanguage = localStorage.getItem('preferredLanguage') || 'tr';
+      document.getElementById('languageSelect').value = preferredLanguage;
+      translatePage(preferredLanguage);
     });
   </script>
 </body>

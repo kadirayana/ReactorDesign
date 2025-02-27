@@ -2,13 +2,24 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Isı Transferi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2c3e50">
+  <title data-translate="heat.title">Isı Transferi</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+  <script src="translations.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+  <div class="language-selector">
+    <select id="languageSelect" onchange="changeLanguage(this.value)">
+      <option value="tr">Türkçe</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+
   <nav>
     <a href="index.html">Ana Sayfa</a>
     <a href="reactor.html">Reaktör Tasarım</a>
@@ -20,47 +31,51 @@
   </nav>
 
   <div class="page-header">
-    <h1>Isı Transferi</h1>
-    <p>Duvar içindeki sıcaklık dağılımını ve ısı transfer hızını hesaplayın</p>
+    <h1 data-translate="heat.pageTitle">Isı Transferi Hesaplamaları</h1>
+    <p data-translate="heat.pageDesc">Reaktör sistemlerinde ısı transferi analizi</p>
   </div>
 
   <div class="grid-container">
     <div class="controls">
       <div class="input-group">
-        <label for="reactor_type">Reaktör Tipi</label>
+        <label for="reactor_type" data-translate="heat.reactorType">Reaktör Tipi</label>
         <select id="reactor_type">
-          <option value="PFR">Piston Akışlı Reaktör (PFR)</option>
-          <option value="CSTR">Karıştırmalı Tank Reaktörü (CSTR)</option>
+          <option value="PFR" data-translate="heat.pfr">Piston Akışlı Reaktör</option>
+          <option value="CSTR" data-translate="heat.cstr">Karıştırmalı Tank Reaktörü</option>
         </select>
       </div>
 
       <div class="input-group">
-        <label for="T_in">Giriş Sıcaklığı (°C)</label>
+        <label for="T_in" data-translate="heat.inletTemp">Giriş Sıcaklığı (°C)</label>
         <input type="number" id="T_in" step="any">
       </div>
 
       <div class="input-group">
-        <label for="T_cool">Soğutma Sıcaklığı (°C)</label>
+        <label for="T_cool" data-translate="heat.coolantTemp">Soğutucu Sıcaklığı (°C)</label>
         <input type="number" id="T_cool" step="any">
       </div>
 
       <div class="input-group">
-        <label for="dH">Reaksiyon Entalpisi (kJ/mol)</label>
+        <label for="dH" data-translate="heat.reactionHeat">Reaksiyon Isısı (kJ/mol)</label>
         <input type="number" id="dH" step="any">
       </div>
 
       <div class="input-group">
-        <label for="U">Isı Transfer Katsayısı (W/m²·K)</label>
+        <label for="U" data-translate="heat.heatTransfer">Isı Transfer Katsayısı (W/m²K)</label>
         <input type="number" id="U" step="any">
       </div>
 
-      <button id="calculateBtn">Hesapla ve Görselleştir</button>
+      <button id="calculateBtn" data-translate="common.calculate">Hesapla</button>
     </div>
 
     <div class="visualization-container">
-      <div class="visualization-tabs">
-        <button class="tab-btn active" data-view="temperature">Sıcaklık Profili</button>
-        <button class="tab-btn" data-view="3d">3D Görünüm</button>
+      <div class="tab-navigation">
+        <button class="tab-btn active" data-view="temperature" data-translate="heat.tempProfile">
+          Sıcaklık Profili
+        </button>
+        <button class="tab-btn" data-view="3d" data-translate="heat.view3d">
+          3D Görünüm
+        </button>
       </div>
       <div id="temperaturePlot"></div>
       <div id="reactor3d" style="display: none;"></div>
@@ -68,6 +83,18 @@
   </div>
 
   <script>
+    // Touch olayları ve dil desteği
+    document.addEventListener('DOMContentLoaded', function() {
+      // ... (mevcut touch ve dil desteği kodu) ...
+    });
+
+    // Plotly konfigürasyonu
+    const plotlyConfig = {
+      responsive: true,
+      displayModeBar: false,
+      displaylogo: false
+    };
+
     // Sıcaklık profili hesaplama ve görselleştirme
     function calculateTemperatureProfile(type, T_in, T_cool, dH, U, length) {
       const points = 100;

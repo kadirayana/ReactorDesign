@@ -191,19 +191,142 @@ button:hover {
 }
 
 /* Responsive tasarım için medya sorguları */
-@media (max-width: 768px) {
-  nav {
-    flex-direction: column;
-    align-items: stretch;
+@media screen and (max-width: 768px) {
+  body {
+    padding: 10px;
   }
-  
-  nav a {
-    margin: 5px 0;
-    text-align: center;
+
+  .page-header {
+    padding: 15px 0;
   }
-  
+
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+
   .grid-container {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+  }
+
+  .controls {
+    padding: 1rem;
+  }
+
+  .input-group {
+    margin-bottom: 10px;
+  }
+
+  .input-group label {
+    font-size: 0.9rem;
+  }
+
+  .visualization-container {
+    padding: 10px;
+    overflow-x: auto;
+  }
+
+  .tab-navigation {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .tab-btn {
+    flex: 1 1 calc(50% - 5px);
+    padding: 8px;
+    font-size: 0.9rem;
+    min-width: 120px;
+  }
+
+  #reactor3d {
+    height: 300px;
+  }
+
+  .chart-wrapper {
+    padding: 10px;
+    margin: 10px 0;
+  }
+
+  /* Plotly grafikleri için mobil optimizasyon */
+  .js-plotly-plot {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Dil seçici için mobil stil */
+  .language-selector {
+    position: static;
+    margin: 10px auto;
+    width: fit-content;
+  }
+
+  /* Tooltip mobil uyumluluğu */
+  .tooltip .tooltip-text {
+    width: 200px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* Form elemanları için mobil optimizasyon */
+  input, select, button {
+    font-size: 16px; /* iOS zoom sorununu önler */
+    min-height: 44px; /* Dokunmatik hedef boyutu */
+  }
+
+  /* Tablo görünümü için mobil uyumluluk */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  /* Modal/Dialog için mobil stil */
+  .modal-content {
+    width: 90%;
+    margin: 20px auto;
+  }
+
+  .feature-card {
+    margin-bottom: 15px;
+  }
+
+  .feature-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .feature-card h2 {
+    font-size: 1.2rem;
+  }
+
+  .feature-card p {
+    font-size: 0.9rem;
+  }
+}
+
+/* Tablet boyutu için ek stiller */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .grid-container {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  #reactor3d {
+    height: 400px;
+  }
+}
+
+/* Yatay mobil görünüm için ek stiller */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+  .page-header {
+    padding: 10px 0;
+  }
+
+  #reactor3d {
+    height: 200px;
+  }
+
+  .grid-container {
+    grid-template-columns: 1fr 1fr !important;
   }
 }
 
@@ -286,4 +409,38 @@ button:hover {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   user-select: none;
   z-index: 1;
+}
+
+/* Dil seçimi için stil */
+.language-selector {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  background: white;
+  padding: 0.5rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+/* Feature cards için stiller */
+.feature-card {
+  background: white;
+  padding: 20px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.feature-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 15px;
 } 

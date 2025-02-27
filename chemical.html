@@ -2,64 +2,129 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kimyasal Denge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2c3e50">
+  <title data-translate="chemical.title">Kimyasal Denge Hesaplamaları</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+  <script src="translations.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
+  <div class="language-selector">
+    <select id="languageSelect" onchange="changeLanguage(this.value)">
+      <option value="tr">Türkçe</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+
   <nav>
-    <a href="index.html">Ana Sayfa</a>
-    <a href="reactor.html">Reaktör Tasarım</a>
-    <a href="chemical.html">Kimyasal Denge</a>
-    <a href="heattransfer.html">Isı Transferi</a>
-    <a href="dynamics.html">Dinamik Simülasyon</a>
-    <a href="optimization.html">Reaktör Optimizasyonu</a>
-    <a href="history.html">Hesaplama Geçmişi</a>
+    <a href="index.html" data-translate="nav.home">Ana Sayfa</a>
+    <a href="reactor.html" data-translate="nav.reactor">Reaktör Tasarım</a>
+    <a href="chemical.html" data-translate="nav.chemical">Kimyasal Denge</a>
+    <a href="heattransfer.html" data-translate="nav.heat">Isı Transferi</a>
+    <a href="dynamics.html" data-translate="nav.dynamics">Dinamik Simülasyon</a>
+    <a href="optimization.html" data-translate="nav.optimization">Reaktör Optimizasyonu</a>
+    <a href="history.html" data-translate="nav.history">Hesaplama Geçmişi</a>
   </nav>
 
   <div class="page-header">
-    <h1>Kimyasal Denge Hesaplaması</h1>
-    <p>A + B ⇌ C reaksiyonu için denge konsantrasyonlarını hesaplayın</p>
+    <h1 data-translate="chemical.pageTitle">Kimyasal Denge Hesaplamaları</h1>
+    <p data-translate="chemical.pageDesc">Reaksiyon denge sabitleri ve konsantrasyon hesaplamaları</p>
   </div>
 
   <div class="grid-container">
     <div class="controls">
       <div class="input-group">
-        <label for="reaction">Reaksiyon Tipi</label>
+        <label for="reaction" data-translate="chemical.reactionType">Reaksiyon Tipi</label>
         <select id="reaction">
-          <option value="A⇌B">A ⇌ B</option>
-          <option value="A+B⇌C">A + B ⇌ C</option>
-          <option value="2A⇌B">2A ⇌ B</option>
+          <option value="A⇌B" data-translate="chemical.reaction1">A ⇌ B</option>
+          <option value="A+B⇌C" data-translate="chemical.reaction2">A + B ⇌ C</option>
+          <option value="2A⇌B" data-translate="chemical.reaction3">2A ⇌ B</option>
         </select>
       </div>
 
       <div class="input-group">
-        <label for="k_forward">İleri Reaksiyon Sabiti (k₁)</label>
+        <label for="k_forward" data-translate="chemical.k1">İleri Reaksiyon Sabiti (k₁)</label>
         <input type="number" id="k_forward" step="any">
       </div>
 
       <div class="input-group">
-        <label for="k_reverse">Geri Reaksiyon Sabiti (k₋₁)</label>
+        <label for="k_reverse" data-translate="chemical.k_1">Geri Reaksiyon Sabiti (k₋₁)</label>
         <input type="number" id="k_reverse" step="any">
       </div>
 
       <div class="input-group">
-        <label for="C_A_initial">Başlangıç [A] (mol/L)</label>
+        <label for="C_A_initial" data-translate="chemical.initialConc">Başlangıç [A] (mol/L)</label>
         <input type="number" id="C_A_initial" step="any">
       </div>
 
-      <button id="calculateBtn">Hesapla ve Görselleştir</button>
+      <button id="calculateBtn" data-translate="common.calculate">Hesapla</button>
     </div>
 
     <div class="visualization-container">
+      <div class="visualization-tabs">
+        <button class="tab-btn active" data-view="concentration" data-translate="chemical.concTab">
+          Konsantrasyon
+        </button>
+        <button class="tab-btn" data-view="equilibrium" data-translate="chemical.eqTab">
+          Denge
+        </button>
+      </div>
       <div id="concentrationPlot"></div>
-      <div id="equilibriumPlot"></div>
+      <div id="equilibriumPlot" style="display: none;"></div>
     </div>
   </div>
 
   <script>
-    document.getElementById('calculateBtn').addEventListener('click', function() {
+    // Touch olayları için destek
+    document.addEventListener('DOMContentLoaded', function() {
+      // Çift dokunma zoom'unu engelle
+      document.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      // Pinch zoom'u engelle
+      document.addEventListener('touchmove', function(e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      // Tercih edilen dili yükle
+      const preferredLanguage = localStorage.getItem('preferredLanguage') || 'tr';
+      document.getElementById('languageSelect').value = preferredLanguage;
+      translatePage(preferredLanguage);
+
+      // Plotly konfigürasyonu
+      const plotlyConfig = {
+        responsive: true,
+        displayModeBar: false,
+        displaylogo: false
+      };
+
+      // Event listeners
+      document.getElementById('calculateBtn').addEventListener('click', calculate);
+      
+      // Tab değiştirme
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          
+          const view = this.dataset.view;
+          document.getElementById('concentrationPlot').style.display = 
+            view === 'concentration' ? 'block' : 'none';
+          document.getElementById('equilibriumPlot').style.display = 
+            view === 'equilibrium' ? 'block' : 'none';
+        });
+      });
+    });
+
+    function calculate() {
       const reaction = document.getElementById('reaction').value;
       const k1 = parseFloat(document.getElementById('k_forward').value);
       const k_1 = parseFloat(document.getElementById('k_reverse').value);
@@ -87,7 +152,7 @@
         yaxis: {title: '[B] (mol/L)'},
         height: 400
       });
-    });
+    }
 
     function calculateConcentrations(t, k1, k_1, C_A0, reaction) {
       const concentrations = {

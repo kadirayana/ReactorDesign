@@ -2,159 +2,159 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hesaplama Geçmişi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#2c3e50">
+  <title data-translate="history.title">Hesaplama Geçmişi</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+  <script src="translations.js"></script>
 </head>
 <body>
+  <div class="language-selector">
+    <select id="languageSelect" onchange="changeLanguage(this.value)">
+      <option value="tr">Türkçe</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+
   <nav>
-    <a href="index.html">Ana Sayfa</a>
-    <a href="reactor.html">Reaktör Tasarım</a>
-    <a href="chemical.html">Kimyasal Denge</a>
-    <a href="heattransfer.html">Isı Transferi</a>
-    <a href="dynamics.html">Dinamik Simülasyon</a>
-    <a href="optimization.html">Reaktör Optimizasyonu</a>
-    <a href="history.html">Hesaplama Geçmişi</a>
+    <a href="index.html" data-translate="nav.home">Ana Sayfa</a>
+    <a href="reactor.html" data-translate="nav.reactor">Reaktör Tasarım</a>
+    <a href="chemical.html" data-translate="nav.chemical">Kimyasal Denge</a>
+    <a href="heattransfer.html" data-translate="nav.heat">Isı Transferi</a>
+    <a href="dynamics.html" data-translate="nav.dynamics">Dinamik Simülasyon</a>
+    <a href="optimization.html" data-translate="nav.optimization">Reaktör Optimizasyonu</a>
+    <a href="history.html" data-translate="nav.history">Hesaplama Geçmişi</a>
   </nav>
 
   <div class="page-header">
-    <h1>Hesaplama Geçmişi</h1>
-    <p>Tüm modüllerde yapılan hesaplamaların kayıtları</p>
+    <h1 data-translate="history.pageTitle">Hesaplama Geçmişi</h1>
+    <p data-translate="history.pageDesc">Önceki hesaplamaları görüntüleyin ve karşılaştırın</p>
   </div>
 
-  <div class="controls">
-    <div class="tab-navigation">
-      <button class="tab-btn active" data-filter="all">Tümü</button>
-      <button class="tab-btn" data-filter="reactor">Reaktör</button>
-      <button class="tab-btn" data-filter="chemical">Kimyasal Denge</button>
-      <button class="tab-btn" data-filter="heat">Isı Transferi</button>
-      <button class="tab-btn" data-filter="dynamic">Dinamik</button>
-      <button class="tab-btn" data-filter="optimization">Optimizasyon</button>
+  <div class="grid-container">
+    <div class="controls">
+      <div class="input-group">
+        <label for="history_filter" data-translate="history.filter">Filtrele</label>
+        <select id="history_filter">
+          <option value="all" data-translate="history.all">Tümü</option>
+          <option value="reactor" data-translate="history.reactorCalc">Reaktör Hesaplamaları</option>
+          <option value="chemical" data-translate="history.chemicalCalc">Kimyasal Denge</option>
+          <option value="heat" data-translate="history.heatCalc">Isı Transferi</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="date_range" data-translate="history.dateRange">Tarih Aralığı</label>
+        <select id="date_range">
+          <option value="all" data-translate="history.allTime">Tüm Zamanlar</option>
+          <option value="today" data-translate="history.today">Bugün</option>
+          <option value="week" data-translate="history.thisWeek">Bu Hafta</option>
+          <option value="month" data-translate="history.thisMonth">Bu Ay</option>
+        </select>
+      </div>
+
+      <button id="clearHistoryBtn" data-translate="history.clearAll">Geçmişi Temizle</button>
+      <button id="exportBtn" data-translate="history.export">Dışa Aktar</button>
     </div>
 
-    <div class="input-group">
-      <label for="dateFilter">Tarih Filtresi</label>
-      <input type="date" id="dateFilter">
+    <div class="history-container">
+      <div class="history-list" id="historyList">
+        <!-- Geçmiş kayıtları buraya dinamik olarak eklenecek -->
+      </div>
     </div>
-
-    <button id="clearFiltersBtn">Filtreleri Temizle</button>
-  </div>
-
-  <div class="result-panel">
-    <table>
-      <thead>
-        <tr>
-          <th>Tarih</th>
-          <th>Modül</th>
-          <th>Parametreler</th>
-          <th>Sonuç</th>
-          <th>Detaylar</th>
-        </tr>
-      </thead>
-      <tbody id="historyTable"></tbody>
-    </table>
   </div>
 
   <script>
-    function formatDate(isoString) {
-      return new Date(isoString).toLocaleString('tr-TR');
-    }
+    // Touch olayları ve dil desteği
+    document.addEventListener('DOMContentLoaded', function() {
+      // Çift dokunma zoom'unu engelle
+      document.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
 
-    function filterResults() {
-      const activeFilter = document.querySelector('.tab-btn.active').dataset.filter;
-      const dateFilter = document.getElementById('dateFilter').value;
-      const records = JSON.parse(localStorage.getItem("hesaplamalar")) || [];
-      
-      return records.filter(record => {
-        const matchesType = activeFilter === 'all' || 
-          (activeFilter === 'reactor' && ['PFR', 'CSTR', 'PBR', 'Batch'].includes(record.tip)) ||
-          (activeFilter === 'chemical' && record.tip === 'Kimyasal Denge') ||
-          (activeFilter === 'heat' && record.tip === 'Isı Transferi') ||
-          (activeFilter === 'dynamic' && record.tip === 'Dinamik Simülasyon') ||
-          (activeFilter === 'optimization' && record.tip === 'Optimizasyon');
+      // Pinch zoom'u engelle
+      document.addEventListener('touchmove', function(e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
 
-        const matchesDate = !dateFilter || record.tarih.startsWith(dateFilter);
-        
-        return matchesType && matchesDate;
+      // Tercih edilen dili yükle
+      const preferredLanguage = localStorage.getItem('preferredLanguage') || 'tr';
+      document.getElementById('languageSelect').value = preferredLanguage;
+      translatePage(preferredLanguage);
+
+      // Geçmiş kayıtlarını yükle
+      loadHistory();
+    });
+
+    // Geçmiş kayıtlarını yükleme fonksiyonu
+    function loadHistory() {
+      const history = JSON.parse(localStorage.getItem('calculationHistory') || '[]');
+      const historyList = document.getElementById('historyList');
+      historyList.innerHTML = '';
+
+      if (history.length === 0) {
+        historyList.innerHTML = `<p class="no-history" data-translate="history.noRecords">Henüz kayıt bulunmuyor</p>`;
+        return;
+      }
+
+      history.forEach(record => {
+        const recordElement = createHistoryRecord(record);
+        historyList.appendChild(recordElement);
       });
     }
 
-    function updateTable() {
-      const filteredRecords = filterResults();
-      const tableBody = document.getElementById("historyTable");
-      
-      tableBody.innerHTML = filteredRecords.length === 0 
-        ? '<tr><td colspan="5">Kayıt bulunamadı.</td></tr>'
-        : filteredRecords.reverse().map(record => {
-            const params = formatParameters(record);
-            const result = formatResult(record);
-            
-            return `
-              <tr>
-                <td>${formatDate(record.tarih)}</td>
-                <td>${record.tip}</td>
-                <td>${params}</td>
-                <td>${result}</td>
-                <td>${formatDetails(record)}</td>
-              </tr>
-            `;
-          }).join('');
+    // Geçmiş kaydı oluşturma fonksiyonu
+    function createHistoryRecord(record) {
+      const div = document.createElement('div');
+      div.className = 'history-record';
+      div.innerHTML = `
+        <h3>${record.type}</h3>
+        <p class="timestamp">${new Date(record.timestamp).toLocaleString()}</p>
+        <div class="record-details">
+          ${Object.entries(record.data).map(([key, value]) => 
+            `<p><strong>${key}:</strong> ${value}</p>`
+          ).join('')}
+        </div>
+        <button class="delete-btn" onclick="deleteRecord('${record.id}')" 
+                data-translate="history.delete">Sil</button>
+      `;
+      return div;
     }
 
-    function formatParameters(record) {
-      switch(record.tip) {
-        case 'PFR':
-        case 'CSTR':
-        case 'PBR':
-        case 'Batch':
-          return `F₀ = ${record.F_A0}, C₀ = ${record.C_A0}, k = ${record.k}`;
-        case 'Kimyasal Denge':
-          return `A₀ = ${record.A0}, K = ${record.K}`;
-        case 'Isı Transferi':
-          return `L = ${record.L}, k = ${record.kVal}, T₁ = ${record.T1}, T₂ = ${record.T2}`;
-        case 'Dinamik Simülasyon':
-          return `C₀ = ${record.C0}, k = ${record.kDyn}, t = ${record.simTime}`;
-        case 'Optimizasyon':
-          return `Tip = ${record.reactionType}, F₀ = ${record.F_A0}, C₀ = ${record.C_A0}`;
-        default:
-          return '-';
+    // Kayıt silme fonksiyonu
+    function deleteRecord(id) {
+      let history = JSON.parse(localStorage.getItem('calculationHistory') || '[]');
+      history = history.filter(record => record.id !== id);
+      localStorage.setItem('calculationHistory', JSON.stringify(history));
+      loadHistory();
+    }
+
+    // Event listeners
+    document.getElementById('clearHistoryBtn').addEventListener('click', function() {
+      if (confirm(translations[localStorage.getItem('preferredLanguage') || 'tr'].history.confirmClear)) {
+        localStorage.removeItem('calculationHistory');
+        loadHistory();
       }
-    }
-
-    function formatResult(record) {
-      return record.sonuc !== undefined ? record.sonuc.toFixed(3) : '-';
-    }
-
-    function formatDetails(record) {
-      if (record.tip === 'Optimizasyon') {
-        return `
-          <details>
-            <summary>Optimizasyon Detayları</summary>
-            <p>PFR: V = ${record.pfrOptimum.volume.toFixed(2)} m³, Kar = $${record.pfrOptimum.profit.toFixed(2)}</p>
-            <p>CSTR: V = ${record.cstrOptimum.volume.toFixed(2)} m³, Kar = $${record.cstrOptimum.profit.toFixed(2)}</p>
-          </details>
-        `;
-      }
-      return '-';
-    }
-
-    // Event Listeners
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        updateTable();
-      });
     });
 
-    document.getElementById('dateFilter').addEventListener('change', updateTable);
-    document.getElementById('clearFiltersBtn').addEventListener('click', function() {
-      document.getElementById('dateFilter').value = '';
-      document.querySelector('.tab-btn[data-filter="all"]').click();
+    document.getElementById('exportBtn').addEventListener('click', function() {
+      const history = JSON.parse(localStorage.getItem('calculationHistory') || '[]');
+      const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'calculation_history.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     });
-
-    // Initial load
-    window.addEventListener('load', updateTable);
   </script>
 </body>
 </html>
