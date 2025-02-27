@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reaktör Optimizasyonu</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Ana Sayfa</a>
+    <a href="reactor.html">Reaktör Tasarım</a>
+    <a href="chemical.html">Kimyasal Denge</a>
+    <a href="heattransfer.html">Isı Transferi</a>
+    <a href="dynamics.html">Dinamik Simülasyon</a>
+    <a href="optimization.html">Reaktör Optimizasyonu</a>
+    <a href="history.html">Hesaplama Geçmişi</a>
+  </nav>
+
+  <div class="page-header">
+    <h1>Reaktör Optimizasyonu</h1>
+    <p>Farklı reaktör tiplerinde optimum hacim ve çalışma koşullarını belirleyin</p>
+  </div>
+
+  <div class="grid-container">
+    <div class="controls">
+      <div class="input-group">
+        <label for="objective">Optimizasyon Hedefi</label>
+        <select id="objective">
+          <option value="conversion">Maksimum Dönüşüm</option>
+          <option value="selectivity">Maksimum Seçicilik</option>
+          <option value="cost">Minimum Maliyet</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="reactor_type">Reaktör Tipi</label>
+        <select id="reactor_type">
+          <option value="CSTR">CSTR</option>
+          <option value="PFR">PFR</option>
+          <option value="cascade">CSTR Kaskadı</option>
+        </select>
+      </div>
+
+      <div class="parameter-ranges">
+        <h3>Parametre Aralıkları</h3>
+        
+        <div class="input-group">
+          <label for="temp_min">Minimum Sıcaklık (°C)</label>
+          <input type="number" id="temp_min" step="any">
+        </div>
+        
+        <div class="input-group">
+          <label for="temp_max">Maksimum Sıcaklık (°C)</label>
+          <input type="number" id="temp_max" step="any">
+        </div>
+
+        <div class="input-group">
+          <label for="volume_min">Minimum Hacim (L)</label>
+          <input type="number" id="volume_min" step="any">
+        </div>
+
+        <div class="input-group">
+          <label for="volume_max">Maksimum Hacim (L)</label>
+          <input type="number" id="volume_max" step="any">
+        </div>
+      </div>
+
+      <div class="constraints">
+        <h3>Kısıtlamalar</h3>
+        
+        <div class="input-group">
+          <label for="min_conversion">Minimum Dönüşüm</label>
+          <input type="number" id="min_conversion" step="0.01" min="0" max="1">
+        </div>
+
+        <div class="input-group">
+          <label for="max_cost">Maksimum Maliyet ($)</label>
+          <input type="number" id="max_cost" step="any">
+        </div>
+      </div>
+
+      <button id="optimizeBtn">Optimize Et</button>
+    </div>
+
+    <div class="visualization-container">
+      <div class="visualization-tabs">
+        <button class="tab-btn active" data-view="pareto">Pareto Grafiği</button>
+        <button class="tab-btn" data-view="surface">Yüzey Grafiği</button>
+        <button class="tab-btn" data-view="sensitivity">Duyarlılık Analizi</button>
+      </div>
+      
+      <div id="paretoPlot"></div>
+      <div id="surfacePlot" style="display: none;"></div>
+      <div id="sensitivityPlot" style="display: none;"></div>
+
+      <div id="optimizationResults" class="results-panel">
+        <h3>Optimizasyon Sonuçları</h3>
+        <div id="results"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Optimizasyon algoritması
+    class ReactorOptimizer {
+      constructor(objective, type, constraints, ranges) {
+        this.objective = objective;
+        this.type = type;
+        this.constraints = constraints;
+        this.ranges = ranges;
+        this.population = [];
+        this.generations = 50;
+        this.populationSize = 100;
+      }
+
+      initialize() {
+        // Başlangıç popülasyonunu oluştur
+        for (let i = 0; i < this.populationSize; i++) {
+          this.population.push(this.generateRandomSolution());
+        }
+      }
+
+      generateRandomSolution() {
+        return {
+          temperature: Math.random() * (this.ranges.temp_max - this.ranges.temp_min) + this.ranges.temp_min,
+          volume: Math.random() * (this.ranges.volume_max - this.ranges.volume_min) + this.ranges.volume_min
+        };
+      }
+
+      evaluate(solution) {
+        // Çözümü değerlendir
+        let conversion, selectivity, cost;
+        
+        // Basit model hesaplamaları
+        const k = 0.01 * Math.exp(-50000/(8.314 * (solution.temperature + 273.15)));
+        
+        if (this.type === 'CSTR') {
+          conversion = (k * solution.volume) / (1 + k * solution.volume);
+        } else if (this.type === 'PFR') {
+          conversion = 1 - Math.exp(-k * solution.volume);
+        }
+        
+        selectivity = 0.9 - 0.3 * (solution.temperature / this.ranges.temp_max);
+        cost = 100 * solution.volume + 10 * solution.temperature;
+
+        return {
+          conversion,
+          selectivity,
+          cost
+        };
+      }
+
+      optimize() {
+        this.initialize();
+        
+        for (let gen = 0; gen < this.generations; gen++) {
+          // Yeni nesil oluştur
+          const newPopulation = [];
+          
+          // Elitizm
+          const sorted = this.population.sort((a, b) => 
+            this.getFitness(b) - this.getFitness(a)
+          );
+          
+          newPopulation.push(...sorted.slice(0, 2));
+
+          // Çaprazlama ve mutasyon
+          while (newPopulation.length < this.populationSize) {
+            const parent1 = this.selectParent();
+            const parent2 = this.selectParent();
+            const child = this.crossover(parent1, parent2);
+            this.mutate(child);
+            newPopulation.push(child);
+          }
+
+          this.population = newPopulation;
+        }
+
+        return this.getBestSolution();
+      }
+
+      getFitness(solution) {
+        const result = this.evaluate(solution);
+        
+        switch(this.objective) {
+          case 'conversion':
+            return result.conversion;
+          case 'selectivity':
+            return result.selectivity;
+          case 'cost':
+            return -result.cost;
+        }
+      }
+
+      selectParent() {
+        // Turnuva seçimi
+        const tournament = [];
+        for (let i = 0; i < 3; i++) {
+          const idx = Math.floor(Math.random() * this.population.length);
+          tournament.push(this.population[idx]);
+        }
+        
+        return tournament.sort((a, b) => 
+          this.getFitness(b) - this.getFitness(a)
+        )[0];
+      }
+
+      crossover(parent1, parent2) {
+        // Aritmetik çaprazlama
+        const r = Math.random();
+        return {
+          temperature: r * parent1.temperature + (1-r) * parent2.temperature,
+          volume: r * parent1.volume + (1-r) * parent2.volume
+        };
+      }
+
+      mutate(solution) {
+        // Gaussian mutasyon
+        if (Math.random() < 0.1) {
+          solution.temperature += (Math.random() - 0.5) * 10;
+          solution.volume += (Math.random() - 0.5) * 5;
+          
+          // Sınırlar içinde tut
+          solution.temperature = Math.max(this.ranges.temp_min, 
+            Math.min(this.ranges.temp_max, solution.temperature));
+          solution.volume = Math.max(this.ranges.volume_min, 
+            Math.min(this.ranges.volume_max, solution.volume));
+        }
+      }
+
+      getBestSolution() {
+        return this.population.sort((a, b) => 
+          this.getFitness(b) - this.getFitness(a)
+        )[0];
+      }
+    }
+
+    // Event listeners
+    document.getElementById('optimizeBtn').addEventListener('click', function() {
+      const objective = document.getElementById('objective').value;
+      const type = document.getElementById('reactor_type').value;
+      
+      const constraints = {
+        min_conversion: parseFloat(document.getElementById('min_conversion').value),
+        max_cost: parseFloat(document.getElementById('max_cost').value)
+      };
+      
+      const ranges = {
+        temp_min: parseFloat(document.getElementById('temp_min').value),
+        temp_max: parseFloat(document.getElementById('temp_max').value),
+        volume_min: parseFloat(document.getElementById('volume_min').value),
+        volume_max: parseFloat(document.getElementById('volume_max').value)
+      };
+
+      const optimizer = new ReactorOptimizer(objective, type, constraints, ranges);
+      const solution = optimizer.optimize();
+      const result = optimizer.evaluate(solution);
+
+      // Sonuçları göster
+      document.getElementById('results').innerHTML = `
+        <p>Optimum Sıcaklık: ${solution.temperature.toFixed(2)} °C</p>
+        <p>Optimum Hacim: ${solution.volume.toFixed(2)} L</p>
+        <p>Dönüşüm: ${(result.conversion * 100).toFixed(2)}%</p>
+        <p>Seçicilik: ${(result.selectivity * 100).toFixed(2)}%</p>
+        <p>Maliyet: $${result.cost.toFixed(2)}</p>
+      `;
+
+      // Pareto grafiği
+      const paretoData = optimizer.population.map(sol => {
+        const eval = optimizer.evaluate(sol);
+        return {
+          conversion: eval.conversion,
+          selectivity: eval.selectivity,
+          cost: eval.cost
+        };
+      });
+
+      Plotly.newPlot('paretoPlot', [{
+        x: paretoData.map(d => d.conversion),
+        y: paretoData.map(d => d.cost),
+        mode: 'markers',
+        type: 'scatter',
+        marker: {
+          color: paretoData.map(d => d.selectivity),
+          colorscale: 'Viridis',
+          showscale: true,
+          colorbar: {title: 'Seçicilik'}
+        },
+        name: 'Çözümler'
+      }], {
+        title: 'Pareto Grafiği',
+        xaxis: {title: 'Dönüşüm'},
+        yaxis: {title: 'Maliyet ($)'},
+        height: 400
+      });
+
+      // Yüzey grafiği
+      const temp_range = Array.from({length: 30}, (_, i) => 
+        ranges.temp_min + (ranges.temp_max - ranges.temp_min) * i / 29);
+      const vol_range = Array.from({length: 30}, (_, i) => 
+        ranges.volume_min + (ranges.volume_max - ranges.volume_min) * i / 29);
+      
+      const z_data = temp_range.map(temp => 
+        vol_range.map(vol => 
+          optimizer.evaluate({temperature: temp, volume: vol})[objective === 'cost' ? 'cost' : 'conversion']
+        )
+      );
+
+      Plotly.newPlot('surfacePlot', [{
+        type: 'surface',
+        x: temp_range,
+        y: vol_range,
+        z: z_data,
+        colorscale: 'Viridis'
+      }], {
+        title: 'Optimizasyon Yüzeyi',
+        scene: {
+          xaxis: {title: 'Sıcaklık (°C)'},
+          yaxis: {title: 'Hacim (L)'},
+          zaxis: {title: objective === 'cost' ? 'Maliyet ($)' : 'Dönüşüm'}
+        },
+        height: 500
+      });
+    });
+
+    // Tab değiştirme
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const view = this.dataset.view;
+        document.getElementById('paretoPlot').style.display = 
+          view === 'pareto' ? 'block' : 'none';
+        document.getElementById('surfacePlot').style.display = 
+          view === 'surface' ? 'block' : 'none';
+        document.getElementById('sensitivityPlot').style.display = 
+          view === 'sensitivity' ? 'block' : 'none';
+      });
+    });
+  </script>
+</body>
+</html> 

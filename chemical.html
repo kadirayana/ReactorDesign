@@ -2,14 +2,10 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Kimyasal Denge Hesaplaması</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    nav a { margin-right: 15px; text-decoration: none; font-weight: bold; color: #005; }
-    .controls { max-width: 400px; margin-bottom: 20px; }
-    .controls input, .controls button { width: 100%; padding: 8px; margin: 6px 0; }
-    #result { padding: 10px; background-color: #eef; border: 1px solid #99c; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kimyasal Denge</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
   <nav>
@@ -18,68 +14,197 @@
     <a href="chemical.html">Kimyasal Denge</a>
     <a href="heattransfer.html">Isı Transferi</a>
     <a href="dynamics.html">Dinamik Simülasyon</a>
+    <a href="optimization.html">Reaktör Optimizasyonu</a>
     <a href="history.html">Hesaplama Geçmişi</a>
   </nav>
-  <h2>Kimyasal Denge Hesaplaması</h2>
-  <div class="controls">
-    <label for="A0">Başlangıç Konsantrasyonu (A₀ = B₀) [mol/L]:</label>
-    <input type="number" id="A0" placeholder="Örn: 1.0" step="any">
-    
-    <label for="K">Denge Sabiti (K):</label>
-    <input type="number" id="K" placeholder="Örn: 2.0" step="any">
-    
-    <button id="calcEquilibriumBtn">Hesapla</button>
-    
-    <div id="result"></div>
+
+  <div class="page-header">
+    <h1>Kimyasal Denge Hesaplaması</h1>
+    <p>A + B ⇌ C reaksiyonu için denge konsantrasyonlarını hesaplayın</p>
   </div>
-  
+
+  <div class="grid-container">
+    <div class="controls">
+      <div class="input-group">
+        <label for="reaction">Reaksiyon Tipi</label>
+        <select id="reaction">
+          <option value="A⇌B">A ⇌ B</option>
+          <option value="A+B⇌C">A + B ⇌ C</option>
+          <option value="2A⇌B">2A ⇌ B</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="k_forward">İleri Reaksiyon Sabiti (k₁)</label>
+        <input type="number" id="k_forward" step="any">
+      </div>
+
+      <div class="input-group">
+        <label for="k_reverse">Geri Reaksiyon Sabiti (k₋₁)</label>
+        <input type="number" id="k_reverse" step="any">
+      </div>
+
+      <div class="input-group">
+        <label for="C_A_initial">Başlangıç [A] (mol/L)</label>
+        <input type="number" id="C_A_initial" step="any">
+      </div>
+
+      <button id="calculateBtn">Hesapla ve Görselleştir</button>
+    </div>
+
+    <div class="visualization-container">
+      <div id="concentrationPlot"></div>
+      <div id="equilibriumPlot"></div>
+    </div>
+  </div>
+
   <script>
-    document.getElementById("calcEquilibriumBtn").addEventListener("click", function() {
-      let A0 = parseFloat(document.getElementById("A0").value);
-      let K = parseFloat(document.getElementById("K").value);
-      let resultDiv = document.getElementById("result");
+    document.getElementById('calculateBtn').addEventListener('click', function() {
+      const reaction = document.getElementById('reaction').value;
+      const k1 = parseFloat(document.getElementById('k_forward').value);
+      const k_1 = parseFloat(document.getElementById('k_reverse').value);
+      const C_A0 = parseFloat(document.getElementById('C_A_initial').value);
+
+      // Zaman noktaları
+      const t = Array.from({length: 100}, (_, i) => i * 0.1);
       
-      if(isNaN(A0) || isNaN(K) || A0 <= 0 || K <= 0){
-        resultDiv.innerText = "Lütfen geçerli pozitif sayısal değerler giriniz.";
-        return;
-      }
+      // Konsantrasyon profilleri hesaplama
+      const concentrations = calculateConcentrations(t, k1, k_1, C_A0, reaction);
       
-      // Quadratic denklem: K*(A0 - x)^2 - x = 0  =>  K*x^2 - (2*K*A0 + 1)x + K*A0^2 = 0
-      let a = K;
-      let b = -(2*K*A0 + 1);
-      let c = K*A0*A0;
-      
-      let discriminant = b*b - 4*a*c;
-      if(discriminant < 0){
-        resultDiv.innerText = "Gerçek çözümler bulunamadı.";
-        return;
-      }
-      let sqrtD = Math.sqrt(discriminant);
-      let x1 = (-b + sqrtD) / (2*a);
-      let x2 = (-b - sqrtD) / (2*a);
-      
-      let x = (x1 >= 0 && x1 <= A0) ? x1 : (x2 >= 0 && x2 <= A0 ? x2 : null);
-      if(x === null){
-        resultDiv.innerText = "Fiziksel olarak anlamlı bir çözüm bulunamadı.";
-        return;
-      }
-      
-      let A_eq = A0 - x;
-      let message = `Denge noktasında: [C] = ${x.toFixed(3)} mol/L, [A] = [B] = ${A_eq.toFixed(3)} mol/L.`;
-      resultDiv.innerText = message;
-      
-      // Sonucu localStorage’a kaydedelim.
-      let kayit = {
-        tip: "Kimyasal Denge",
-        A0: A0,
-        K: K,
-        x: x,
-        tarih: new Date().toISOString()
-      };
-      let hesaplamalar = JSON.parse(localStorage.getItem("hesaplamalar")) || [];
-      hesaplamalar.push(kayit);
-      localStorage.setItem("hesaplamalar", JSON.stringify(hesaplamalar));
+      // Konsantrasyon-zaman grafiği
+      Plotly.newPlot('concentrationPlot', concentrations.traces, {
+        title: 'Konsantrasyon vs. Zaman',
+        xaxis: {title: 'Zaman (s)'},
+        yaxis: {title: 'Konsantrasyon (mol/L)'},
+        height: 400
+      });
+
+      // Denge diyagramı
+      const equilibrium = calculateEquilibrium(k1, k_1, C_A0, reaction);
+      Plotly.newPlot('equilibriumPlot', equilibrium.traces, {
+        title: 'Denge Diyagramı',
+        xaxis: {title: '[A] (mol/L)'},
+        yaxis: {title: '[B] (mol/L)'},
+        height: 400
+      });
     });
+
+    function calculateConcentrations(t, k1, k_1, C_A0, reaction) {
+      const concentrations = {
+        A: [C_A0],
+        B: [0],
+        C: [0]
+      };
+
+      // Runge-Kutta 4. derece metodu ile diferansiyel denklemleri çöz
+      const dt = t[1] - t[0];
+      
+      for (let i = 1; i < t.length; i++) {
+        let CA = concentrations.A[i-1];
+        let CB = concentrations.B[i-1];
+        let CC = concentrations.C[i-1];
+        
+        switch(reaction) {
+          case 'A⇌B':
+            // dCA/dt = -k1*CA + k_1*CB
+            const k1_A = -k1*CA + k_1*CB;
+            const k2_A = -k1*(CA + dt*k1_A/2) + k_1*(CB - dt*k1_A/2);
+            const k3_A = -k1*(CA + dt*k2_A/2) + k_1*(CB - dt*k2_A/2);
+            const k4_A = -k1*(CA + dt*k3_A) + k_1*(CB - dt*k3_A);
+            
+            CA = CA + (dt/6)*(k1_A + 2*k2_A + 2*k3_A + k4_A);
+            CB = C_A0 - CA;
+            CC = 0;
+            break;
+
+          case 'A+B⇌C':
+            // dCA/dt = -k1*CA*CB + k_1*CC
+            const k1_AB = -k1*CA*CB + k_1*CC;
+            const k2_AB = -k1*(CA + dt*k1_AB/2)*(CB + dt*k1_AB/2) + k_1*(CC - dt*k1_AB/2);
+            const k3_AB = -k1*(CA + dt*k2_AB/2)*(CB + dt*k2_AB/2) + k_1*(CC - dt*k2_AB/2);
+            const k4_AB = -k1*(CA + dt*k3_AB)*(CB + dt*k3_AB) + k_1*(CC - dt*k3_AB);
+            
+            const dCA = (dt/6)*(k1_AB + 2*k2_AB + 2*k3_AB + k4_AB);
+            CA = CA + dCA;
+            CB = CB + dCA;
+            CC = C_A0 - CA;
+            break;
+
+          case '2A⇌B':
+            // dCA/dt = -2k1*CA^2 + 2k_1*CB
+            const k1_2A = -2*k1*CA*CA + 2*k_1*CB;
+            const k2_2A = -2*k1*(CA + dt*k1_2A/2)*(CA + dt*k1_2A/2) + 2*k_1*(CB - dt*k1_2A/4);
+            const k3_2A = -2*k1*(CA + dt*k2_2A/2)*(CA + dt*k2_2A/2) + 2*k_1*(CB - dt*k2_2A/4);
+            const k4_2A = -2*k1*(CA + dt*k3_2A)*(CA + dt*k3_2A) + 2*k_1*(CB - dt*k3_2A/4);
+            
+            CA = CA + (dt/6)*(k1_2A + 2*k2_2A + 2*k3_2A + k4_2A);
+            CB = (C_A0 - CA)/2;
+            CC = 0;
+            break;
+        }
+        
+        concentrations.A.push(CA);
+        concentrations.B.push(CB);
+        concentrations.C.push(CC);
+      }
+
+      return {
+        traces: [
+          {
+            x: t,
+            y: concentrations.A,
+            name: 'A',
+            type: 'scatter',
+            line: {color: '#e74c3c'}
+          },
+          {
+            x: t,
+            y: concentrations.B,
+            name: 'B',
+            type: 'scatter',
+            line: {color: '#3498db'}
+          },
+          {
+            x: t,
+            y: concentrations.C,
+            name: 'C',
+            type: 'scatter',
+            line: {color: '#2ecc71'},
+            visible: reaction === 'A+B⇌C' ? true : 'legendonly'
+          }
+        ]
+      };
+    }
+
+    function calculateEquilibrium(k1, k_1, C_A0, reaction) {
+      const K = k1/k_1;
+      const points = 50;
+      const A_range = Array.from({length: points}, (_, i) => (i * C_A0) / (points - 1));
+      
+      const B_values = A_range.map(A => {
+        switch(reaction) {
+          case 'A⇌B':
+            return K * A;
+          case 'A+B⇌C':
+            return K * A * A;
+          case '2A⇌B':
+            return K * Math.pow(A, 2);
+        }
+      });
+
+      return {
+        traces: [
+          {
+            x: A_range,
+            y: B_values,
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Denge Eğrisi',
+            line: {color: '#9b59b6'}
+          }
+        ]
+      };
+    }
   </script>
 </body>
 </html>

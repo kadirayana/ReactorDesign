@@ -2,15 +2,11 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Dinamik Sistem Simülasyonu</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    nav a { margin-right: 15px; text-decoration: none; font-weight: bold; color: #005; }
-    .controls { max-width: 400px; margin-bottom: 20px; }
-    .controls input, .controls button { width: 100%; padding: 8px; margin: 6px 0; }
-    #result { padding: 10px; background-color: #eef; border: 1px solid #99c; }
-    .canvas-container { margin-top: 20px; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dinamik Simülasyon</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
   <nav>
@@ -19,105 +15,231 @@
     <a href="chemical.html">Kimyasal Denge</a>
     <a href="heattransfer.html">Isı Transferi</a>
     <a href="dynamics.html">Dinamik Simülasyon</a>
+    <a href="optimization.html">Reaktör Optimizasyonu</a>
     <a href="history.html">Hesaplama Geçmişi</a>
   </nav>
-  <h2>Dinamik Sistem Simülasyonu</h2>
-  <div class="controls">
-    <label for="C0">Başlangıç Konsantrasyonu C₀:</label>
-    <input type="number" id="C0" placeholder="Örn: 1.0" step="any">
-    
-    <label for="kDyn">Hız Sabiti k [1/s]:</label>
-    <input type="number" id="kDyn" placeholder="Örn: 0.1" step="any">
-    
-    <label for="simTime">Simülasyon Süresi [s]:</label>
-    <input type="number" id="simTime" placeholder="Örn: 50" step="any">
-    
-    <button id="startSimBtn">Simülasyonu Başlat</button>
-    <div id="result"></div>
+
+  <div class="page-header">
+    <h1>Dinamik Simülasyon</h1>
+    <p>Birinci dereceden reaksiyon kinetiklerinin zamana bağlı davranışını inceleyin</p>
   </div>
-  
-  <div class="canvas-container" id="sketch-holder"></div>
-  
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+
+  <div class="grid-container">
+    <div class="controls">
+      <div class="input-group">
+        <label for="reactor_type">Reaktör Tipi</label>
+        <select id="reactor_type">
+          <option value="CSTR">CSTR</option>
+          <option value="PFR">PFR</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="F_in">Giriş Akış Hızı (L/s)</label>
+        <input type="number" id="F_in" step="any">
+      </div>
+
+      <div class="input-group">
+        <label for="C_in">Giriş Konsantrasyonu (mol/L)</label>
+        <input type="number" id="C_in" step="any">
+      </div>
+
+      <div class="input-group">
+        <label for="k">Reaksiyon Hız Sabiti (1/s)</label>
+        <input type="number" id="k" step="any">
+      </div>
+
+      <div class="input-group">
+        <label for="V">Reaktör Hacmi (L)</label>
+        <input type="number" id="V" step="any">
+      </div>
+
+      <div class="input-group">
+        <label for="sim_time">Simülasyon Süresi (s)</label>
+        <input type="number" id="sim_time" value="100" step="any">
+      </div>
+
+      <button id="startBtn">Simülasyonu Başlat</button>
+      <button id="pauseBtn" disabled>Duraklat</button>
+      <button id="resetBtn" disabled>Sıfırla</button>
+    </div>
+
+    <div class="visualization-container">
+      <div class="visualization-tabs">
+        <button class="tab-btn active" data-view="concentration">Konsantrasyon</button>
+        <button class="tab-btn" data-view="conversion">Dönüşüm</button>
+        <button class="tab-btn" data-view="3d">3D Görünüm</button>
+      </div>
+      <div id="concentrationPlot"></div>
+      <div id="conversionPlot" style="display: none;"></div>
+      <div id="reactor3d" style="display: none;"></div>
+    </div>
+  </div>
+
   <script>
-    let C0, kDyn, simTime;
-    let timeData = [], concData = [];
-    let simStarted = false;
-    let simDt = 0.1;
+    let simulation = null;
+    let animationId = null;
+    let timeData = [];
+    let concentrationData = [];
+    let conversionData = [];
     let currentTime = 0;
-    let currentC = 0;
-    
-    document.getElementById("startSimBtn").addEventListener("click", function() {
-      C0 = parseFloat(document.getElementById("C0").value);
-      kDyn = parseFloat(document.getElementById("kDyn").value);
-      simTime = parseFloat(document.getElementById("simTime").value);
-      let resultDiv = document.getElementById("result");
-      
-      if(isNaN(C0) || isNaN(kDyn) || isNaN(simTime) || C0<=0 || kDyn<=0 || simTime<=0){
-        resultDiv.innerText = "Lütfen geçerli pozitif sayısal değerler giriniz.";
-        return;
+
+    class ReactorSimulation {
+      constructor(type, F_in, C_in, k, V) {
+        this.type = type;
+        this.F_in = F_in;
+        this.C_in = C_in;
+        this.k = k;
+        this.V = V;
+        this.C = 0;
+        this.dt = 0.1;
       }
-      
-      timeData = [];
-      concData = [];
+
+      step() {
+        if (this.type === 'CSTR') {
+          // dC/dt = F_in/V * (C_in - C) - k*C
+          const dC = (this.F_in/this.V) * (this.C_in - this.C) - this.k * this.C;
+          this.C += dC * this.dt;
+        } else {
+          // PFR için sürekli hal çözümü
+          this.C = this.C_in * Math.exp(-this.k * this.V / this.F_in);
+        }
+        return this.C;
+      }
+
+      getConversion() {
+        return (this.C_in - this.C) / this.C_in;
+      }
+    }
+
+    function initSimulation() {
+      const type = document.getElementById('reactor_type').value;
+      const F_in = parseFloat(document.getElementById('F_in').value);
+      const C_in = parseFloat(document.getElementById('C_in').value);
+      const k = parseFloat(document.getElementById('k').value);
+      const V = parseFloat(document.getElementById('V').value);
+
+      simulation = new ReactorSimulation(type, F_in, C_in, k, V);
+      timeData = [0];
+      concentrationData = [simulation.C];
+      conversionData = [0];
       currentTime = 0;
-      currentC = C0;
-      simStarted = true;
-      resultDiv.innerText = "Simülasyon başladı...";
-      
-      let kayit = {
-        tip: "Dinamik Simülasyon",
-        C0: C0,
-        kDyn: kDyn,
-        simTime: simTime,
-        tarih: new Date().toISOString()
-      };
-      let hesaplamalar = JSON.parse(localStorage.getItem("hesaplamalar")) || [];
-      hesaplamalar.push(kayit);
-      localStorage.setItem("hesaplamalar", JSON.stringify(hesaplamalar));
+
+      updatePlots();
+      init3DVisualization();
+    }
+
+    function updatePlots() {
+      // Konsantrasyon grafiği
+      Plotly.newPlot('concentrationPlot', [{
+        x: timeData,
+        y: concentrationData,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Konsantrasyon',
+        line: { color: '#e74c3c' }
+      }], {
+        title: 'Konsantrasyon vs. Zaman',
+        xaxis: { title: 'Zaman (s)' },
+        yaxis: { title: 'Konsantrasyon (mol/L)' },
+        height: 400
+      });
+
+      // Dönüşüm grafiği
+      Plotly.newPlot('conversionPlot', [{
+        x: timeData,
+        y: conversionData,
+        type: 'scatter',
+        mode: 'lines',
+        name: 'Dönüşüm',
+        line: { color: '#2ecc71' }
+      }], {
+        title: 'Dönüşüm vs. Zaman',
+        xaxis: { title: 'Zaman (s)' },
+        yaxis: { title: 'Dönüşüm' },
+        height: 400
+      });
+    }
+
+    function animate() {
+      if (simulation && currentTime < parseFloat(document.getElementById('sim_time').value)) {
+        currentTime += simulation.dt;
+        const C = simulation.step();
+        const X = simulation.getConversion();
+
+        timeData.push(currentTime);
+        concentrationData.push(C);
+        conversionData.push(X);
+
+        Plotly.update('concentrationPlot', {
+          x: [timeData],
+          y: [concentrationData]
+        });
+
+        Plotly.update('conversionPlot', {
+          x: [timeData],
+          y: [conversionData]
+        });
+
+        update3DVisualization(C/simulation.C_in);
+        animationId = requestAnimationFrame(animate);
+      } else {
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('pauseBtn').disabled = true;
+      }
+    }
+
+    // Event listeners
+    document.getElementById('startBtn').addEventListener('click', function() {
+      if (!simulation) {
+        initSimulation();
+      }
+      this.disabled = true;
+      document.getElementById('pauseBtn').disabled = false;
+      document.getElementById('resetBtn').disabled = false;
+      animate();
     });
-    
-    let sketch = function(p) {
-      p.setup = function() {
-        p.createCanvas(500, 300).parent('sketch-holder');
-        p.frameRate(30);
-      };
-      
-      p.draw = function() {
-        p.background(255);
-        p.fill(0);
-        p.textSize(16);
-        p.text("Dinamik Sistem Simülasyonu: C(t) = C₀ e^(–k t)", 10, 20);
-        p.stroke(0);
-        p.line(50, 250, 450, 250);
-        p.line(50, 250, 50, 50);
+
+    document.getElementById('pauseBtn').addEventListener('click', function() {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+        this.disabled = true;
+        document.getElementById('startBtn').disabled = false;
+      }
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', function() {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+      simulation = null;
+      timeData = [];
+      concentrationData = [];
+      conversionData = [];
+      currentTime = 0;
+      updatePlots();
+      init3DVisualization();
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('pauseBtn').disabled = true;
+      this.disabled = true;
+    });
+
+    // Tab değiştirme
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
         
-        if(simStarted && currentTime < simTime) {
-          currentC = currentC - kDyn * currentC * simDt;
-          currentTime += simDt;
-          timeData.push(currentTime);
-          concData.push(currentC);
-        }
-        
-        p.noFill();
-        p.stroke(255, 0, 0);
-        p.beginShape();
-        for(let i = 0; i < timeData.length; i++){
-          let x = p.map(timeData[i], 0, simTime, 50, 450);
-          let y = p.map(concData[i], 0, C0, 250, 50);
-          p.vertex(x, y);
-        }
-        p.endShape();
-        
-        if(currentTime >= simTime){
-          simStarted = false;
-          p.fill(0);
-          p.text("Simülasyon tamamlandı.", 60, 270);
-        }
-      };
-    };
-    
-    let myp5 = new p5(sketch);
+        const view = this.dataset.view;
+        document.getElementById('concentrationPlot').style.display = 
+          view === 'concentration' ? 'block' : 'none';
+        document.getElementById('conversionPlot').style.display = 
+          view === 'conversion' ? 'block' : 'none';
+        document.getElementById('reactor3d').style.display = 
+          view === '3d' ? 'block' : 'none';
+      });
+    });
   </script>
 </body>
 </html>

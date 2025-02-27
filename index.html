@@ -2,11 +2,80 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Ana Sayfa - Kompleks Hesaplama Platformu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ana Sayfa - Kimya Mühendisliği Hesaplama Platformu</title>
+  <link rel="stylesheet" href="styles.css">
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    nav { margin-bottom: 20px; }
-    nav a { margin-right: 15px; text-decoration: none; font-weight: bold; color: #005; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .feature-card {
+      background: white;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .feature-card h3 {
+      color: var(--primary-color);
+      margin-top: 0;
+    }
+
+    .feature-card ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    .feature-card li {
+      margin: 10px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .feature-card li:before {
+      content: "•";
+      color: var(--secondary-color);
+      position: absolute;
+      left: 0;
+    }
+
+    .welcome-section {
+      text-align: center;
+      padding: 40px 0;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      border-radius: var(--border-radius);
+      margin-bottom: 30px;
+    }
+
+    .quick-start {
+      background: white;
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      margin: 30px 0;
+    }
+
+    .quick-start h3 {
+      color: var(--primary-color);
+    }
+
+    .quick-start ol {
+      padding-left: 20px;
+    }
+
+    .quick-start li {
+      margin: 10px 0;
+    }
   </style>
 </head>
 <body>
@@ -16,10 +85,103 @@
     <a href="chemical.html">Kimyasal Denge</a>
     <a href="heattransfer.html">Isı Transferi</a>
     <a href="dynamics.html">Dinamik Simülasyon</a>
+    <a href="optimization.html">Reaktör Optimizasyonu</a>
     <a href="history.html">Hesaplama Geçmişi</a>
   </nav>
-  <h1>Ana Sayfa</h1>
-  <p>Bu platform; reaktör tasarımlarından kimyasal denge hesaplamalarına, ısı transferi modellerinden dinamik simülasyonlara kadar çeşitli mühendislik problemlerinin çözümüne yönelik araçlar sunar.</p>
-  <p>Menüden ihtiyacınız olan bölümü seçip hesaplamaları gerçekleştirebilirsiniz.</p>
+
+  <div class="welcome-section">
+    <h1>Kimya Mühendisliği Hesaplama Platformu</h1>
+    <p>Reaktör tasarımı, kimyasal denge, ısı transferi ve optimizasyon hesaplamalarınız için kapsamlı çözümler</p>
+  </div>
+
+  <div class="quick-start">
+    <h3>Hızlı Başlangıç</h3>
+    <ol>
+      <li>Menüden ilgilendiğiniz hesaplama modülünü seçin</li>
+      <li>Gerekli parametreleri girin</li>
+      <li>Sonuçları görsel ve sayısal olarak inceleyin</li>
+      <li>Hesaplama geçmişinizi takip edin</li>
+    </ol>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <h3>Reaktör Tasarımı</h3>
+      <ul>
+        <li>PFR (Piston Akışlı Reaktör)</li>
+        <li>CSTR (Sürekli Karıştırmalı Tank Reaktör)</li>
+        <li>PBR (Dolgulu Yatak Reaktör)</li>
+        <li>Batch Reaktör</li>
+        <li>Dönüşüm ve hacim hesaplamaları</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h3>Kimyasal Denge</h3>
+      <ul>
+        <li>Denge konsantrasyonları</li>
+        <li>Denge sabiti hesaplamaları</li>
+        <li>Termodinamik analizler</li>
+        <li>Gibbs serbest enerji hesaplamaları</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h3>Isı Transferi</h3>
+      <ul>
+        <li>İletim, taşınım ve ışınım</li>
+        <li>Isı değiştirici tasarımı</li>
+        <li>Sıcaklık profilleri</li>
+        <li>Enerji dengeleri</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h3>Optimizasyon</h3>
+      <ul>
+        <li>Reaktör hacmi optimizasyonu</li>
+        <li>Ekonomik analiz</li>
+        <li>Duyarlılık analizi</li>
+        <li>Çoklu parametre optimizasyonu</li>
+        <li>Maliyet-fayda analizi</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h3>Dinamik Simülasyon</h3>
+      <ul>
+        <li>Zamana bağlı analizler</li>
+        <li>Konsantrasyon profilleri</li>
+        <li>Kinetik parametreler</li>
+        <li>Gerçek zamanlı görselleştirme</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h3>Veri Yönetimi</h3>
+      <ul>
+        <li>Hesaplama geçmişi</li>
+        <li>Sonuç karşılaştırma</li>
+        <li>Veri filtreleme</li>
+        <li>Rapor oluşturma</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Sayfa yüklendiğinde animasyon efekti
+    document.addEventListener('DOMContentLoaded', function() {
+      const cards = document.querySelectorAll('.feature-card');
+      cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+          card.style.transition = 'all 0.5s ease';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, index * 100);
+      });
+    });
+  </script>
 </body>
 </html>

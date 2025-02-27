@@ -2,13 +2,9 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hesaplama Geçmişi</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    nav a { margin-right: 15px; text-decoration: none; font-weight: bold; color: #005; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 8px; border: 1px solid #ccc; text-align: center; }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <nav>
@@ -17,57 +13,148 @@
     <a href="chemical.html">Kimyasal Denge</a>
     <a href="heattransfer.html">Isı Transferi</a>
     <a href="dynamics.html">Dinamik Simülasyon</a>
+    <a href="optimization.html">Reaktör Optimizasyonu</a>
     <a href="history.html">Hesaplama Geçmişi</a>
   </nav>
-  <h2>Hesaplama Geçmişi</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Tarih</th>
-        <th>Modül</th>
-        <th>Parametreler</th>
-        <th>Sonuç</th>
-      </tr>
-    </thead>
-    <tbody id="historyTable">
-    </tbody>
-  </table>
-  
+
+  <div class="page-header">
+    <h1>Hesaplama Geçmişi</h1>
+    <p>Tüm modüllerde yapılan hesaplamaların kayıtları</p>
+  </div>
+
+  <div class="controls">
+    <div class="tab-navigation">
+      <button class="tab-btn active" data-filter="all">Tümü</button>
+      <button class="tab-btn" data-filter="reactor">Reaktör</button>
+      <button class="tab-btn" data-filter="chemical">Kimyasal Denge</button>
+      <button class="tab-btn" data-filter="heat">Isı Transferi</button>
+      <button class="tab-btn" data-filter="dynamic">Dinamik</button>
+      <button class="tab-btn" data-filter="optimization">Optimizasyon</button>
+    </div>
+
+    <div class="input-group">
+      <label for="dateFilter">Tarih Filtresi</label>
+      <input type="date" id="dateFilter">
+    </div>
+
+    <button id="clearFiltersBtn">Filtreleri Temizle</button>
+  </div>
+
+  <div class="result-panel">
+    <table>
+      <thead>
+        <tr>
+          <th>Tarih</th>
+          <th>Modül</th>
+          <th>Parametreler</th>
+          <th>Sonuç</th>
+          <th>Detaylar</th>
+        </tr>
+      </thead>
+      <tbody id="historyTable"></tbody>
+    </table>
+  </div>
+
   <script>
     function formatDate(isoString) {
-      let date = new Date(isoString);
-      return date.toLocaleString();
+      return new Date(isoString).toLocaleString('tr-TR');
     }
-    
-    window.onload = function() {
-      let hesaplamalar = JSON.parse(localStorage.getItem("hesaplamalar")) || [];
-      let tableBody = document.getElementById("historyTable");
-      if(hesaplamalar.length === 0) {
-        tableBody.innerHTML = "<tr><td colspan='4'>Henüz kayıt bulunmamaktadır.</td></tr>";
-      } else {
-        hesaplamalar.reverse().forEach(function(item) {
-          let params = "";
-          if(item.tip === "PFR" || item.tip === "CSTR" || item.tip === "Batch" || item.tip === "PBR"){
-            params = `F_A0: ${item.F_A0}, C_A0: ${item.C_A0}, k: ${item.k}, X: ${item.X}`;
-            if(item.tip === "PBR") { params += `, k_eff: ${item.k_eff}`; }
-          } else if(item.tip === "Kimyasal Denge"){
-            params = `A0: ${item.A0}, K: ${item.K}`;
-          } else if(item.tip === "Isı Transferi"){
-            params = `L: ${item.L}, k: ${item.kVal}, T₁: ${item.T1}, T₂: ${item.T2}`;
-          } else if(item.tip === "Dinamik Simülasyon"){
-            params = `C0: ${item.C0}, k: ${item.kDyn}, Süre: ${item.simTime}`;
-          }
-          let sonuc = (item.sonuc !== undefined) ? item.sonuc.toFixed(3) : "-";
-          let row = `<tr>
-                      <td>${formatDate(item.tarih)}</td>
-                      <td>${item.tip}</td>
-                      <td>${params}</td>
-                      <td>${sonuc}</td>
-                    </tr>`;
-          tableBody.innerHTML += row;
-        });
+
+    function filterResults() {
+      const activeFilter = document.querySelector('.tab-btn.active').dataset.filter;
+      const dateFilter = document.getElementById('dateFilter').value;
+      const records = JSON.parse(localStorage.getItem("hesaplamalar")) || [];
+      
+      return records.filter(record => {
+        const matchesType = activeFilter === 'all' || 
+          (activeFilter === 'reactor' && ['PFR', 'CSTR', 'PBR', 'Batch'].includes(record.tip)) ||
+          (activeFilter === 'chemical' && record.tip === 'Kimyasal Denge') ||
+          (activeFilter === 'heat' && record.tip === 'Isı Transferi') ||
+          (activeFilter === 'dynamic' && record.tip === 'Dinamik Simülasyon') ||
+          (activeFilter === 'optimization' && record.tip === 'Optimizasyon');
+
+        const matchesDate = !dateFilter || record.tarih.startsWith(dateFilter);
+        
+        return matchesType && matchesDate;
+      });
+    }
+
+    function updateTable() {
+      const filteredRecords = filterResults();
+      const tableBody = document.getElementById("historyTable");
+      
+      tableBody.innerHTML = filteredRecords.length === 0 
+        ? '<tr><td colspan="5">Kayıt bulunamadı.</td></tr>'
+        : filteredRecords.reverse().map(record => {
+            const params = formatParameters(record);
+            const result = formatResult(record);
+            
+            return `
+              <tr>
+                <td>${formatDate(record.tarih)}</td>
+                <td>${record.tip}</td>
+                <td>${params}</td>
+                <td>${result}</td>
+                <td>${formatDetails(record)}</td>
+              </tr>
+            `;
+          }).join('');
+    }
+
+    function formatParameters(record) {
+      switch(record.tip) {
+        case 'PFR':
+        case 'CSTR':
+        case 'PBR':
+        case 'Batch':
+          return `F₀ = ${record.F_A0}, C₀ = ${record.C_A0}, k = ${record.k}`;
+        case 'Kimyasal Denge':
+          return `A₀ = ${record.A0}, K = ${record.K}`;
+        case 'Isı Transferi':
+          return `L = ${record.L}, k = ${record.kVal}, T₁ = ${record.T1}, T₂ = ${record.T2}`;
+        case 'Dinamik Simülasyon':
+          return `C₀ = ${record.C0}, k = ${record.kDyn}, t = ${record.simTime}`;
+        case 'Optimizasyon':
+          return `Tip = ${record.reactionType}, F₀ = ${record.F_A0}, C₀ = ${record.C_A0}`;
+        default:
+          return '-';
       }
-    };
+    }
+
+    function formatResult(record) {
+      return record.sonuc !== undefined ? record.sonuc.toFixed(3) : '-';
+    }
+
+    function formatDetails(record) {
+      if (record.tip === 'Optimizasyon') {
+        return `
+          <details>
+            <summary>Optimizasyon Detayları</summary>
+            <p>PFR: V = ${record.pfrOptimum.volume.toFixed(2)} m³, Kar = $${record.pfrOptimum.profit.toFixed(2)}</p>
+            <p>CSTR: V = ${record.cstrOptimum.volume.toFixed(2)} m³, Kar = $${record.cstrOptimum.profit.toFixed(2)}</p>
+          </details>
+        `;
+      }
+      return '-';
+    }
+
+    // Event Listeners
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        updateTable();
+      });
+    });
+
+    document.getElementById('dateFilter').addEventListener('change', updateTable);
+    document.getElementById('clearFiltersBtn').addEventListener('click', function() {
+      document.getElementById('dateFilter').value = '';
+      document.querySelector('.tab-btn[data-filter="all"]').click();
+    });
+
+    // Initial load
+    window.addEventListener('load', updateTable);
   </script>
 </body>
 </html>

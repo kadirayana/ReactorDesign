@@ -2,15 +2,11 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Isı Transferi Hesaplaması</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    nav a { margin-right: 15px; text-decoration: none; font-weight: bold; color: #005; }
-    .controls { max-width: 400px; margin-bottom: 20px; }
-    .controls input, .controls button { width: 100%; padding: 8px; margin: 6px 0; }
-    #result { padding: 10px; background-color: #eef; border: 1px solid #99c; }
-    .canvas-container { margin-top: 20px; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Isı Transferi</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
   <nav>
@@ -19,99 +15,272 @@
     <a href="chemical.html">Kimyasal Denge</a>
     <a href="heattransfer.html">Isı Transferi</a>
     <a href="dynamics.html">Dinamik Simülasyon</a>
+    <a href="optimization.html">Reaktör Optimizasyonu</a>
     <a href="history.html">Hesaplama Geçmişi</a>
   </nav>
-  <h2>Isı Transferi Hesaplaması</h2>
-  <div class="controls">
-    <label for="L">Duvar Kalınlığı L [m]:</label>
-    <input type="number" id="L" placeholder="Örn: 0.1" step="any">
-    
-    <label for="kVal">Termal İletkenlik k [W/(m·K)]:</label>
-    <input type="number" id="kVal" placeholder="Örn: 1.5" step="any">
-    
-    <label for="T1">Birinci Yüzey Sıcaklığı T₁ [°C]:</label>
-    <input type="number" id="T1" placeholder="Örn: 100" step="any">
-    
-    <label for="T2">İkinci Yüzey Sıcaklığı T₂ [°C]:</label>
-    <input type="number" id="T2" placeholder="Örn: 20" step="any">
-    
-    <button id="calcHeatBtn">Hesapla ve Görselleştir</button>
-    
-    <div id="result"></div>
+
+  <div class="page-header">
+    <h1>Isı Transferi</h1>
+    <p>Duvar içindeki sıcaklık dağılımını ve ısı transfer hızını hesaplayın</p>
   </div>
-  
-  <div class="canvas-container" id="sketch-holder"></div>
-  
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+
+  <div class="grid-container">
+    <div class="controls">
+      <div class="input-group">
+        <label for="reactor_type">Reaktör Tipi</label>
+        <select id="reactor_type">
+          <option value="PFR">Piston Akışlı Reaktör (PFR)</option>
+          <option value="CSTR">Karıştırmalı Tank Reaktörü (CSTR)</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="T_in">Giriş Sıcaklığı (°C)</label>
+        <input type="number" id="T_in" step="any">
+      </div>
+
+      <div class="input-group">
+        <label for="T_cool">Soğutma Sıcaklığı (°C)</label>
+        <input type="number" id="T_cool" step="any">
+      </div>
+
+      <div class="input-group">
+        <label for="dH">Reaksiyon Entalpisi (kJ/mol)</label>
+        <input type="number" id="dH" step="any">
+      </div>
+
+      <div class="input-group">
+        <label for="U">Isı Transfer Katsayısı (W/m²·K)</label>
+        <input type="number" id="U" step="any">
+      </div>
+
+      <button id="calculateBtn">Hesapla ve Görselleştir</button>
+    </div>
+
+    <div class="visualization-container">
+      <div class="visualization-tabs">
+        <button class="tab-btn active" data-view="temperature">Sıcaklık Profili</button>
+        <button class="tab-btn" data-view="3d">3D Görünüm</button>
+      </div>
+      <div id="temperaturePlot"></div>
+      <div id="reactor3d" style="display: none;"></div>
+    </div>
+  </div>
+
   <script>
-    let Q = 0, L_val = 0, T1 = 0, T2 = 0;
-    let errorMessage = "";
-    
-    document.getElementById("calcHeatBtn").addEventListener("click", function() {
-      L_val = parseFloat(document.getElementById("L").value);
-      let kVal = parseFloat(document.getElementById("kVal").value);
-      T1 = parseFloat(document.getElementById("T1").value);
-      T2 = parseFloat(document.getElementById("T2").value);
-      let resultDiv = document.getElementById("result");
+    // Sıcaklık profili hesaplama ve görselleştirme
+    function calculateTemperatureProfile(type, T_in, T_cool, dH, U, length) {
+      const points = 100;
+      const z = Array.from({length: points}, (_, i) => (i * length) / (points - 1));
+      let T;
       
-      if(isNaN(L_val) || isNaN(kVal) || isNaN(T1) || isNaN(T2) || L_val <= 0){
-        resultDiv.innerText = "Lütfen geçerli pozitif sayısal değerler giriniz.";
+      if (type === 'PFR') {
+        // PFR için sıcaklık profili
+        T = z.map(z_i => {
+          return T_cool + (T_in - T_cool) * Math.exp(-U * z_i);
+        });
+      } else {
+        // CSTR için sabit sıcaklık
+        T = z.map(() => T_in);
+      }
+
+      return {z, T};
+    }
+
+    // 3D görselleştirme
+    function init3DVisualization(type, T_in, T_cool, dH, U) {
+      const container = document.getElementById('reactor3d');
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf0f0f0);
+
+      const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      container.innerHTML = '';
+      container.appendChild(renderer.domElement);
+
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+
+      // Reaktör geometrisi
+      const geometry = type === 'PFR' ? 
+        new THREE.CylinderGeometry(0.5, 0.5, 5, 32) :
+        new THREE.CylinderGeometry(1, 1, 2, 32);
+
+      // Sıcaklık gradyanı için malzeme
+      const segments = 20;
+      const materials = [];
+      
+      for (let i = 0; i < segments; i++) {
+        const t = i / (segments - 1);
+        const temperature = T_cool + (T_in - T_cool) * (1 - t);
+        const color = getTemperatureColor(temperature, T_cool, T_in);
+        
+        materials.push(new THREE.MeshPhongMaterial({
+          color: color,
+          transparent: true,
+          opacity: 0.8
+        }));
+      }
+
+      // Reaktör oluşturma
+      const reactor = type === 'PFR' ?
+        createPFRWithTemperature(geometry, materials) :
+        createCSTRWithTemperature(geometry, materials);
+
+      scene.add(reactor);
+
+      // Işıklandırma
+      const ambientLight = new THREE.AmbientLight(0x404040);
+      scene.add(ambientLight);
+
+      const light1 = new THREE.DirectionalLight(0xffffff, 0.8);
+      light1.position.set(1, 1, 1);
+      scene.add(light1);
+
+      const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
+      light2.position.set(-1, -1, -1);
+      scene.add(light2);
+
+      camera.position.set(5, 5, 5);
+      controls.update();
+
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    }
+
+    // Sıcaklığa göre renk hesaplama
+    function getTemperatureColor(temp, minTemp, maxTemp) {
+      const t = (temp - minTemp) / (maxTemp - minTemp);
+      const hue = (1 - t) * 240; // 240 (mavi) -> 0 (kırmızı)
+      return new THREE.Color(`hsl(${hue}, 100%, 50%)`);
+    }
+
+    // PFR reaktör oluşturma
+    function createPFRWithTemperature(geometry, materials) {
+      const group = new THREE.Group();
+      const segmentHeight = geometry.parameters.height / materials.length;
+
+      materials.forEach((material, i) => {
+        const segmentGeometry = new THREE.CylinderGeometry(
+          geometry.parameters.radiusTop,
+          geometry.parameters.radiusBottom,
+          segmentHeight,
+          geometry.parameters.radialSegments
+        );
+
+        const segment = new THREE.Mesh(segmentGeometry, material);
+        segment.position.y = (i - materials.length/2) * segmentHeight;
+        group.add(segment);
+      });
+
+      // Soğutma ceketi
+      const jacketGeometry = new THREE.CylinderGeometry(
+        geometry.parameters.radiusTop * 1.2,
+        geometry.parameters.radiusBottom * 1.2,
+        geometry.parameters.height,
+        geometry.parameters.radialSegments
+      );
+      
+      const jacketMaterial = new THREE.MeshPhongMaterial({
+        color: 0x88ccff,
+        transparent: true,
+        opacity: 0.3
+      });
+      
+      const jacket = new THREE.Mesh(jacketGeometry, jacketMaterial);
+      group.add(jacket);
+
+      return group;
+    }
+
+    // CSTR reaktör oluşturma
+    function createCSTRWithTemperature(geometry, materials) {
+      const group = new THREE.Group();
+      
+      // Ana tank
+      const tank = new THREE.Mesh(geometry, materials[0]); // CSTR için tek sıcaklık
+      group.add(tank);
+
+      // Karıştırıcı
+      const shaftGeometry = new THREE.CylinderGeometry(0.05, 0.05, 2.5, 16);
+      const shaftMaterial = new THREE.MeshPhongMaterial({ color: 0x888888 });
+      const shaft = new THREE.Mesh(shaftGeometry, shaftMaterial);
+      group.add(shaft);
+
+      // Soğutma ceketi
+      const jacketGeometry = new THREE.CylinderGeometry(1.2, 1.2, 2, 32);
+      const jacketMaterial = new THREE.MeshPhongMaterial({
+        color: 0x88ccff,
+        transparent: true,
+        opacity: 0.3
+      });
+      const jacket = new THREE.Mesh(jacketGeometry, jacketMaterial);
+      group.add(jacket);
+
+      return group;
+    }
+
+    // Event listeners
+    document.getElementById('calculateBtn').addEventListener('click', function() {
+      const type = document.getElementById('reactor_type').value;
+      const T_in = parseFloat(document.getElementById('T_in').value);
+      const T_cool = parseFloat(document.getElementById('T_cool').value);
+      const dH = parseFloat(document.getElementById('dH').value);
+      const U = parseFloat(document.getElementById('U').value);
+
+      if (isNaN(T_in) || isNaN(T_cool) || isNaN(dH) || isNaN(U)) {
+        alert('Lütfen tüm alanları doldurun');
         return;
       }
-      
-      Q = kVal * (T1 - T2) / L_val;
-      resultDiv.innerText = `Isı Akısı Q = ${Q.toFixed(3)} W/m²`;
-      
-      // localStorage kaydı
-      let kayit = {
-        tip: "Isı Transferi",
-        L: L_val,
-        kVal: kVal,
-        T1: T1,
-        T2: T2,
-        Q: Q,
-        tarih: new Date().toISOString()
-      };
-      let hesaplamalar = JSON.parse(localStorage.getItem("hesaplamalar")) || [];
-      hesaplamalar.push(kayit);
-      localStorage.setItem("hesaplamalar", JSON.stringify(hesaplamalar));
-      
-      myp5.redraw();
+
+      // Sıcaklık profili hesaplama ve çizme
+      const length = type === 'PFR' ? 5 : 2;
+      const profile = calculateTemperatureProfile(type, T_in, T_cool, dH, U, length);
+
+      Plotly.newPlot('temperaturePlot', [{
+        x: profile.z,
+        y: profile.T,
+        type: 'scatter',
+        mode: 'lines',
+        line: {
+          color: '#e74c3c',
+          width: 3
+        },
+        name: 'Sıcaklık Profili'
+      }], {
+        title: 'Reaktör Boyunca Sıcaklık Profili',
+        xaxis: {
+          title: 'Reaktör Uzunluğu (m)'
+        },
+        yaxis: {
+          title: 'Sıcaklık (°C)'
+        },
+        height: 400
+      });
+
+      // 3D görselleştirme
+      init3DVisualization(type, T_in, T_cool, dH, U);
     });
-    
-    let sketch = function(p) {
-      p.setup = function() {
-        p.createCanvas(500, 200).parent('sketch-holder');
-        p.noLoop();
-      };
-      
-      p.draw = function() {
-        p.background(255);
-        p.fill(0);
-        p.textSize(16);
-        p.text("Duvar İçinde Sıcaklık Profili", 10, 20);
-        if(errorMessage) {
-          p.fill(255, 0, 0);
-          p.text(errorMessage, 10, 40);
-          return;
-        }
-        let wallX = 50, wallY = 50, wallWidth = 400, wallHeight = 50;
-        p.stroke(0);
-        p.noFill();
-        p.rect(wallX, wallY, wallWidth, wallHeight);
-        let tempGradient = p.drawingContext.createLinearGradient(wallX, 0, wallX+wallWidth, 0);
-        tempGradient.addColorStop(0, "blue");
-        tempGradient.addColorStop(1, "red");
-        p.drawingContext.fillStyle = tempGradient;
-        p.noStroke();
-        p.rect(wallX, wallY, wallWidth, wallHeight);
-        p.fill(0);
-        p.text(`T₁ = ${T1}°C`, wallX, wallY - 10);
-        p.text(`T₂ = ${T2}°C`, wallX + wallWidth - 50, wallY - 10);
-      };
-    };
-    
-    let myp5 = new p5(sketch);
+
+    // Tab değiştirme
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const view = this.dataset.view;
+        document.getElementById('temperaturePlot').style.display = 
+          view === 'temperature' ? 'block' : 'none';
+        document.getElementById('reactor3d').style.display = 
+          view === '3d' ? 'block' : 'none';
+      });
+    });
   </script>
 </body>
 </html>
