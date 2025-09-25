@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Gizli Veri Girişi</title>
+</head>
+<body>
+  <h2>Veri Gir</h2>
+  <form id="dataForm">
+    <label>İsim: <input type="text" name="İsim" required></label><br><br>
+    <label>E-posta: <input type="email" name="E-posta" required></label><br><br>
+    <label>Mesaj: <textarea name="Mesaj"></textarea></label><br><br>
+    <button type="submit">Gönder</button>
+  </form>
+
+  <p id="status"></p>
+
+  <script>
+    document.getElementById('dataForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData);
+
+      // 👇 Buraya kendi Google Apps Script webhook URL'ini yaz!
+      const webhookUrl = "https://script.google.com/macros/s/AKfycby6sGEPmzkAGAPxVYOSxt4XyENdCKrrdu5aBMdNIadrv6alkrC4rzHMfWYl149lHX9h/exec";
+
+      try {
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          body: new URLSearchParams(data)
+        });
+
+        const result = await response.json();
+        if (result.result === "success") {
+          document.getElementById('status').innerText = "✅ Veri başarıyla kaydedildi!";
+          e.target.reset();
+        } else {
+          throw new Error("Hata oluştu");
+        }
+      } catch (err) {
+        document.getElementById('status').innerText = "❌ Gönderim başarısız oldu.";
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
