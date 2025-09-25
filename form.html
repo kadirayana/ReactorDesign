@@ -1,28 +1,223 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-  <title>Gizli Veri Girişi</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reactor Deney Veri Girişi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf9 100%);
+      color: #2d3748;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    .header {
+      background: #2c5282;
+      color: white;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-weight: 600;
+      font-size: 24px;
+      letter-spacing: -0.4px;
+    }
+
+    .form-body {
+      padding: 30px;
+    }
+
+    .form-group {
+      margin-bottom: 22px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      color: #2d3748;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #cbd5e0;
+      border-radius: 10px;
+      font-size: 16px;
+      background: #f8fafc;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #63b3ed;
+      box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.2);
+    }
+
+    .form-control option {
+      font-size: 16px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: #3182ce;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover {
+      background: #2c5282;
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .status {
+      margin-top: 24px;
+      padding: 14px;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: 500;
+      display: none;
+    }
+
+    .status.success {
+      display: block;
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status.error {
+      display: block;
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    @media (max-width: 600px) {
+      .form-body {
+        padding: 20px;
+      }
+      .header {
+        padding: 20px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h2>Veri Gir</h2>
-  <form id="dataForm">
-    <label>İsim: <input type="text" name="İsim" required></label><br><br>
-    <label>E-posta: <input type="email" name="E-posta" required></label><br><br>
-    <label>Mesaj: <textarea name="Mesaj"></textarea></label><br><br>
-    <button type="submit">Gönder</button>
-  </form>
+  <div class="container">
+    <div class="header">
+      <h1>🔬 Reactor Deney Veri Girişi</h1>
+    </div>
+    <div class="form-body">
+      <form id="experimentForm">
+        <div class="form-group">
+          <label for="deneyHarfi">Deney Harfi</label>
+          <input type="text" id="deneyHarfi" name="Deney Harfi" maxlength="5" required placeholder="Örn: A, B3, C12">
+        </div>
 
-  <p id="status"></p>
+        <div class="form-group">
+          <label for="ph">pH (2-3-4)</label>
+          <select id="ph" name="pH(2-3-4)" class="form-control" required>
+            <option value="">Seçiniz</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="sicaklik">Sıcaklık (40-60-90°C)</label>
+          <select id="sicaklik" name="Sıcaklık(40-60-90°C)" class="form-control" required>
+            <option value="">Seçiniz</option>
+            <option value="40">40°C</option>
+            <option value="60">60°C</option>
+            <option value="90">90°C</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="karistirma">Karıştırma Hızı (400-600-800 rpm)</label>
+          <select id="karistirma" name="Karıştırma Hızı(400-600-800 rpm)" class="form-control" required>
+            <option value="">Seçiniz</option>
+            <option value="400">400 rpm</option>
+            <option value="600">600 rpm</option>
+            <option value="800">800 rpm</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="gun">Gün (1, 2, 3)</label>
+          <select id="gun" name="Gün(1,2,3)" class="form-control" required>
+            <option value="">Seçiniz</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="daldirma">Daldırma Süresi (30-60-90-120 sn)</label>
+          <select id="daldirma" name="Daldırma süresi(30,60,90,120 sn)" class="form-control" required>
+            <option value="">Seçiniz</option>
+            <option value="30">30 sn</option>
+            <option value="60">60 sn</option>
+            <option value="90">90 sn</option>
+            <option value="120">120 sn</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn">✅ Veriyi Kaydet</button>
+      </form>
+
+      <div id="status" class="status"></div>
+    </div>
+  </div>
 
   <script>
-    document.getElementById('dataForm').addEventListener('submit', async (e) => {
+    document.getElementById('experimentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      
+
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData);
 
-      // 👇 Buraya kendi Google Apps Script webhook URL'ini yaz!
+      // 🔑 BURAYA KENDİ GOOGLE APPS SCRIPT URL'İNİ YAZ!
       const webhookUrl = "https://script.google.com/macros/s/AKfycby6sGEPmzkAGAPxVYOSxt4XyENdCKrrdu5aBMdNIadrv6alkrC4rzHMfWYl149lHX9h/exec";
+
+      const statusEl = document.getElementById('status');
 
       try {
         const response = await fetch(webhookUrl, {
@@ -32,14 +227,16 @@
 
         const result = await response.json();
         if (result.result === "success") {
-          document.getElementById('status').innerText = "✅ Veri başarıyla kaydedildi!";
+          statusEl.textContent = "✅ Veri başarıyla kaydedildi!";
+          statusEl.className = "status success";
           e.target.reset();
         } else {
-          throw new Error("Hata oluştu");
+          throw new Error("Yanıt başarısız");
         }
       } catch (err) {
-        document.getElementById('status').innerText = "❌ Gönderim başarısız oldu.";
-        console.error(err);
+        statusEl.textContent = "❌ Veri gönderilemedi. Lütfen bağlantınızı kontrol edin.";
+        statusEl.className = "status error";
+        console.error("Hata:", err);
       }
     });
   </script>
