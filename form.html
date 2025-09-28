@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Deney Veri Girişi</title>
+  <title> Deney Veri Girişi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -196,7 +196,10 @@
     document.getElementById('experimentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
+      // Form verilerini al
       const formData = new FormData(e.target);
+      
+      // Seçilen daldırma sürelerini al
       const checkboxes = document.querySelectorAll('input[name="Daldırma süresi(30,60,90,120 sn)"]:checked');
       const durations = Array.from(checkboxes).map(cb => cb.value);
 
@@ -205,23 +208,30 @@
         return;
       }
 
+      // Google Apps Script URL'si (SENIN_YENI_URL'yi kendi URL'inle değiştir!)
       const webhookUrl = "https://script.google.com/macros/s/AKfycby6sGEPmzkAGAPxVYOSxt4XyENdCKrrdu5aBMdNIadrv6alkrC4rzHMfWYl149lHX9h/exec";
 
+      // Her daldırma süresi için ayrı POST isteği gönder
       for (const duration of durations) {
-        await fetch(webhookUrl, {
-          method: 'POST',
-          body: new URLSearchParams({
-            "Deney Harfi": formData.get("Deney Harfi"),
-            "pH(2-3-4)": formData.get("pH(2-3-4)"),
-            "Sıcaklık(40-60-90°C)": formData.get("Sıcaklık(40-60-90°C)"),
-            "Karıştırma Hızı(400-600-800 rpm)": formData.get("Karıştırma Hızı(400-600-800 rpm)"),
-            "Gün(1,2,3)": formData.get("Gün(1,2,3)"),
-            "Daldırma süresi(30,60,90,120 sn)": duration,
-            "Not": formData.get("Not")
-          })
-        });
+        try {
+          await fetch(webhookUrl, {
+            method: 'POST',
+            body: new URLSearchParams({
+              "Deney Harfi": formData.get("Deney Harfi"),
+              "pH(2-3-4)": formData.get("pH(2-3-4)"),
+              "Sıcaklık(40-60-90°C)": formData.get("Sıcaklık(40-60-90°C)"),
+              "Karıştırma Hızı(400-600-800 rpm)": formData.get("Karıştırma Hızı(400-600-800 rpm)"),
+              "Gün(1,2,3)": formData.get("Gün(1,2,3)"),
+              "Daldırma süresi(30,60,90,120 sn)": duration,
+              "Not": formData.get("Not")
+            })
+          });
+        } catch (err) {
+          console.error("Kayıt hatası (süre:", duration, "):", err);
+        }
       }
 
+      // Başarı mesajı
       document.getElementById('status').textContent = "✅ Tüm veriler başarıyla kaydedildi!";
       document.getElementById('status').className = "status success";
       e.target.reset();
