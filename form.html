@@ -121,7 +121,7 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>🔬Deney Veri Girişi</h1>
+      <h1>🔬 Deney Veri Girişi</h1>
     </div>
     <div class="form-body">
       <form id="experimentForm">
@@ -197,30 +197,34 @@
       e.preventDefault();
 
       const formData = new FormData(e.target);
-            const webhookUrl = "https://script.google.com/macros/s/AKfycby6sGEPmzkAGAPxVYOSxt4XyENdCKrrdu5aBMdNIadrv6alkrC4rzHMfWYl149lHX9h/exec";
-      const statusEl = document.getElementById('status');
+      const checkboxes = document.querySelectorAll('input[name="Daldırma süresi(30,60,90,120 sn)"]:checked');
+      const durations = Array.from(checkboxes).map(cb => cb.value);
 
-      try {
-        const response = await fetch(webhookUrl, {
-          method: 'POST',
-          body: formData
-        });
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        
-        const result = await response.json();
-        if (result.result === "success") {
-          statusEl.textContent = "✅ Veri başarıyla kaydedildi!";
-          statusEl.className = "status success";
-          e.target.reset();
-        } else {
-          throw new Error(result.message || "Bilinmeyen hata");
-        }
-      } catch (err) {
-        statusEl.textContent = "❌ Hata: " + (err.message || "Bağlantı kurulamadı");
-        statusEl.className = "status error";
-        console.error("Detaylı hata:", err);
+      if (durations.length === 0) {
+        alert("Lütfen en az bir daldırma süresi seçin!");
+        return;
       }
+
+      const webhookUrl = "https://script.google.com/macros/s/AKfycby6sGEPmzkAGAPxVYOSxt4XyENdCKrrdu5aBMdNIadrv6alkrC4rzHMfWYl149lHX9h/exec";
+
+      for (const duration of durations) {
+        await fetch(webhookUrl, {
+          method: 'POST',
+          body: new URLSearchParams({
+            "Deney Harfi": formData.get("Deney Harfi"),
+            "pH(2-3-4)": formData.get("pH(2-3-4)"),
+            "Sıcaklık(40-60-90°C)": formData.get("Sıcaklık(40-60-90°C)"),
+            "Karıştırma Hızı(400-600-800 rpm)": formData.get("Karıştırma Hızı(400-600-800 rpm)"),
+            "Gün(1,2,3)": formData.get("Gün(1,2,3)"),
+            "Daldırma süresi(30,60,90,120 sn)": duration,
+            "Not": formData.get("Not")
+          })
+        });
+      }
+
+      document.getElementById('status').textContent = "✅ Tüm veriler başarıyla kaydedildi!";
+      document.getElementById('status').className = "status success";
+      e.target.reset();
     });
   </script>
 </body>
