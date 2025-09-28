@@ -8,14 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'Inter', sans-serif;
       background: linear-gradient(135deg, #f5f7fa 0%, #e4edf9 100%);
       color: #2d3748;
       padding: 20px;
@@ -24,7 +19,6 @@
       justify-content: center;
       align-items: center;
     }
-
     .container {
       width: 100%;
       max-width: 600px;
@@ -33,28 +27,23 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
       overflow: hidden;
     }
-
     .header {
       background: #2c5282;
       color: white;
       padding: 24px;
       text-align: center;
     }
-
     .header h1 {
       font-weight: 600;
       font-size: 24px;
       letter-spacing: -0.4px;
     }
-
     .form-body {
       padding: 30px;
     }
-
     .form-group {
       margin-bottom: 22px;
     }
-
     .form-group label {
       display: block;
       margin-bottom: 8px;
@@ -62,7 +51,6 @@
       font-size: 14px;
       color: #2d3748;
     }
-
     .form-control {
       width: 100%;
       padding: 12px 16px;
@@ -70,19 +58,27 @@
       border-radius: 10px;
       font-size: 16px;
       background: #f8fafc;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: border-color 0.2s;
     }
-
     .form-control:focus {
       outline: none;
       border-color: #63b3ed;
       box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.2);
     }
-
-    .form-control option {
-      font-size: 16px;
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
     }
-
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .checkbox-item input {
+      width: auto;
+      margin: 0;
+    }
     .btn {
       width: 100%;
       padding: 14px;
@@ -95,15 +91,7 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-
-    .btn:hover {
-      background: #2c5282;
-    }
-
-    .btn:active {
-      transform: translateY(1px);
-    }
-
+    .btn:hover { background: #2c5282; }
     .status {
       margin-top: 24px;
       padding: 14px;
@@ -112,28 +100,21 @@
       font-weight: 500;
       display: none;
     }
-
     .status.success {
       display: block;
       background: #d4edda;
       color: #155724;
       border: 1px solid #c3e6cb;
     }
-
     .status.error {
       display: block;
       background: #f8d7da;
       color: #721c24;
       border: 1px solid #f5c6cb;
     }
-
     @media (max-width: 600px) {
-      .form-body {
-        padding: 20px;
-      }
-      .header {
-        padding: 20px;
-      }
+      .form-body { padding: 20px; }
+      .header { padding: 20px; }
     }
   </style>
 </head>
@@ -146,7 +127,7 @@
       <form id="experimentForm">
         <div class="form-group">
           <label for="deneyHarfi">Deney Harfi</label>
-          <input type="text" id="deneyHarfi" name="Deney Harfi" maxlength="5" required placeholder="Örn: A, B3, C12">
+          <input type="text" id="deneyHarfi" name="Deney Harfi" maxlength="5" required placeholder="Örn: A, B3">
         </div>
 
         <div class="form-group">
@@ -190,14 +171,18 @@
         </div>
 
         <div class="form-group">
-          <label for="daldirma">Daldırma Süresi (30-60-90-120 sn)</label>
-          <select id="daldirma" name="Daldırma süresi(30,60,90,120 sn)" class="form-control" required>
-            <option value="">Seçiniz</option>
-            <option value="30">30 sn</option>
-            <option value="60">60 sn</option>
-            <option value="90">90 sn</option>
-            <option value="120">120 sn</option>
-          </select>
+          <label>Daldırma Süresi (Birden fazla seçebilirsiniz)</label>
+          <div class="checkbox-group">
+            <label class="checkbox-item"><input type="checkbox" name="Daldırma süresi(30,60,90,120 sn)" value="30"> 30 sn</label>
+            <label class="checkbox-item"><input type="checkbox" name="Daldırma süresi(30,60,90,120 sn)" value="60"> 60 sn</label>
+            <label class="checkbox-item"><input type="checkbox" name="Daldırma süresi(30,60,90,120 sn)" value="90"> 90 sn</label>
+            <label class="checkbox-item"><input type="checkbox" name="Daldırma süresi(30,60,90,120 sn)" value="120"> 120 sn</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="not">Not (İsteğe Bağlı)</label>
+          <textarea id="not" name="Not" class="form-control" rows="3" placeholder="Deneyle ilgili ek bilgi..."></textarea>
         </div>
 
         <button type="submit" class="btn">✅ Veriyi Kaydet</button>
@@ -211,18 +196,21 @@
     document.getElementById('experimentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
+      // FormData ile tüm verileri al
       const formData = new FormData(e.target);
-      const data = Object.fromEntries(formData);
+      
+      // Daldırma süresi çoklu olduğundan, FormData zaten array olarak tutar
+      // Diğer alanlar tekil
 
       // 🔑 BURAYA KENDİ GOOGLE APPS SCRIPT URL'İNİ YAZ!
-      const webhookUrl = "https://script.google.com/macros/s/AKfycby6sGEPmzkAGAPxVYOSxt4XyENdCKrrdu5aBMdNIadrv6alkrC4rzHMfWYl149lHX9h/exec";
+      const webhookUrl = "https://script.google.com/macros/s/SENIN_YENI_URL/exec";
 
       const statusEl = document.getElementById('status');
 
       try {
         const response = await fetch(webhookUrl, {
           method: 'POST',
-          body: new URLSearchParams(data)
+          body: new URLSearchParams(formData) // ✅ FormData doğrudan kullanılabilir!
         });
 
         const result = await response.json();
@@ -231,10 +219,10 @@
           statusEl.className = "status success";
           e.target.reset();
         } else {
-          throw new Error("Yanıt başarısız");
+          throw new Error(result.message || "Bilinmeyen hata");
         }
       } catch (err) {
-        statusEl.textContent = "❌ Veri gönderilemedi. Lütfen bağlantınızı kontrol edin.";
+        statusEl.textContent = "❌ Gönderim başarısız: " + err.message;
         statusEl.className = "status error";
         console.error("Hata:", err);
       }
