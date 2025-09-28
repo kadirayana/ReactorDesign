@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Reactor Deney Veri Girişi</title>
+  <title>Deney Veri Girişi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -121,7 +121,7 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>🔬 Reactor Deney Veri Girişi</h1>
+      <h1>🔬 Deney Veri Girişi</h1>
     </div>
     <div class="form-body">
       <form id="experimentForm">
@@ -195,18 +195,9 @@
   <script>
     document.getElementById('experimentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-
-      // FormData ile tüm verileri al
       const formData = new FormData(e.target);
-      
-      // Daldırma süresi çoklu olduğundan, FormData zaten array olarak tutar
-      // Diğer alanlar tekil
-
-      // 🔑 BURAYA KENDİ GOOGLE APPS SCRIPT URL'İNİ YAZ!
-      const webhookUrl = "https://script.google.com/macros/s/SENIN_YENI_URL/exec";
-
+      const webhookUrl = "https://script.google.com/macros/s/AKfycby6sGEPmzkAGAPxVYOSxt4XyENdCKrrdu5aBMdNIadrv6alkrC4rzHMfWYl149lHX9h/exec";
       const statusEl = document.getElementById('status');
-
       try {
         const response = await fetch(webhookUrl, {
           method: 'POST',
