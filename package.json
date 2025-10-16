@@ -7,11 +7,15 @@
     "build": "next build",
     "start": "next start -p 3000",
     "migrate:copy-legacy": "node scripts/copyLegacy.js",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "export": "cross-env GITHUB_PAGES=true next build && next export",
+    "predeploy": "npm run export",
+    "deploy": "gh-pages -d out"
   },
   "dependencies": {
     "chart.js": "^4.4.0",
     "next": "^15.5.5",
+    "next-i18next": "^15.4.2",
     "p5": "^1.6.0",
     "plotly.js-dist": "^2.29.1",
     "postcss": "^8.5.6",
@@ -21,6 +25,8 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
+    "gh-pages": "^6.3.0",
     "jest": "29.7.0"
   }
 }
