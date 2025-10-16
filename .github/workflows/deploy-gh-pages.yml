@@ -70,14 +70,7 @@ jobs:
           
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          # Use GH_TOKEN if available, otherwise use GITHUB_TOKEN
-          if [ -n "${{ secrets.GH_TOKEN }}" ]; then
-            TOKEN="${{ secrets.GH_TOKEN }}"
-          else
-            TOKEN="${{ secrets.GITHUB_TOKEN }}"
-          fi
-          echo "Setting git remote with token..."
-          git remote set-url origin "https://x-access-token:${TOKEN}@github.com/kadirayana/ReactorDesign.git"
+          git remote set-url origin "https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/kadirayana/ReactorDesign.git"
           git checkout --orphan gh-pages
           git rm -rf .
           cp -r deploy/* .
