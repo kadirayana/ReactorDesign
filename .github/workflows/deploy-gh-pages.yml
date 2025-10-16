@@ -28,7 +28,11 @@ jobs:
         run: npm ci
 
       - name: Build and export static site
-        run: npm run export
+        env:
+          GITHUB_PAGES: 'true'
+        run: |
+          npm run build
+          next export
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
