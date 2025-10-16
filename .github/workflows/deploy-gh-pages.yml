@@ -41,10 +41,12 @@ jobs:
 
             - name: "Debug: show repository files"
               run: |
-                echo "Working directory: $(pwd)"
+                echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+                echo "Working directory (pwd): $(pwd)"
                 echo "List top-level files:"; ls -la
                 echo "List repo subdirs:"; ls -la . || true
                 echo "Show package.json if present:"; if [ -f package.json ]; then echo "package.json exists:"; sed -n '1,120p' package.json; else echo "package.json not found"; fi
+              shell: bash
 
             - name: "Install dependencies"
               run: |
@@ -59,11 +61,15 @@ jobs:
                   echo "Listing current directory for debugging:"; ls -la;
                   exit 1;
                 fi
+              working-directory: .
+              shell: bash
 
             - name: "Build and export static site"
               # Run the same export path used locally (predeploy -> export) while
               # ensuring GITHUB_PAGES=true is available to next.config.js
               run: npm run predeploy
+              working-directory: .
+              shell: bash
 
             - name: "Deploy to GitHub Pages"
               uses: peaceiris/actions-gh-pages@v4
@@ -73,6 +79,8 @@ jobs:
                 publish_branch: gh-pages
                 user_name: 'github-actions[bot]'
                 user_email: '41898282+github-actions[bot]@users.noreply.github.com'
+              # Note: peaceiris/actions-gh-pages publishes files from the workspace root.
+              # If your built files are in a subdirectory, adjust publish_dir accordingly.
       - name: Checkout
         uses: actions/checkout@v4
 
