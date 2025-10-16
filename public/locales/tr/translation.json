@@ -1,0 +1,177 @@
+{
+  "navbar": {
+    "reactor": "Reaktör Tasarımı",
+    "reactorss": {
+      "title": "Özelleştirilebilir Reaktör Tasarımı Hesaplayıcı",
+      "sections": {
+        "product": "Ürün Bilgileri",
+        "reactA": "Reaktan A Bilgileri",
+        "reactB": "Reaktan B Bilgileri",
+        "process": "Proses ve Reaksiyon Koşulları",
+        "kinetics": "Reaksiyon Kinetiği Parametreleri",
+        "feed": "Feed ve Stoikiometri"
+      },
+      "labels": {
+        "prodName": "Ürün Adı:",
+        "prodMolarMass": "Ürün Molar Kütlesi (kg/kmol):",
+        "prodStoich": "Ürün Stoikiometrik Katsayısı (c):",
+        "reactAName": "Reaktan A Adı:",
+        "reactAStoich": "Reaktan A Stoikiometrik Katsayısı (a):",
+        "reactBName": "Reaktan B Adı:",
+        "reactBStoich": "Reaktan B Stoikiometrik Katsayısı (b):",
+        "conversion": "Dönüş (X, ondalık; örn: 0.3 = %30):",
+        "annualProd": "Yıllık Üretim (ton/yıl):",
+        "opHours": "Yıllık Çalışma Saati (h):",
+        "reactionTemp": "Reaksiyon Sıcaklığı (K):",
+        "P_total": "Toplam Basınç (atm):",
+        "k0": "Ön Faktör, k₀ [kmol/(kg_cat·s·atm²)]:",
+        "E": "Aktivasyon Enerjisi, E (kJ/mol):",
+        "orderLim": "Limitleyici Reaktanın Reaksiyon Sırası (nₗ):",
+        "orderExc": "Fazladan Reaktanın Reaksiyon Sırası (nₑ):",
+        "feedRatio": "Feed Oranı (Fazladan reaktan / Limitleyici reaktan, r):",
+        "limiting": "Limitleyici Reaktan Seçimi:",
+        "normalize": "Normalize",
+        "useAbsoluteConc": "Mutlak Konsantrasyon (kmol/h)",
+        "rX": "r(X)",
+        "X": "Dönüşüm X",
+        "rate": "Reaksiyon Hızı",
+        "limAbs": "Limitleyici (kmol/h)",
+        "excAbs": "Fazladan (kmol/h)",
+        "limFrac": "Limitleyici Konsantrasyon (mol fraksiyon)",
+        "excFrac": "Fazladan Konsantrasyon",
+        "molFrac": "Mol Fraksiyonu"
+      },
+      "options": {
+        "reactA": "Reaktan A",
+        "reactB": "Reaktan B"
+      },
+      "buttons": {
+        "calculate": "Hesaplamayı Yap",
+        "export": "CSV İndir",
+        "pause": "Durdur",
+        "play": "Oynat"
+      },
+      "tabs": {
+        "rate": "Hız (r)",
+        "conc": "Konsantrasyon"
+      },
+      "profiles": "Reaksiyon Profilleri",
+      "advanced": {
+        "title": "Gelişmiş Görselleştirme & Adım Adım Analiz",
+        "summary": "Hesaplama Özeti",
+        "prodKmolH": "Saatlik Üretim (kmol/h)",
+        "F0_lim": "Limitleyici Akış F₀ (kmol/h)",
+        "F0_exc": "Fazladan Akış (kmol/h)",
+        "W": "Katalizör Miktarı W (kg)",
+        "k_val": "k (s⁻¹) örnek (k_val)",
+        "k_h": "k (h⁻¹) (k_h)",
+        "rMinMax": "r min / max",
+        "warning": "Uyarı",
+        "slider": "Dönüşüm seçici (X):",
+        "selectedX": "Seçilen X:",
+        "rX": "r(X):",
+        "limFrac": "Limitleyici mol fraksiyonu:",
+        "diagram": "Reaktör Şeması",
+        "diagramTitle": "Özelleştirilebilir Reaktör",
+        "input": "Giriş",
+        "output": "Çıkış",
+        "stepsTitle": "Adım Adım Hesaplama",
+        "step1": "Yıllık üretim → saatlik üretim hesaplandı: <strong>{{prodKmolH}} kmol/h</strong>.",
+        "step2": "Limitleyici reaktanın F₀ hesaplandı: <strong>{{F0_lim}} kmol/h</strong>.",
+        "step3": "Fazladan reaktanın akışı: <strong>{{F0_exc}} kmol/h</strong>.",
+        "step4": "Katalizör ihtiyacı trapezoidal entegrasyon ile hesaplandı: <strong>W = {{W}} kg</strong>."
+      },
+      "results": {
+        "catalyst": "üretimi için gerekli katalizör miktarı",
+        "hourlyProd": "Saatlik Üretim",
+        "limiting": "Limitleyici Reaktan",
+        "F0_lim": "Limitleyici Akış",
+        "F0_exc": "Fazladan Akış"
+      },
+      "note": {
+        "title": "Hesaplama Adımları (Özet):",
+        "content1": "1. Yıllık üretim ton→kg→kmol/yıl ve kmol/h cinsine dönüştürülür.",
+        "content2": "2. Limitleyici reaktanın feed akımı; eğer limitleyici reaktan A ise: F₀₍A₎ = (Üretim [kmol/h] × (a/c)) / X, limitleyici B için benzer şekilde hesaplanır.",
+        "content3": "3. Feed olarak limitleyici reaktanın mol oranı 1, fazladan reaktanın oranı girilen feed oranı (r) alınır.",
+        "content4": "4. Reaksiyon ilerledikçe (X değişkeni) reaktanların kısmi basınçları, stoikiometrik tüketim göz önüne alınarak hesaplanır.",
+        "content5": "5. Arrhenius denklemiyle k = k₀·exp(–E/(R·T)) hesaplanır, k saatlik forma çevrilir.",
+        "content6": "6. Reaksiyon hızı fonksiyonu: r(X) = k_h · [P_lim(X)]^(nₗ) · [P_ex(X)]^(nₑ) şeklinde alınır.",
+        "content7": "7. Katalizör miktarı: W = ∫₀^(X) [F₀_lim / r(X)] dX, trapezoidal entegrasyonla sayısal olarak hesaplanır."
+      }
+    },
+    "chemical": "Kimyasal Denge",
+    "heattransfer": "Isı Transferi",
+    "heatintegration": "Isı Entegrasyonu",
+    "dynamics": "Dinamik Simülasyon",
+    "vaporizer": {
+      "title": "Vaporizer Tasarım Hesaplayıcı",
+      "sections": {
+        "feed": "Besleme & Proses Verileri",
+        "liquidVapor": "Sıvı/Buhar Özellikleri",
+        "coolingWater": "Soğutma Suyu Özellikleri",
+        "tubeFouling": "Boru, Kirlenme & Geometri"
+      },
+      "labels": {
+        "feedFlow": "Besleme Debisi (kg/saat)",
+        "vaporFraction": "Buharlaşma Oranı",
+        "T_feed_in": "Besleme Giriş Sıcaklığı (°C)",
+        "T_feed_out": "Besleme Çıkış Sıcaklığı (°C)",
+        "P_operating": "Çalışma Basıncı (bar)",
+        "Pc_mix": "Kritik Basınç (bar)",
+        "dHvap_mix": "Buharlaşma Isısı (J/mol)",
+        "Cp_mix": "Karışım Isı Kapasitesi (J/mol·K)",
+        "T_water_in": "Su Giriş Sıcaklığı (°C)",
+        "T_water_out": "Su Çıkış Sıcaklığı (°C)",
+        "k_water": "Su Isı İletkenliği (W/m·K)",
+        "Cp_water": "Su Isı Kapasitesi (kJ/kg·K)",
+        "rho_water": "Su Yoğunluğu (kg/m³)",
+        "mu_water": "Su Viskozitesi (Pa·s)",
+        "tubeLength": "Boru Boyu (m)",
+        "d0": "Boru Dış Çapı (m)",
+        "di": "Boru İç Çapı (m)",
+        "Rf_o": "Kirlenme Direnci (Kılıf) (m²K/W)",
+        "Rf_i": "Kirlenme Direnci (Boru) (m²K/W)",
+        "k_tube": "Boru Isı İletkenliği (W/m·K)",
+        "U_initial": "Başlangıç U (W/m²K)",
+        "freeboard": "Serbest Yükseklik (m)",
+        "iterations": "İterasyon Sayısı"
+      },
+      "buttons": {
+        "calculate": "Hesapla",
+        "export": "CSV Dışa Aktar",
+        "reset": "Sıfırla"
+      },
+      "errors": {
+        "title": "Lütfen aşağıdaki hataları düzeltin:",
+        "feedFlow": "Besleme debisi pozitif olmalı.",
+        "waterTemp": "Su giriş sıcaklığı çıkıştan yüksek olmalı.",
+        "iterations": "İterasyon sayısı en az 1 olmalı."
+      },
+      "results": {
+        "title": "Sonuçlar",
+        "Q_total": "Toplam Isı Yükü:",
+        "m_water": "Su Debisi:",
+        "LMTD": "Logaritmik Ortalama Sıcaklık Farkı:",
+        "iteration": "{{n}}. İterasyon (U = {{U}} W/m²K)",
+        "A": "Alan:",
+        "N_tubes": "Boru Sayısı:",
+        "v_water": "Su Hızı:",
+        "Re": "Reynolds Sayısı:",
+        "h_i": "Boru Tarafı h:",
+        "h_nb": "Nükleasyon Kaynama h:",
+        "U_calc": "Hesaplanan U:",
+        "controls": "Mekanik Kontroller",
+        "Db": "Demet Çapı:",
+        "Ds": "Kılıf Çapı:",
+        "freeboard_ratio": "Serbest Yükseklik Oranı:"
+      },
+      "visualization": "3B Görselleştirme",
+      "legacy3d": "Eski 3B görünümü aç"
+    },
+    "form": "Deney Formu",
+    "history": "Geçmiş",
+    "optimization": "Optimizasyon",
+    "cv": "CV"
+  },
+  "logo": "Kimya Mühendisliği"
+}

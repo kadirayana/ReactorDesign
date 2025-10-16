@@ -1,0 +1,150 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+.container {
+  background: #fff;
+  padding: 20px 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  max-width: 900px;
+  width: 100%;
+  margin: 80px auto 20px;
+  font-family: 'Inter', sans-serif;
+}
+.title {
+  text-align: center;
+  color: #00539C;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #00539C;
+  padding-bottom: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+}
+.intro {
+  color: #2d3748;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  text-align: justify;
+}
+.moduleList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px 0;
+}
+.moduleList li {
+  margin-bottom: 18px;
+  color: #2d3748;
+  line-height: 1.6;
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  border-left: 4px solid #00539C;
+  transition: all 0.3s ease;
+}
+.moduleList li:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.moduleList strong {
+  color: #00539C;
+  font-weight: 600;
+}
+.moduleList a {
+  color: #00539C;
+  text-decoration: none;
+  margin-left: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+.moduleList a:hover {
+  text-decoration: underline;
+  color: #003458;
+}
+.selectModule {
+  color: #2d3748;
+  margin-top: 24px;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .container {
+    margin: 80px auto 15px;
+    padding: 16px 20px;
+    max-width: 95%;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    margin: 70px auto 15px;
+    padding: 14px;
+    max-width: 100%;
+  }
+  .title {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  .intro {
+    font-size: 14px;
+  }
+  .moduleList li {
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  .moduleList strong {
+    display: block;
+    margin-bottom: 4px;
+  }
+  .moduleList a {
+    margin-left: 0;
+    display: block;
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    margin: 60px auto 10px;
+    padding: 10px;
+  }
+  .title {
+    font-size: 20px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #00539C;
+    padding-bottom: 10px;
+  }
+  .intro {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+  }
+  .moduleList {
+    margin: 0 0 16px 0;
+  }
+  .moduleList li {
+    margin-bottom: 12px;
+    padding: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .moduleList strong {
+    color: #00539C;
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .moduleList a {
+    color: #00539C;
+    margin-left: 0;
+    font-weight: 600;
+    display: inline-block;
+    margin-top: 6px;
+  }
+  .selectModule {
+    margin-top: 16px;
+    font-size: 14px;
+  }
+}

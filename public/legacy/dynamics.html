@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-translate="dynamicSimulation" data-section="nav">Dinamik Sistem Simülasyonu</title>
+  <script src="translations.js"></script>
+  <link rel="stylesheet" href="responsive.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    /* ...existing code... */
+    .content {
+      background-color: white;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      margin-top: 60px;
+    }
+    h1 {
+      text-align: center;
+      color: #00539C;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #00539C;
+      padding-bottom: 10px;
+    }
+    h2 {
+      border-bottom: 2px solid #00539C;
+      padding-bottom: 10px;
+      color: #00539C;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+      color: #343a40;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      display: block;
+      width: 200px;
+      margin: 20px auto;
+      padding: 10px;
+      font-size: 16px;
+      background: #00539C;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #003f7d;
+    }
+    #result {
+      background: #e9f5ff;
+      border: 1px solid #b3d7ff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .form-row label {
+      flex: 1 0 300px;
+    }
+    .form-row input, .form-row select {
+      flex: 1 0 150px;
+    }
+    .canvas-container {
+      margin-top: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+    /* Tablo görünümü için stil */
+    #dataDisplay {
+      margin-top: 20px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table, th, td {
+      border: 1px solid #ced4da;
+    }
+    th, td {
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #00539C;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <!-- header/navbar removed -->
+  <div class="container">
+
+    
+    <div class="section">
+      <h2 data-translate="systemParameters" data-section="dynamicSimulation">Simülasyon Parametreleri</h2>
+      <!-- Simülasyon Türü -->
+      <div class="form-row">
+        <label for="simType" data-translate="simulationType" data-section="dynamicSimulation">Simülasyon Türü:</label>
+        <select id="simType">
+          <option value="dynamic" data-translate="dynamicSimType" data-section="dynamicSimulation">Dinamik Simülasyon (C(t)=C₀e^(–kt))</option>
+          <option value="cstr" data-translate="cstrSimType" data-section="dynamicSimulation">CSTR Simülasyonu</option>
+          <option value="pfr" data-translate="pfrSimType" data-section="dynamicSimulation">PFR Simülasyonu</option>
+          <option value="equilibrium" data-translate="equilibriumSimType" data-section="dynamicSimulation">Kimyasal Denge Hesaplaması</option>
+          <option value="heattransfer" data-translate="heatTransferSimType" data-section="dynamicSimulation">Isı Transfer Hesaplaması</option>
+          <option value="michaelis" data-translate="michaelisSimType" data-section="dynamicSimulation">Michaelis-Menten Kinetik Simülasyonu</option>
+          <option value="multicomponent" data-translate="multicomponentSimType" data-section="dynamicSimulation">Çok Bileşenli Sistem Simülasyonu (A→B)</option>
+        </select>
+      </div>
+      
+      <!-- Ortak Parametreler -->
+      <div class="form-row">
+        <label for="C0" data-translate="initialConcentration" data-section="dynamicSimulation">Başlangıç Konsantrasyonu C₀:</label>
+        <input type="number" id="C0" placeholder="Örn: 1.0" step="any" min="0">
+      </div>
+      
+      <div class="form-row">
+        <label for="kDyn" data-translate="rateConstant" data-section="dynamicSimulation">Hız Sabiti k [1/s]:</label>
+        <input type="number" id="kDyn" placeholder="Örn: 0.1" step="any" min="0">
+      </div>
+      
+      <div class="form-row">
+        <label for="simTime" data-translate="simulationTime" data-section="dynamicSimulation">Simülasyon Süresi [s] / Reaktör Hacmi (PFR için V):</label>
+        <input type="number" id="simTime" placeholder="Örn: 50" step="any" min="0">
+      </div>
+      
+      <!-- CSTR Ek Parametre -->
+      <div class="form-row" id="group-cstr" style="display:none;">
+        <label for="tau" data-translate="residenceTime" data-section="dynamicSimulation">Rezidans Zamanı (τ) [s]:</label>
+        <input type="number" id="tau" placeholder="Örn: 10" step="any" min="0">
+      </div>
+      
+      <!-- PFR Ek Parametre -->
+      <div id="group-pfr" style="display:none;">
+        <div class="form-row">
+          <label for="Q">Volumetrik Akış (Q) [m³/s]:</label>
+          <input type="number" id="Q" placeholder="Örn: 0.01" step="any" min="0">
+        </div>
+      </div>
+      
+      <!-- Kimyasal Denge Ek Parametre -->
+      <div id="group-equilibrium" style="display:none;">
+        <div class="form-row">
+          <label for="deltaG">ΔG (kJ/mol):</label>
+          <input type="number" id="deltaG" placeholder="Örn: -10" step="any">
+        </div>
+        <div class="form-row">
+          <label for="temp">Sıcaklık (T) [K]:</label>
+          <input type="number" id="temp" placeholder="Örn: 298" step="any" min="0">
+        </div>
+      </div>
+      
+      <!-- Isı Transfer Ek Parametre -->
+      <div id="group-heattransfer" style="display:none;">
+        <div class="form-row">
+          <label for="dT">Sıcaklık Farkı (ΔT) [K]:</label>
+          <input type="number" id="dT" placeholder="Örn: 20" step="any">
+        </div>
+        <div class="form-row">
+          <label for="area">Alan (A) [m²]:</label>
+          <input type="number" id="area" placeholder="Örn: 5" step="any" min="0">
+        </div>
+        <div class="form-row">
+          <label for="U">Isı Transfer Katsayısı (U) [W/m²K]:</label>
+          <input type="number" id="U" placeholder="Örn: 100" step="any" min="0">
+        </div>
+      </div>
+      
+      <!-- Michaelis-Menten Ek Parametre -->
+      <div id="group-michaelis" style="display:none;">
+        <div class="form-row">
+          <label for="Vmax">Vmax:</label>
+          <input type="number" id="Vmax" placeholder="Örn: 1.0" step="any" min="0">
+        </div>
+        <div class="form-row">
+          <label for="Km">Km:</label>
+          <input type="number" id="Km" placeholder="Örn: 0.5" step="any" min="0">
+        </div>
+      </div>
+      
+    </div>
+    
+    <button id="startSimBtn">Simülasyonu Başlat</button>
+    <div id="result"></div>
+    
+    <div class="section">
+      <h2>Simülasyon Grafiği</h2>
+      <div class="canvas-container" id="sketch-holder"></div>
+    </div>
+    
+    <!-- Simülasyon verilerinin tablo olarak gösterimi -->
+    <div class="section">
+      <h2>Simülasyon Verileri</h2>
+      <div id="dataDisplay">
+        <!-- Simülasyon tamamlandığında buraya tablo oluşturulacak -->
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+  <script>
+    // Global değişkenler
+    let simulationType = "dynamic";
+    let simStarted = false;
+    let simDt = 0.1;
+    let currentTime = 0;
+    let currentC = 0;
+    // Global parametre
+    let globalK = 0;
+    // Ek değişkenler
+    let currentVolume = 0;
+    let currentA = 0, currentB = 0;
+    let computedValue = null; // equilibrium veya heat transfer sonucu
+    
+    // Verilerin saklanacağı diziler
+    let timeData = [];
+    let concData = [];
+    let volumeData = [];
+    let AData = [];
+    let BData = [];
+    
+    // Simülasyon türüne göre ek alanları göster/gizle
+    document.getElementById("simType").addEventListener("change", function() {
+      simulationType = this.value;
+      document.getElementById("group-cstr").style.display = "none";
+      document.getElementById("group-pfr").style.display = "none";
+      document.getElementById("group-equilibrium").style.display = "none";
+      document.getElementById("group-heattransfer").style.display = "none";
+      document.getElementById("group-michaelis").style.display = "none";
+      
+      if(simulationType === "cstr"){
+        document.getElementById("group-cstr").style.display = "flex";
+      } else if(simulationType === "pfr"){
+        document.getElementById("group-pfr").style.display = "block";
+      } else if(simulationType === "equilibrium"){
+        document.getElementById("group-equilibrium").style.display = "block";
+      } else if(simulationType === "heattransfer"){
+        document.getElementById("group-heattransfer").style.display = "block";
+      } else if(simulationType === "michaelis"){
+        document.getElementById("group-michaelis").style.display = "block";
+      }
+    });
+    
+    // Başlat butonuna tıklandığında
+    document.getElementById("startSimBtn").addEventListener("click", function() {
+      simulationType = document.getElementById("simType").value;
+      let C0 = parseFloat(document.getElementById("C0").value);
+      let kDynInput = parseFloat(document.getElementById("kDyn").value);
+      let simTime = parseFloat(document.getElementById("simTime").value);
+      let resultDiv = document.getElementById("result");
+      
+      if(isNaN(C0) || isNaN(kDynInput) || isNaN(simTime) || C0<=0 || kDynInput<=0 || simTime<=0){
+        resultDiv.innerHTML = "<h3>Hata</h3><p>Lütfen geçerli pozitif sayısal değerler giriniz.</p>";
+        return;
+      }
+      // Global parametreleri ata
+      globalK = kDynInput;
+      
+      // PFR için simülasyon hızını artır (dakikada daha hızlı hacim artışı sağlamak için)
+      simDt = (simulationType === "pfr") ? 1 : 0.1;
+      
+      // Ortak başlangıç değerleri ve dizileri sıfırla
+      currentTime = 0;
+      currentC = C0;
+      simStarted = true;
+      computedValue = null;
+      currentVolume = 0;
+      currentA = C0; currentB = 0;
+      timeData = [];
+      concData = [];
+      volumeData = [];
+      AData = [];
+      BData = [];
+      document.getElementById("dataDisplay").innerHTML = "";
+      
+      // Ek parametre kontrolleri
+      if(simulationType === "cstr"){
+        var tau = parseFloat(document.getElementById("tau").value);
+        if(isNaN(tau) || tau<=0){
+          resultDiv.innerHTML = "<h3>Hata</h3><p>Lütfen geçerli Rezidans Zamanı giriniz.</p>";
+          simStarted = false;
+          return;
+        }
+      }
+      if(simulationType === "pfr"){
+        var Q = parseFloat(document.getElementById("Q").value);
+        if(isNaN(Q) || Q<=0){
+          resultDiv.innerHTML = "<h3>Hata</h3><p>Lütfen geçerli Volumetrik Akış değeri giriniz.</p>";
+          simStarted = false;
+          return;
+        }
+      }
+      if(simulationType === "equilibrium"){
+        var deltaG = parseFloat(document.getElementById("deltaG").value);
+        var temp = parseFloat(document.getElementById("temp").value);
+        if(isNaN(deltaG) || isNaN(temp) || temp<=0){
+          resultDiv.innerHTML = "<h3>Hata</h3><p>Lütfen geçerli ΔG ve Sıcaklık değerleri giriniz.</p>";
+          simStarted = false;
+          return;
+        }
+        let R = 8.314e-3;
+        computedValue = Math.exp(-deltaG/(R*temp));
+        resultDiv.innerHTML = "<h3>Sonuç</h3><p>Hesaplanan Denge Sabiti K: " + computedValue.toFixed(4) + "</p>";
+        simStarted = false;
+      }
+      if(simulationType === "heattransfer"){
+        var dT = parseFloat(document.getElementById("dT").value);
+        var area = parseFloat(document.getElementById("area").value);
+        var U = parseFloat(document.getElementById("U").value);
+        if(isNaN(dT) || isNaN(area) || isNaN(U) || area<=0 || U<=0){
+          resultDiv.innerHTML = "<h3>Hata</h3><p>Lütfen geçerli ısı transfer parametreleri giriniz.</p>";
+          simStarted = false;
+          return;
+        }
+        computedValue = U * area * dT;
+        resultDiv.innerHTML = "<h3>Sonuç</h3><p>Hesaplanan Isı Transferi (Q): " + computedValue.toFixed(2) + " W</p>";
+        simStarted = false;
+      }
+      if(simulationType === "michaelis"){
+        var Vmax = parseFloat(document.getElementById("Vmax").value);
+        var Km = parseFloat(document.getElementById("Km").value);
+        if(isNaN(Vmax) || isNaN(Km) || Vmax<=0 || Km<=0){
+          resultDiv.innerHTML = "<h3>Hata</h3><p>Lütfen geçerli Vmax ve Km değerleri giriniz.</p>";
+          simStarted = false;
+          return;
+        }
+      }
+      
+      let kayit = {
+        tip: simulationType,
+        C0: C0,
+        kDyn: kDynInput,
+        simTime: simTime,
+        tarih: new Date().toISOString()
+      };
+      let hesaplamalar = JSON.parse(localStorage.getItem("hesaplamalar")) || [];
+      hesaplamalar.push(kayit);
+      localStorage.setItem("hesaplamalar", JSON.stringify(hesaplamalar));
+      
+      resultDiv.innerHTML = "<h3>Durum</h3><p>Simülasyon başladı...</p>";
+    });
+    
+    // p5.js sketch
+    let sketch = function(p) {
+      p.setup = function() {
+        p.createCanvas(500, 300).parent('sketch-holder');
+        p.frameRate(30);
+      };
+      
+      p.draw = function() {
+        p.background(255);
+        p.fill(0);
+        p.textSize(16);
+        
+        // Başlık metni
+        if(simulationType === "dynamic" || simulationType === "michaelis" || simulationType === "cstr" || simulationType === "multicomponent") {
+          p.text("Simülasyon: C(t) değişimi", 10, 20);
+        } else if(simulationType === "pfr") {
+          p.text("PFR Simülasyonu: C(V) değişimi", 10, 20);
+        } else if(simulationType === "equilibrium") {
+          p.text("Kimyasal Denge Hesabı", 10, 20);
+        } else if(simulationType === "heattransfer") {
+          p.text("Isı Transfer Hesabı", 10, 20);
+        }
+        
+        // Koordinat eksenleri
+        p.stroke(0);
+        p.line(50, 250, 450, 250); // x ekseni
+        p.line(50, 250, 50, 50);   // y ekseni
+        
+        // Eksen etiketleri
+        p.textSize(12);
+        p.fill(0);
+        if(simulationType === "pfr"){
+          p.text("Hacim (m³)", 410, 265);
+        } else {
+          p.text("Zaman (s)", 410, 265);
+        }
+        p.push();
+        p.translate(30, 60);
+        p.rotate(-p.HALF_PI);
+        p.text("Konsantrasyon", 0, 0);
+        p.pop();
+        
+        // Dinamik simülasyonlar ve PFR için hesaplama & veri kaydı
+        if(simStarted && (simulationType === "dynamic" || simulationType === "cstr" || simulationType === "michaelis" || simulationType === "multicomponent" || simulationType === "pfr")){
+          if(simulationType === "dynamic"){
+            currentC = currentC - globalK * currentC * simDt;
+            currentTime += simDt;
+            timeData.push(currentTime);
+            concData.push(currentC);
+          } else if(simulationType === "cstr"){
+            let tau = parseFloat(document.getElementById("tau").value);
+            currentC = currentC + (((parseFloat(document.getElementById("C0").value) - currentC)/tau - globalK * currentC) * simDt);
+            currentTime += simDt;
+            timeData.push(currentTime);
+            concData.push(currentC);
+          } else if(simulationType === "michaelis"){
+            let Vmax = parseFloat(document.getElementById("Vmax").value);
+            let Km = parseFloat(document.getElementById("Km").value);
+            currentC = currentC - ((Vmax * currentC)/(Km + currentC)) * simDt;
+            currentTime += simDt;
+            timeData.push(currentTime);
+            concData.push(currentC);
+          } else if(simulationType === "multicomponent"){
+            let dA = -globalK * currentA * simDt;
+            currentA += dA;
+            currentB += -dA;
+            currentTime += simDt;
+            timeData.push(currentTime);
+            AData.push(currentA);
+            BData.push(currentB);
+          } else if(simulationType === "pfr"){
+            let Q = parseFloat(document.getElementById("Q").value);
+            currentVolume += Q * simDt;
+            // PFR diferansiyel denklemi: dC/dV = -kC/Q
+            currentC = currentC - globalK * currentC * simDt;
+            volumeData.push(currentVolume);
+            concData.push(currentC);
+          }
+        }
+        
+        // Grafik çizimi
+        p.noFill();
+        if(simulationType === "multicomponent"){
+          p.stroke(255, 0, 0);
+          p.beginShape();
+          for(let i = 0; i < timeData.length; i++){
+            let x = p.map(timeData[i], 0, parseFloat(document.getElementById("simTime").value), 50, 450);
+            let yA = p.map(AData[i], 0, parseFloat(document.getElementById("C0").value), 250, 50);
+            p.vertex(x, yA);
+          }
+          p.endShape();
+          p.stroke(0, 0, 255);
+          p.beginShape();
+          for(let i = 0; i < timeData.length; i++){
+            let x = p.map(timeData[i], 0, parseFloat(document.getElementById("simTime").value), 50, 450);
+            let yB = p.map(BData[i], 0, parseFloat(document.getElementById("C0").value), 250, 50);
+            p.vertex(x, yB);
+          }
+          p.endShape();
+        } else if(simulationType === "pfr"){
+          p.stroke(255, 0, 0);
+          p.beginShape();
+          for(let i = 0; i < volumeData.length; i++){
+            let x = p.map(volumeData[i], 0, parseFloat(document.getElementById("simTime").value), 50, 450);
+            let y = p.map(concData[i], 0, parseFloat(document.getElementById("C0").value), 250, 50);
+            p.vertex(x, y);
+          }
+          p.endShape();
+          if(currentVolume >= parseFloat(document.getElementById("simTime").value)){
+            simStarted = false;
+            document.getElementById("result").innerHTML = "<h3>Durum</h3><p>PFR simülasyonu tamamlandı.</p>";
+            displayTable();
+          }
+        } else {
+          p.stroke(255, 0, 0);
+          p.beginShape();
+          for(let i = 0; i < timeData.length; i++){
+            let x = p.map(timeData[i], 0, parseFloat(document.getElementById("simTime").value), 50, 450);
+            let y = p.map(concData[i], 0, parseFloat(document.getElementById("C0").value), 250, 50);
+            p.vertex(x, y);
+          }
+          p.endShape();
+        }
+        
+        // Simülasyonun bitiş kontrolü (PFR dışındaki modeller)
+        if(simStarted && simulationType !== "pfr" && currentTime >= parseFloat(document.getElementById("simTime").value)){
+          simStarted = false;
+          document.getElementById("result").innerHTML = "<h3>Durum</h3><p>Simülasyon tamamlandı.</p>";
+          displayTable();
+        }
+        
+        // Statik hesaplamalar (equilibrium, heattransfer)
+        if(!simStarted && (simulationType === "equilibrium" || simulationType === "heattransfer")){
+          p.fill(0);
+          p.noStroke();
+          p.textSize(18);
+          if(computedValue !== null){
+            let label = simulationType === "equilibrium" ? "Denge Sabiti K" : "Isı Transferi Q (W)";
+            p.text(label + ": " + computedValue.toFixed(4), p.width/2 - 100, p.height/2);
+          }
+        }
+        
+        // Fonksiyon: Verileri tablo olarak göster
+        function displayTable(){
+          let tableHTML = "<table><tr>";
+          if(simulationType === "multicomponent"){
+            tableHTML += "<th>Zaman (s)</th><th>A</th><th>B</th>";
+          } else if(simulationType === "pfr"){
+            tableHTML += "<th>Hacim (m³)</th><th>Konsantrasyon</th>";
+          } else {
+            tableHTML += "<th>Zaman (s)</th><th>Konsantrasyon</th>";
+          }
+          tableHTML += "</tr>";
+          
+          let n = (simulationType === "pfr") ? volumeData.length : timeData.length;
+          for(let i = 0; i < n; i++){
+            tableHTML += "<tr>";
+            if(simulationType === "multicomponent"){
+              tableHTML += "<td>" + timeData[i].toFixed(2) + "</td>";
+              tableHTML += "<td>" + AData[i].toFixed(4) + "</td>";
+              tableHTML += "<td>" + BData[i].toFixed(4) + "</td>";
+            } else if(simulationType === "pfr"){
+              tableHTML += "<td>" + volumeData[i].toFixed(2) + "</td>";
+              tableHTML += "<td>" + concData[i].toFixed(4) + "</td>";
+            } else {
+              tableHTML += "<td>" + timeData[i].toFixed(2) + "</td>";
+              tableHTML += "<td>" + concData[i].toFixed(4) + "</td>";
+            }
+            tableHTML += "</tr>";
+          }
+          tableHTML += "</table>";
+          document.getElementById("dataDisplay").innerHTML = tableHTML;
+        }
+      };
+    };
+    
+    let myp5 = new p5(sketch);
+  </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+{
+  "navbar": {
+    "reactor": "Reactor Design",
+    "reactorss": "Customizable Reactor",
+    "chemical": "Chemical Equilibrium",
+    "heattransfer": "Heat Transfer",
+    "heatintegration": "Heat Integration",
+    "dynamics": "Dynamic Simulation",
+    "vaporizer": "Vaporizer Design",
+    "form": "Experiment Form",
+    "history": "History",
+    "optimization": "Optimization",
+    "cv": "CV"
+  },
+  "logo": "Chemical Engineering",
+  "vaporizer": {
+    "title": "Vaporizer Design Calculator",
+    "sections": {
+      "feed": "Feed & Process Data",
+      "liquidVapor": "Liquid/Vapor Properties",
+      "coolingWater": "Cooling Water Properties",
+      "tubeFouling": "Tube, Fouling & Geometry"
+    },
+    "labels": {
+      "feedFlow": "Feed Flow (kg/h)",
+      "vaporFraction": "Vapor Fraction",
+      "T_feed_in": "Feed Inlet Temp (°C)",
+      "T_feed_out": "Feed Outlet Temp (°C)",
+      "P_operating": "Operating Pressure (bar)",
+      "Pc_mix": "Critical Pressure (bar)",
+      "dHvap_mix": "Heat of Vaporization (J/mol)",
+      "Cp_mix": "Mixture Heat Capacity (J/mol·K)",
+      "T_water_in": "Water Inlet Temp (°C)",
+      "T_water_out": "Water Outlet Temp (°C)",
+      "k_water": "Water Conductivity (W/m·K)",
+      "Cp_water": "Water Heat Capacity (kJ/kg·K)",
+      "rho_water": "Water Density (kg/m³)",
+      "mu_water": "Water Viscosity (Pa·s)",
+      "tubeLength": "Tube Length (m)",
+      "d0": "Tube Outer Diameter (m)",
+      "di": "Tube Inner Diameter (m)",
+      "Rf_o": "Fouling Resistance (Shell) (m²K/W)",
+      "Rf_i": "Fouling Resistance (Tube) (m²K/W)",
+      "k_tube": "Tube Conductivity (W/m·K)",
+      "U_initial": "Initial U (W/m²K)",
+      "freeboard": "Freeboard (m)",
+      "iterations": "Iteration Count"
+    },
+    "buttons": {
+      "calculate": "Calculate",
+      "export": "Export CSV",
+      "reset": "Reset"
+    },
+    "errors": {
+      "title": "Please fix the following errors:",
+      "feedFlow": "Feed flow must be positive.",
+      "waterTemp": "Water inlet temp must be higher than outlet.",
+      "iterations": "Iteration count must be at least 1."
+    },
+    "results": {
+      "title": "Results",
+      "Q_total": "Total Heat Duty:",
+      "m_water": "Water Flow:",
+      "LMTD": "Log Mean Temp. Diff.:",
+      "iteration": "Iteration {{n}} (U = {{U}} W/m²K)",
+      "A": "Area:",
+      "N_tubes": "Number of Tubes:",
+      "v_water": "Water Velocity:",
+      "Re": "Reynolds Number:",
+      "h_i": "Tube Side h:",
+      "h_nb": "Nucleate Boiling h:",
+      "U_calc": "Calculated U:",
+      "controls": "Mechanical Controls",
+      "Db": "Bundle Diameter:",
+      "Ds": "Shell Diameter:",
+      "freeboard_ratio": "Freeboard Ratio:"
+    },
+    "visualization": "3D Visualization",
+    "legacy3d": "Open legacy 3D view"
+  },
+  "reactorss": {
+    "title": "Customizable Reactor Design Calculator",
+    "sections": {
+      "product": "Product Information",
+      "reactA": "Reactant A Information",
+      "reactB": "Reactant B Information",
+      "process": "Process & Reaction Conditions",
+      "kinetics": "Reaction Kinetics Parameters",
+      "feed": "Feed & Stoichiometry"
+    },
+    "labels": {
+      "prodName": "Product Name:",
+      "prodMolarMass": "Product Molar Mass (kg/kmol):",
+      "prodStoich": "Product Stoichiometric Coefficient (c):",
+      "reactAName": "Reactant A Name:",
+      "reactAStoich": "Reactant A Stoichiometric Coefficient (a):",
+      "reactBName": "Reactant B Name:",
+      "reactBStoich": "Reactant B Stoichiometric Coefficient (b):",
+      "conversion": "Conversion (X, decimal; e.g. 0.3 = 30%):",
+      "annualProd": "Annual Production (ton/year):",
+      "opHours": "Annual Operating Hours (h):",
+      "reactionTemp": "Reaction Temperature (K):",
+      "P_total": "Total Pressure (atm):",
+      "k0": "Pre-exponential Factor, k₀ [kmol/(kg_cat·s·atm²)]:",
+      "E": "Activation Energy, E (kJ/mol):",
+      "orderLim": "Order of Limiting Reactant (nₗ):",
+      "orderExc": "Order of Excess Reactant (nₑ):",
+      "feedRatio": "Feed Ratio (Excess/Limiting, r):",
+      "limiting": "Select Limiting Reactant:",
+      "normalize": "Normalize",
+      "useAbsoluteConc": "Absolute Concentration (kmol/h)",
+      "rX": "r(X)",
+      "X": "Conversion X",
+      "rate": "Reaction Rate",
+      "limAbs": "Limiting (kmol/h)",
+      "excAbs": "Excess (kmol/h)",
+      "limFrac": "Limiting Concentration (mol frac)",
+      "excFrac": "Excess Concentration",
+      "molFrac": "Mole Fraction"
+    },
+    "options": {
+      "reactA": "Reactant A",
+      "reactB": "Reactant B"
+    },
+    "buttons": {
+      "calculate": "Calculate",
+      "export": "Export CSV",
+      "pause": "Pause",
+      "play": "Play"
+    },
+    "tabs": {
+      "rate": "Rate (r)",
+      "conc": "Concentration"
+    },
+    "profiles": "Reaction Profiles",
+    "advanced": {
+      "title": "Advanced Visualization & Step-by-Step Analysis",
+      "summary": "Calculation Summary",
+      "prodKmolH": "Hourly Production (kmol/h)",
+      "F0_lim": "Limiting Flow F₀ (kmol/h)",
+      "F0_exc": "Excess Flow (kmol/h)",
+      "W": "Catalyst Amount W (kg)",
+      "k_val": "k (s⁻¹) sample (k_val)",
+      "k_h": "k (h⁻¹) (k_h)",
+      "rMinMax": "r min / max",
+      "warning": "Warning",
+      "slider": "Conversion selector (X):",
+      "selectedX": "Selected X:",
+      "rX": "r(X):",
+      "limFrac": "Limiting mole fraction:",
+      "diagram": "Reactor Diagram",
+      "diagramTitle": "Customizable Reactor",
+      "input": "Input",
+      "output": "Output",
+      "stepsTitle": "Step-by-Step Calculation",
+      "step1": "Annual production → hourly production calculated: <strong>{{prodKmolH}} kmol/h</strong>.",
+      "step2": "Limiting reactant F₀ calculated: <strong>{{F0_lim}} kmol/h</strong>.",
+      "step3": "Excess reactant flow: <strong>{{F0_exc}} kmol/h</strong>.",
+      "step4": "Catalyst requirement calculated by trapezoidal integration: <strong>W = {{W}} kg</strong>."
+    },
+    "results": {
+      "catalyst": "catalyst required for production",
+      "hourlyProd": "Hourly Production",
+      "limiting": "Limiting Reactant",
+      "F0_lim": "Limiting Flow",
+      "F0_exc": "Excess Flow"
+    },
+    "note": {
+      "title": "Calculation Steps (Summary):",
+      "content1": "1. Annual production is converted to kg→kmol/year and kmol/h.",
+      "content2": "2. Limiting reactant feed flow; if limiting is A: F₀₍A₎ = (Production [kmol/h] × (a/c)) / X, for B calculated similarly.",
+      "content3": "3. Feed: limiting reactant mole ratio is 1, excess is the entered feed ratio (r).",
+      "content4": "4. As reaction progresses (X variable), partial pressures are calculated considering stoichiometric consumption.",
+      "content5": "5. Arrhenius equation: k = k₀·exp(–E/(R·T)), k is converted to hourly.",
+      "content6": "6. Reaction rate function: r(X) = k_h · [P_lim(X)]^(nₗ) · [P_ex(X)]^(nₑ).",
+      "content7": "7. Catalyst amount: W = ∫₀^(X) [F₀_lim / r(X)] dX, numerically by trapezoidal integration."
+    }
+  }
+}
