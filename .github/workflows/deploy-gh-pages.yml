@@ -37,6 +37,15 @@ jobs:
           GITHUB_PAGES: 'true'
         run: npm run build
 
+      - name: Check build output
+        run: |
+          echo "Contents of workspace:"
+          ls -la
+          echo ""
+          echo "Checking for out/ or .next/ directories:"
+          [ -d out ] && echo "✓ out/ exists" || echo "✗ out/ NOT found"
+          [ -d .next ] && echo "✓ .next/ exists - listing contents:" && ls -la .next | head -20 || echo "✗ .next/ NOT found"
+
       - name: Deploy to GitHub Pages
         run: |
           mkdir -p deploy
