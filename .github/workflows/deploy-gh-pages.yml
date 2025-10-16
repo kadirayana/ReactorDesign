@@ -35,21 +35,39 @@ jobs:
       - name: Build and export static site
         env:
           GITHUB_PAGES: 'true'
-        run: npm run build
+        run: |
+          npm run build
+          if [ ! -d out ]; then
+            echo "out/ not found, checking for .next/static/..."
+            if [ -d .next ]; then
+              mkdir -p out
+              cp -r .next/static out/ || true
+            fi
+          fi
 
       - name: Check build output
         run: |
           echo "Contents of workspace:"
           ls -la
           echo ""
-          echo "Checking for out/ or .next/ directories:"
-          [ -d out ] && echo "✓ out/ exists" || echo "✗ out/ NOT found"
-          [ -d .next ] && echo "✓ .next/ exists - listing contents:" && ls -la .next | head -20 || echo "✗ .next/ NOT found"
+          if [ -d out ]; then
+            echo "✓ out/ exists"
+            find out -type f | head -20
+          else
+            echo "✗ out/ NOT found - build may have failed"
+            ls -la .next 2>/dev/null | head -10 || echo "No .next/ either"
+          fi
 
       - name: Deploy to GitHub Pages
         run: |
+          if [ ! -d out ] || [ -z "$(ls -A out 2>/dev/null)" ]; then
+            echo "ERROR: out/ directory is empty or missing"
+            exit 1
+          fi
+          
           mkdir -p deploy
-          cp -r out/* deploy/ || true
+          cp -r out/* deploy/ || exit 1
+          
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/kadirayana/ReactorDesign.git
