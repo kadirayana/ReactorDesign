@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hesaplama Geçmişi</title>
+  <link rel="stylesheet" href="responsive.css">
+  <style>
+    :root {
+      --primary-color: #00539C;
+      --hover-color: #003f7d;
+      --background-color: #f0f4f8;
+      --white: #fff;
+      --border-color: #ddd;
+      --table-hover: #f2f2f2;
+      --table-stripe: #f8f9fa;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--background-color);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding-top: 60px;
+    }
+
+    nav {
+      background: var(--primary-color);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 15px 0;
+      text-align: center;
+      width: 100%;
+      z-index: 1000;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      padding: 10px 15px;
+      margin: 0 5px;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+
+    nav a:hover {
+      background-color: var(--hover-color);
+      color: var(--white);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      color: var(--primary-color);
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 2rem;
+      font-weight: 600;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      background: var(--white);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 1rem;
+      text-align: left;
+    }
+
+    th {
+      background-color: var(--primary-color);
+      color: var(--white);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    td {
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    tr:nth-child(even) {
+      background-color: var(--table-stripe);
+    }
+
+    tr:hover {
+      background-color: var(--table-hover);
+    }
+
+    @media (max-width: 768px) {
+      nav {
+        flex-wrap: wrap;
+        padding: 0.5rem;
+      }
+
+      nav a {
+        font-size: 0.9rem;
+      }
+
+      .card {
+        padding: 1rem;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+
+      th, td {
+        padding: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- header/navbar removed -->
+
+  <div class="container">
+    <div class="card">
+      <h1>Hesaplama Geçmişi</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>Tarih</th>
+            <th>Modül</th>
+            <th>Parametreler</th>
+            <th>Sonuç</th>
+          </tr>
+        </thead>
+        <tbody id="historyTable">
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <script>
+    function formatDate(isoString) {
+      let date = new Date(isoString);
+      return date.toLocaleString();
+    }
+    
+    window.onload = function() {
+      let hesaplamalar = JSON.parse(localStorage.getItem("hesaplamalar")) || [];
+      let tableBody = document.getElementById("historyTable");
+      
+      if(hesaplamalar.length === 0) {
+        tableBody.innerHTML = "<tr><td colspan='4' style='text-align: center;'>Henüz kayıt bulunmamaktadır.</td></tr>";
+      } else {
+        hesaplamalar.reverse().forEach(function(item) {
+          let params = "";
+          if(item.tip === "PFR" || item.tip === "CSTR" || item.tip === "Batch" || item.tip === "PBR"){
+            params = `F_A0: ${item.F_A0}, C_A0: ${item.C_A0}, k: ${item.k}, X: ${item.X}`;
+            if(item.tip === "PBR") { params += `, k_eff: ${item.k_eff}`; }
+          } else if(item.tip === "Kimyasal Denge"){
+            params = `A0: ${item.A0}, K: ${item.K}`;
+          } else if(item.tip === "Isı Transferi"){
+            params = `L: ${item.L}, k: ${item.kVal}, T₁: ${item.T1}, T₂: ${item.T2}`;
+          } else if(item.tip === "Dinamik Simülasyon"){
+            params = `C0: ${item.C0}, k: ${item.kDyn}, Süre: ${item.simTime}`;
+          }
+          let sonuc = (item.sonuc !== undefined) ? item.sonuc.toFixed(3) : "-";
+          let row = `<tr>
+                      <td>${formatDate(item.tarih)}</td>
+                      <td>${item.tip}</td>
+                      <td>${params}</td>
+                      <td>${sonuc}</td>
+                    </tr>`;
+          tableBody.innerHTML += row;
+        });
+      }
+    };
+  </script>
+</body>
+</html>

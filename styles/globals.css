@@ -1,0 +1,542 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+html,body {
+	padding: 0;
+	margin: 0;
+	font-family: 'Inter', sans-serif;
+	background: #f8f9fa;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	color: #2d3748;
+}
+main {
+	max-width: 1100px;
+	margin: 48px auto;
+	padding: 16px;
+	background: #fff;
+	border-radius: 8px;
+}
+
+h1 {
+	font-family: 'Poppins', sans-serif;
+	font-size: 32px;
+	margin-bottom: 18px;
+	color: #00539C;
+	font-weight: 700;
+	letter-spacing: -0.5px;
+}
+h2 {
+	font-family: 'Poppins', sans-serif;
+	font-size: 24px;
+	color: #2D3748;
+	font-weight: 600;
+	margin-top: 32px;
+	letter-spacing: -0.3px;
+}
+h3 {
+	font-family: 'Poppins', sans-serif;
+	font-size: 18px;
+	color: #495057;
+	font-weight: 600;
+	margin-top: 24px;
+	letter-spacing: -0.2px;
+}
+label {
+	display: block;
+	margin-top: 15px;
+	font-weight: 500;
+	font-size: 15px;
+	color: #2D3748;
+	margin-bottom: 8px;
+}
+input,
+select {
+	width: 100%;
+	padding: 12px;
+	margin-top: 5px;
+	margin-bottom: 15px;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	box-sizing: border-box;
+	font-size: 15px;
+	font-family: 'Inter', sans-serif;
+	background: white;
+	transition: all 0.3s ease;
+	color: #2d3748;
+}
+input:focus,
+select:focus {
+	outline: none;
+	border-color: #00539C;
+	box-shadow: 0 0 0 3px rgba(0, 83, 156, 0.1);
+	background: #f8fbff;
+}
+input::placeholder {
+	color: #adb5bd;
+}
+button {
+	background-color: #00539C;
+	color: white;
+	padding: 10px 20px;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 15px;
+	margin-top: 10px;
+	font-weight: 600;
+	transition: all 0.3s ease;
+	min-height: 44px;
+	font-family: 'Inter', sans-serif;
+}
+button:hover {
+	background-color: #003458;
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(0, 83, 156, 0.15);
+}
+button:active {
+	transform: translateY(0);
+	box-shadow: 0 2px 4px rgba(0, 83, 156, 0.1);
+}
+.tabs {
+	overflow: hidden;
+	border-bottom: 2px solid #e9ecef;
+	background-color: transparent;
+	border-radius: 0;
+	display: flex;
+	gap: 8px;
+}
+.tabs button {
+	background-color: transparent;
+	float: none;
+	border: none;
+	outline: none;
+	cursor: pointer;
+	padding: 12px 20px;
+	transition: all 0.3s ease;
+	color: #666;
+	border-bottom: 3px solid transparent;
+	margin: 0;
+	font-weight: 500;
+	min-height: auto;
+}
+.tabs button:hover {
+	color: #00539C;
+	background: #f8f9fa;
+	transform: none;
+	box-shadow: none;
+}
+.tabs button.active {
+	background-color: transparent;
+	color: #00539C;
+	border-bottom-color: #00539C;
+	font-weight: 600;
+}
+.tabcontent {
+	display: none;
+	padding: 20px;
+	border: none;
+	border-top: none;
+	border-radius: 0;
+	background: white;
+}
+canvas {
+	max-width: 100%;
+	margin-top: 20px;
+	border-radius: 8px;
+}
+.results {
+	margin-top: 20px;
+	padding: 20px;
+	background-color: white;
+	border-radius: 8px;
+	border: 1px solid #e9ecef;
+	border-left: 4px solid #00539C;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	transition: all 0.3s ease;
+}
+.results:hover {
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.results.success {
+	border-left-color: #51CF66;
+	background: #f1fdf4;
+}
+.results.warning {
+	border-left-color: #FFD93D;
+	background: #fffbf0;
+}
+.results.error {
+	border-left-color: #FF6B6B;
+	background: #ffe0e0;
+}
+table {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	margin-top: 15px;
+	font-size: 15px;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+table, th, td {
+	border: none;
+}
+th, td {
+	padding: 14px 16px;
+	text-align: left;
+}
+th {
+	background-color: #00539C;
+	color: white;
+	font-weight: 600;
+	font-size: 14px;
+}
+td {
+	border-bottom: 1px solid #e9ecef;
+}
+tr:last-child td {
+	border-bottom: none;
+}
+tr:hover {
+	background-color: #f8f9fa;
+}
+@media screen and (max-width: 1024px) {
+	main {
+		max-width: 95%;
+		padding: 15px 20px;
+	}
+}
+@media screen and (max-width: 768px) {
+	main {
+		max-width: 100%;
+		margin: 70px auto 15px;
+		padding: 15px;
+	}
+	h1 {
+		font-size: 24px;
+	}
+	h2 {
+		font-size: 20px;
+	}
+	input, select, button {
+		font-size: 14px;
+		min-height: 44px;
+	}
+	.tabs button {
+		padding: 8px 12px;
+	}
+	table {
+		font-size: 14px;
+	}
+}
+@media screen and (max-width: 480px) {
+	main {
+		margin: 60px auto 10px;
+		padding: 10px;
+	}
+	h1 {
+		font-size: 20px;
+		margin-bottom: 15px;
+	}
+	h2 {
+		font-size: 18px;
+	}
+	h3 {
+		font-size: 16px;
+	}
+	p, label {
+		font-size: 14px;
+	}
+	input, select {
+		padding: 8px;
+		margin-bottom: 10px;
+	}
+	button {
+		padding: 8px 16px;
+		font-size: 14px;
+	}
+	.tabs button {
+		padding: 6px 10px;
+		font-size: 12px;
+	}
+	.tabcontent {
+		padding: 10px;
+	}
+	table, th, td {
+		font-size: 12px;
+		padding: 6px;
+	}
+	canvas {
+		max-width: 100%;
+		height: auto;
+	}
+	.results {
+		padding: 10px;
+	}
+}
+@media screen and (max-width: 600px) {
+	table {
+		display: block;
+		overflow-x: auto;
+		white-space: nowrap;
+	}
+}
+
+/* Responsive Utility Classes */
+.page-container {
+	padding: 24px;
+	max-width: 900px;
+	margin: 0 auto;
+	font-family: 'Inter', sans-serif;
+}
+
+.page-title {
+	font-family: 'Poppins', sans-serif;
+	font-size: 32px;
+	font-weight: 700;
+	color: #00539C;
+	margin-bottom: 24px;
+	letter-spacing: -0.5px;
+}
+
+.responsive-grid {
+	display: grid;
+	gap: 20px;
+	grid-template-columns: 1fr;
+}
+
+.form-section {
+	border: 1px solid #e9ecef;
+	border-radius: 8px;
+	padding: 16px;
+	background: white;
+	margin-bottom: 16px;
+}
+
+.form-section h3 {
+	font-size: 16px;
+	color: #00539C;
+	font-weight: 600;
+	margin-top: 0;
+	margin-bottom: 12px;
+	border-bottom: 2px solid #00539C;
+	padding-bottom: 8px;
+}
+
+.flex-row {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+}
+
+.responsive-opt-grid {
+	display: grid !important;
+	grid-template-columns: minmax(280px, 1fr) 2fr !important;
+	gap: 24px !important;
+}
+
+.param-input-flex {
+	display: flex !important;
+	gap: 8px !important;
+	flex-wrap: wrap !important;
+}
+
+.param-input-flex input {
+	flex: 1;
+	min-width: 120px;
+}
+
+@media screen and (max-width: 1024px) {
+	.responsive-opt-grid {
+		grid-template-columns: 1fr 1.5fr !important;
+		gap: 16px !important;
+	}
+}
+
+@media screen and (max-width: 768px) {
+	.responsive-opt-grid {
+		grid-template-columns: 1fr !important;
+		gap: 12px !important;
+	}
+}
+
+@media screen and (max-width: 1024px) {
+	.page-container {
+		padding: 16px 20px;
+		max-width: 95%;
+	}
+}
+
+@media screen and (max-width: 768px) {
+	.page-container {
+		padding: 14px;
+		max-width: 100%;
+	}
+
+	.page-title {
+		font-size: 24px;
+		margin-bottom: 20px;
+	}
+
+	h2 {
+		font-size: 18px;
+		margin-top: 20px;
+	}
+
+	h3 {
+		font-size: 16px;
+	}
+
+	.tabs {
+		overflow-x: auto;
+		flex-wrap: wrap;
+		gap: 4px;
+	}
+
+	.tabs button {
+		padding: 10px 14px;
+		font-size: 13px;
+		white-space: nowrap;
+	}
+
+	.flex-row {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.flex-row input,
+	.flex-row select {
+		width: 100%;
+	}
+
+	.responsive-grid {
+		gap: 16px;
+	}
+
+	.form-section {
+		padding: 12px;
+		margin-bottom: 12px;
+	}
+
+	table {
+		font-size: 12px;
+	}
+
+	th, td {
+		padding: 10px 8px;
+	}
+}
+
+@media screen and (max-width: 480px) {
+	.page-container {
+		padding: 10px;
+		margin-top: 56px;
+	}
+
+	.page-title {
+		font-size: 20px;
+		margin-bottom: 16px;
+	}
+
+	h1 {
+		font-size: 20px;
+	}
+
+	h2 {
+		font-size: 16px;
+		margin-top: 16px;
+	}
+
+	h3 {
+		font-size: 14px;
+		margin-top: 12px;
+	}
+
+	label {
+		font-size: 13px;
+		margin-top: 10px;
+	}
+
+	input,
+	select,
+	button {
+		font-size: 13px;
+		padding: 10px;
+	}
+
+	button {
+		width: 100%;
+		padding: 12px;
+		min-height: 40px;
+	}
+
+	.tabs {
+		flex-wrap: wrap;
+		gap: 2px;
+	}
+
+	.tabs button {
+		padding: 8px 10px;
+		font-size: 11px;
+		flex: 1 1 auto;
+		min-width: 70px;
+	}
+
+	.tabcontent {
+		padding: 10px;
+	}
+
+	.flex-row {
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.flex-row input,
+	.flex-row select {
+		width: 100%;
+	}
+
+	.form-section {
+		padding: 10px;
+		margin-bottom: 10px;
+	}
+
+	.form-section h3 {
+		font-size: 13px;
+		margin-bottom: 8px;
+		padding-bottom: 6px;
+	}
+
+	table {
+		font-size: 11px;
+		display: block;
+		overflow-x: auto;
+		white-space: nowrap;
+	}
+
+	th, td {
+		padding: 6px 4px;
+	}
+
+	canvas {
+		max-width: 100%;
+		height: auto;
+	}
+
+	.results {
+		padding: 12px;
+		margin-top: 16px;
+	}
+
+	.results h2,
+	.results h3 {
+		font-size: 14px;
+	}
+
+	.results p {
+		font-size: 12px;
+		margin-bottom: 6px;
+	}
+}

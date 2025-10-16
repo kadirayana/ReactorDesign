@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <!-- header/navbar removed -->
+    }
+    nav {
+      background-color: #00539C;
+      padding: 15px 0;
+      text-align: center;
+      width: 100%;
+      position: fixed;
+      top: 0;
+      z-index: 1000;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      padding: 10px 15px;
+      margin: 0 5px;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    nav a:hover {
+      background-color: #003f7d;
+    }
+    .container {
+      background: #fff;
+      padding: 20px 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      max-width: 900px;
+      width: 100%;
+      margin: 80px auto 20px; /* üstteki sabit nav için margin */
+    }
+    h1 {
+      text-align: center;
+      color: #00539C;
+      margin-bottom: 20px;
+    }
+    fieldset {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    legend {
+      color: #00539C;
+      padding: 0 10px;
+      font-weight: bold;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      color: #444;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #00539C;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+      display: block;
+      margin: 20px auto;
+    }
+    button:hover {
+      background-color: #003f7d;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      border-left: 4px solid #00539C;
+    }
+    .note {
+      font-size: 0.9em;
+      color: #666;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html">Ana Sayfa</a>
+    <a href="reactor.html">Reaktör Tasarım</a>
+    <a href="reactorss.html">Özelleştirilebilir Reaktör</a>
+    <a href="chemical.html">Kimyasal Denge</a>
+    <a href="dynamics.html">Dinamik Simülasyon</a>
+    <a href="heattransfer.html">Isı Transferi</a>
+    <a href="heatintegration.html">Isı Entegrasyonu</a>
+    <a href="vaporizer.html">Vaporizer Tasarım</a>
+    <a href="history.html">Hesaplama Geçmişi</a>
+  </nav>
+  
+  <div class="container">
+    <h1>Özelleştirilebilir Reaktör Tasarımı Hesaplaması</h1>
+    
+    <!-- Ürün Bilgileri -->
+    <fieldset>
+      <legend>Ürün Bilgileri</legend>
+      <label for="prodName">Ürün Adı:</label>
+      <input type="text" id="prodName" value="Allyl Klorür">
+      
+      <label for="prodMolarMass">Ürün Molar Kütlesi (kg/kmol):</label>
+      <input type="number" id="prodMolarMass" value="76.5" step="any">
+      
+      <label for="prodStoich">Ürün Stoikiometrik Katsayısı (c):</label>
+      <input type="number" id="prodStoich" value="1" step="any">
+    </fieldset>
+    
+    <!-- Reaktan A Bilgileri -->
+    <fieldset>
+      <legend>Reaktan A Bilgileri</legend>
+      <label for="reactAName">Reaktan A Adı:</label>
+      <input type="text" id="reactAName" value="Propylene">
+      
+      <label for="reactAStoich">Reaktan A Stoikiometrik Katsayısı (a):</label>
+      <input type="number" id="reactAStoich" value="1" step="any">
+    </fieldset>
+    
+    <!-- Reaktan B Bilgileri -->
+    <fieldset>
+      <legend>Reaktan B Bilgileri</legend>
+      <label for="reactBName">Reaktan B Adı:</label>
+      <input type="text" id="reactBName" value="Chlorine">
+      
+      <label for="reactBStoich">Reaktan B Stoikiometrik Katsayısı (b):</label>
+      <input type="number" id="reactBStoich" value="1" step="any">
+    </fieldset>
+    
+    <!-- Proses ve Reaksiyon Koşulları -->
+    <fieldset>
+      <legend>Proses ve Reaksiyon Koşulları</legend>
+      <label for="conversion">Dönüş (X, ondalık; örn: 0.3 = %30):</label>
+      <input type="number" id="conversion" value="0.3" step="0.01">
+      
+      <label for="annualProd">Yıllık Üretim (ton/yıl):</label>
+      <input type="number" id="annualProd" value="90000" step="any">
+      
+      <label for="opHours">Yıllık Çalışma Saati (h):</label>
+      <input type="number" id="opHours" value="7200" step="any">
+      
+      <label for="reactionTemp">Reaksiyon Sıcaklığı (K):</label>
+      <input type="number" id="reactionTemp" value="783" step="any">
+      
+      <label for="P_total">Toplam Basınç (atm):</label>
+      <input type="number" id="P_total" value="3" step="any">
+    </fieldset>
+    
+    <!-- Reaksiyon Kinetiği Parametreleri -->
+    <fieldset>
+      <legend>Reaksiyon Kinetiği Parametreleri</legend>
+      <label for="k0">Ön Faktör, k₀ [kmol/(kg_cat·s·atm²)]:</label>
+      <input type="number" id="k0" value="0.0322" step="any">
+      
+      <label for="E">Aktivasyon Enerjisi, E (kJ/mol):</label>
+      <input type="number" id="E" value="63200" step="any">
+      
+      <label for="orderLim">Limitleyici Reaktanın Reaksiyon Sırası (nₗ):</label>
+      <input type="number" id="orderLim" value="1" step="any">
+      
+      <label for="orderExc">Fazladan Reaktanın Reaksiyon Sırası (nₑ):</label>
+      <input type="number" id="orderExc" value="1" step="any">
+    </fieldset>
+    
+    <!-- Feed ve Stoikiometri -->
+    <fieldset>
+      <legend>Feed ve Stoikiometri</legend>
+      <label for="feedRatio">Feed Oranı (Fazladan reaktan / Limitleyici reaktan, r):</label>
+      <input type="number" id="feedRatio" value="5" step="any">
+      
+      <label for="limiting">Limitleyici Reaktan Seçimi:</label>
+      <select id="limiting">
+        <option value="A" selected>Reaktan A</option>
+        <option value="B">Reaktan B</option>
+      </select>
+    </fieldset>
+    
+    <button type="button" onclick="calculateReactor()">Hesaplamayı Yap</button>
+    
+    <div class="result" id="reactorResult"></div>
+    
+    <div class="note">
+      <strong>Hesaplama Adımları (Özet):</strong><br>
+      1. Yıllık üretim ton→kg→kmol/yıl ve kmol/h cinsine dönüştürülür.<br>
+      2. Limitleyici reaktanın feed akımı; eğer limitleyici reaktan A ise: F₀₍A₎ = (Üretim [kmol/h] × (a/c)) / X, limitleyici B için benzer şekilde hesaplanır.<br>
+      3. Feed olarak limitleyici reaktanın mol oranı 1, fazladan reaktanın oranı girilen feed oranı (r) alınır.<br>
+      4. Reaksiyon ilerledikçe (X değişkeni) reaktanların kısmi basınçları, stoikiometrik tüketim göz önüne alınarak hesaplanır.<br>
+      5. Arrhenius denklemiyle k = k₀·exp(–E/(R·T)) hesaplanır, k saatlik forma çevrilir.<br>
+      6. Reaksiyon hızı fonksiyonu: r(X) = k_h · [P_lim(X)]^(nₗ) · [P_ex(X)]^(nₑ) şeklinde alınır.<br>
+      7. Katalizör miktarı: W = ∫₀^(X) [F₀_lim / r(X)] dX, trapezoidal entegrasyonla sayısal olarak hesaplanır.
+    </div>
+  </div>
+  
+  <script>
+    function calculateReactor() {
+      // Sabit R
+      const R = 8.314; // kJ/(kmol·K)
+      
+      // Ürün bilgileri
+      const prodName = document.getElementById("prodName").value;
+      const prodMolarMass = parseFloat(document.getElementById("prodMolarMass").value);
+      const prodStoich = parseFloat(document.getElementById("prodStoich").value);
+      
+      // Reaktan A bilgileri
+      const reactAName = document.getElementById("reactAName").value;
+      const reactAStoich = parseFloat(document.getElementById("reactAStoich").value);
+      
+      // Reaktan B bilgileri
+      const reactBName = document.getElementById("reactBName").value;
+      const reactBStoich = parseFloat(document.getElementById("reactBStoich").value);
+      
+      // Proses koşulları
+      const conversion = parseFloat(document.getElementById("conversion").value); // X
+      const annualProd = parseFloat(document.getElementById("annualProd").value); // ton/yıl
+      const opHours = parseFloat(document.getElementById("opHours").value); // h/yıl
+      const reactionTemp = parseFloat(document.getElementById("reactionTemp").value); // K
+      const P_total = parseFloat(document.getElementById("P_total").value); // atm
+      
+      // Reaksiyon kinetiği parametreleri
+      const k0 = parseFloat(document.getElementById("k0").value);
+      const E = parseFloat(document.getElementById("E").value);
+      const orderLim = parseFloat(document.getElementById("orderLim").value);
+      const orderExc = parseFloat(document.getElementById("orderExc").value);
+      
+      // Feed ve stoikiometri
+      const feedRatio = parseFloat(document.getElementById("feedRatio").value); // r (fazladan/limitleyici)
+      const limiting = document.getElementById("limiting").value; // "A" veya "B"
+      
+      // 1. Yıllık üretimi (ton → kg → kmol/yıl) ve saatlik üretimi hesaplayalım
+      const annualProdKg = annualProd * 1000; // ton → kg
+      const prodKmolYear = annualProdKg / prodMolarMass;
+      const prodKmolH = prodKmolYear / opHours;
+      
+      // 2. Limitleyici reaktanın feed akımı (kmol/h):
+      let F0_lim;
+      if (limiting === "A") {
+        F0_lim = (prodKmolH * (reactAStoich / prodStoich)) / conversion;
+      } else {
+        F0_lim = (prodKmolH * (reactBStoich / prodStoich)) / conversion;
+      }
+      
+      // 3. Fazladan reaktanın feed akımı
+      const F0_exc = F0_lim * feedRatio;
+      
+      // 4. Reaktanların kısmi basınçlarının hesaplanması:
+      // Eğer limitleyici A ise: A = 1, B = feedRatio; 
+      // moles_A = 1 - X, moles_B = feedRatio - (reactBStoich/reactAStoich)*X, toplam = (1+feedRatio) - X*(1 + (reactBStoich/reactAStoich))
+      // Eğer limitleyici B ise: B = 1, A = feedRatio; 
+      // moles_B = 1 - X, moles_A = feedRatio - (reactAStoich/reactBStoich)*X, toplam = (1+feedRatio) - X*(1 + (reactAStoich/reactBStoich))
+      function pressuresA_lim(X) {
+        const molesA = 1 - X;
+        const molesB = feedRatio - (reactBStoich / reactAStoich) * X;
+        const totalMoles = (1 + feedRatio) - X * (1 + (reactBStoich / reactAStoich));
+        return {
+          PA: P_total * (molesA / totalMoles),
+          PB: P_total * (molesB / totalMoles)
+        };
+      }
+      function pressuresB_lim(X) {
+        const molesB = 1 - X;
+        const molesA = feedRatio - (reactAStoich / reactBStoich) * X;
+        const totalMoles = (1 + feedRatio) - X * (1 + (reactAStoich / reactBStoich));
+        return {
+          PA: P_total * (molesA / totalMoles),
+          PB: P_total * (molesB / totalMoles)
+        };
+      }
+      
+      // 5. Reaksiyon hızı fonksiyonu: r(X) = k_h · [P_lim(X)]^(orderLim) · [P_ex(X)]^(orderExc)
+      const k_val = k0 * Math.exp(-E / (R * reactionTemp));
+      const k_h = k_val * 3600;
+      
+      function reactionRate(X) {
+        let P_lim, P_ex;
+        if (limiting === "A") {
+          const pressures = pressuresA_lim(X);
+          P_lim = pressures.PA;  // Limitleyici reaktan A
+          P_ex = pressures.PB;   // Fazladan reaktan B
+        } else {
+          const pressures = pressuresB_lim(X);
+          P_lim = pressures.PB;  // Limitleyici reaktan B
+          P_ex = pressures.PA;   // Fazladan reaktan A
+        }
+        return k_h * Math.pow(P_lim, orderLim) * Math.pow(P_ex, orderExc);
+      }
+      
+      // 6. Trapezoidal entegrasyonla katalizör miktarı hesabı: W = ∫₀^(conversion) [F0_lim / r(X)] dX
+      const N = 100; // entegrasyon adım sayısı
+      const dX = conversion / N;
+      let integral = 0;
+      for (let i = 0; i <= N; i++) {
+        const X_val = i * dX;
+        const r_val = reactionRate(X_val);
+        const f = F0_lim / r_val;
+        if (i === 0 || i === N) {
+          integral += f;
+        } else {
+          integral += 2 * f;
+        }
+      }
+      integral = (dX / 2) * integral;
+      const W = integral;
+      
+      // Sonuçları ekrana yazdır
+      const resultDiv = document.getElementById("reactorResult");
+      resultDiv.innerHTML = `<p><strong>${prodName}</strong> üretimi için gerekli katalizör miktarı: ${W.toFixed(2)} kg (${(W/1000).toFixed(2)} ton)</p>
+                             <p>Saatlik Üretim: ${prodKmolH.toFixed(3)} kmol/h</p>
+                             <p>Limitleyici Reaktan: ${(limiting === "A") ? reactAName : reactBName}</p>
+                             <p>Limitleyici Akış: ${F0_lim.toFixed(2)} kmol/h</p>
+                             <p>Fazladan Akış: ${F0_exc.toFixed(2)} kmol/h</p>`;
+    }
+  </script>
+</body>
+</html>
