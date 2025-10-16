@@ -18,7 +18,6 @@ export default function Navbar() {
       <Link href="/" className={styles.logo}>
         Kimya Mühendisliği
       </Link>
-      
       <button 
         className={styles.hamburger} 
         onClick={toggleMenu}
@@ -29,7 +28,6 @@ export default function Navbar() {
         <span className={styles.bar}></span>
         <span className={styles.bar}></span>
       </button>
-
       <div className={`${styles.links} ${isOpen ? styles.active : ""}`}>
         <Link href="/reactor" onClick={handleLinkClick}>Reaktör Tasarımı</Link>
         <Link href="/reactorss" onClick={handleLinkClick}>Özelleştirilebilir Reaktör</Link>
@@ -38,7 +36,6 @@ export default function Navbar() {
         <Link href="/heatintegration" onClick={handleLinkClick}>Isı Entegrasyonu</Link>
         <Link href="/dynamics" onClick={handleLinkClick}>Dinamik Simülasyon</Link>
         <Link href="/vaporizer" onClick={handleLinkClick}>Vaporizer Tasarım</Link>
-        <Link href="/form" onClick={handleLinkClick}>Deney Formu</Link>
         <Link href="/history" onClick={handleLinkClick}>Geçmiş</Link>
         <Link href="/optimization" onClick={handleLinkClick}>Optimizasyon</Link>
       </div>
