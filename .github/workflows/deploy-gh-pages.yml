@@ -24,8 +24,26 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
+      - name: Debug: show repository files
+        run: |
+          echo "Working directory: $(pwd)"
+          echo "List top-level files:"; ls -la
+          echo "List repo subdirs:"; ls -la . || true
+          echo "Show package.json if present:"; if [ -f package.json ]; then echo "package.json exists:"; sed -n '1,120p' package.json; else echo "package.json not found"; fi
+
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if [ -f "./package.json" ]; then
+            echo "Using npm (package.json found)";
+            npm ci;
+          elif [ -f "./yarn.lock" ]; then
+            echo "Using yarn (yarn.lock found)";
+            yarn install;
+          else
+            echo "Unable to determine package manager";
+            echo "Listing current directory for debugging:"; ls -la;
+            exit 1;
+          fi
 
       - name: Build and export static site
         # Run the same export path used locally (predeploy -> export) while
