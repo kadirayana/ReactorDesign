@@ -39,12 +39,15 @@ jobs:
 
       - name: Deploy to GitHub Pages
         run: |
+          mkdir -p deploy
+          cp -r out/* deploy/ || true
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/kadirayana/ReactorDesign.git
           git checkout --orphan gh-pages
           git rm -rf .
-          cp -r out/* .
+          cp -r deploy/* .
+          rm -rf deploy
           git add .
           git commit -m "Deploy to GitHub Pages [skip ci]"
           git push -f origin gh-pages
