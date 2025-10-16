@@ -42,7 +42,6 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -f out/
-          git commit --allow-empty -m "Deploy to GitHub Pages"
+          git commit --allow-empty -m "Deploy to GitHub Pages [skip ci]"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/kadirayana/ReactorDesign.git
           git push -f origin HEAD:gh-pages
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
