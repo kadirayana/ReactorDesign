@@ -13,66 +13,66 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     env:
-      GITHUB_PAGES: 'true'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      name: Build and Deploy (GitHub Pages)
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
+      on:
+        push:
+          branches:
+            - main
+            - yeni-ozellik
+        pull_request:
+          branches:
+            - main
 
-      - name: Debug: show repository files
-        run: |
-          echo "Working directory: $(pwd)"
-          echo "List top-level files:"; ls -la
-          echo "List repo subdirs:"; ls -la . || true
-          echo "Show package.json if present:"; if [ -f package.json ]; then echo "package.json exists:"; sed -n '1,120p' package.json; else echo "package.json not found"; fi
+      jobs:
+        build-and-deploy:
+          runs-on: ubuntu-latest
+          env:
+            GITHUB_PAGES: 'true'
+          steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          if [ -f "./package.json" ]; then
-            echo "Using npm (package.json found)";
-            npm ci;
-          elif [ -f "./yarn.lock" ]; then
-            echo "Using yarn (yarn.lock found)";
-            yarn install;
-          else
-            echo "Unable to determine package manager";
-            echo "Listing current directory for debugging:"; ls -la;
-            exit 1;
-          fi
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: '18'
+                cache: 'npm'
 
-      - name: Build and export static site
-        run: npm run predeploy
+            - name: Debug: show repository files
+              run: |
+                echo "Working directory: $(pwd)"
+                echo "List top-level files:"; ls -la
+                echo "List repo subdirs:"; ls -la . || true
+                echo "Show package.json if present:"; if [ -f package.json ]; then echo "package.json exists:"; sed -n '1,120p' package.json; else echo "package.json not found"; fi
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./out
-          publish_branch: gh-pages
-          user_name: 'github-actions[bot]'
-          user_email: '41898282+github-actions[bot]@users.noreply.github.com'
-name: Build and Deploy (GitHub Pages)
+            - name: Install dependencies
+              run: |
+                if [ -f "./package.json" ]; then
+                  echo "Using npm (package.json found)";
+                  npm ci;
+                elif [ -f "./yarn.lock" ]; then
+                  echo "Using yarn (yarn.lock found)";
+                  yarn install;
+                else
+                  echo "Unable to determine package manager";
+                  echo "Listing current directory for debugging:"; ls -la;
+                  exit 1;
+                fi
 
-on:
-  push:
-    branches:
-      - main
-      - yeni-ozellik
-  pull_request:
-    branches:
-      - main
+            - name: Build and export static site
+              # Run the same export path used locally (predeploy -> export) while
+              # ensuring GITHUB_PAGES=true is available to next.config.js
+              run: npm run predeploy
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    env:
-      GITHUB_PAGES: 'true'
-    steps:
+            - name: Deploy to GitHub Pages
+              uses: peaceiris/actions-gh-pages@v4
+              with:
+                github_token: ${{ secrets.GITHUB_TOKEN }}
+                publish_dir: ./out
+                publish_branch: gh-pages
+                user_name: 'github-actions[bot]'
+                user_email: '41898282+github-actions[bot]@users.noreply.github.com'
       - name: Checkout
         uses: actions/checkout@v4
 
