@@ -1,10 +1,14 @@
 
 import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import nextI18NextConfig from '../next-i18next.config.js';
+import CVDownloadButton from '../components/CVDownloadButton';
 
 export default function CVPage() {
-  const { t } = useTranslation();
+  const { t } = useTranslation('common');
   return (
     <div className="page-container cv-page">
+      <CVDownloadButton />
       <div className="cv-header">
         <h1>{t('cv.name')}</h1>
         <h2>{t('cv.title')}</h2>
@@ -39,16 +43,6 @@ export default function CVPage() {
           <ul>
             <li>{t('cv.jobs.alpkim.desc1')}</li>
             <li>{t('cv.jobs.alpkim.desc2')}</li>
-            <li>{t('cv.jobs.alpkim.desc3')}</li>
-            <li>{t('cv.jobs.alpkim.desc4')}</li>
-          </ul>
-        </div>
-        {/* Kanat Paints and Coatings - Executive Engineer */}
-        <div className="cv-job">
-          <div className="cv-job-title">{t('cv.jobs.kanatExec.title')} <span>| {t('cv.jobs.kanatExec.role')}</span></div>
-          <div className="cv-job-date">{t('cv.jobs.kanatExec.date')}</div>
-          <ul>
-            <li>{t('cv.jobs.kanatExec.desc1')}</li>
           </ul>
         </div>
         {/* Kanat Paints and Coatings - R&D Engineer */}
@@ -58,6 +52,8 @@ export default function CVPage() {
           <ul>
             <li>{t('cv.jobs.kanatRD.desc1')}</li>
             <li>{t('cv.jobs.kanatRD.desc2')}</li>
+            <li>{t('cv.jobs.kanatRD.desc3')}</li>
+            <li>{t('cv.jobs.kanatRD.desc4')}</li>
           </ul>
         </div>
         {/* IMS Polymers */}
@@ -67,15 +63,6 @@ export default function CVPage() {
           <ul>
             <li>{t('cv.jobs.ims.desc1')}</li>
             <li>{t('cv.jobs.ims.desc2')}</li>
-          </ul>
-        </div>
-        {/* Novartis Pharmaceuticals */}
-        <div className="cv-job">
-          <div className="cv-job-title">{t('cv.jobs.novartis.title')} <span>| {t('cv.jobs.novartis.role')}</span></div>
-          <div className="cv-job-date">{t('cv.jobs.novartis.date')}</div>
-          <ul>
-            <li>{t('cv.jobs.novartis.desc1')}</li>
-            <li>{t('cv.jobs.novartis.desc2')}</li>
           </ul>
         </div>
       </div>
@@ -97,55 +84,69 @@ export default function CVPage() {
             <li>{t('cv.edu.bachelors.courses')}</li>
           </ul>
         </div>
-        {/* Şeyh Şamil High School */}
-        <div className="cv-edu">
-          <div className="cv-edu-title">{t('cv.edu.highschool.title')} <span>| {t('cv.edu.highschool.program')}</span></div>
-          <div className="cv-edu-date">{t('cv.edu.highschool.date')}</div>
-          <ul>
-            <li>{t('cv.edu.highschool.award')}</li>
-            <li>{t('cv.edu.highschool.honor')}</li>
-            <li>{t('cv.edu.highschool.valedictorian')}</li>
-            <li>{t('cv.edu.highschool.competitions')}</li>
+      </div>
+      <div className="cv-section-break">
+        <div className="cv-grid-2">
+          <div className="cv-section">
+            <h3>{t('cv.skills')}</h3>
+            <div className="cv-skills-body">
+              <div><strong>{t('cv.skillsTurkish')}</strong></div>
+              <div><strong>{t('cv.skillsEnglish')}</strong></div>
+              <div><strong>{t('cv.skillsGerman')}</strong></div>
+            </div>
+          </div>
+          <div className="cv-section">
+            <h3>{t('cv.skillsTechnical')}</h3>
+            <div className="cv-skills-body">
+              <div><strong>Programming:</strong> Python (NumPy, Pandas, Matplotlib, Scikit-learn), MATLAB, AutoCAD</div>
+              <div><strong>Data Analysis:</strong> Statistical Analysis (Minitab), Regression Analysis, Data Visualization</div>
+              <div><strong>Machine Learning:</strong> Scikit-learn, TensorFlow basics, Classification & Regression Models</div>
+              <div><strong>ChemE Tools:</strong> Process Design & Modeling, ASPEN, Reaction Kinetics, Thermodynamic Simulations</div>
+              <div><strong>Quality & Standards:</strong> ASTM Testing, ISO Compliance, GMP Protocols, FDA Requirements</div>
+              <div><strong>Software:</strong> SolidWorks (3D CAD), Microsoft Office, Git/GitHub</div>
+            </div>
+          </div>
+        </div>
+      </div>
+  <div className="cv-grid-2">
+        <div className="cv-section">
+          <h3>{t('cv.certifications')}</h3>
+          <ul className="cv-certs">
+            <li>{t('cv.certs.simulink')}</li>
+            <li>{t('cv.certs.matlab')}</li>
+            <li>{t('cv.certs.aromResearch')}</li>
+            <li>{t('cv.certs.aromZero')}</li>
+            <li>{t('cv.certs.researchTech')}</li>
+            <li>{t('cv.certs.projectWriting')}</li>
+            <li>{t('cv.certs.python')}</li>
+            <li>{t('cv.certs.academicWriting')}</li>
+            <li>{t('cv.certs.firstAid')}</li>
+            <li>{t('cv.certs.aiMl')}</li>
+          </ul>
+        </div>
+        <div className="cv-section">
+          <h3>{t('cv.projects')}</h3>
+          <ul className="cv-projects">
+            <li>{t('cv.projects1')}</li>
+            <li>{t('cv.projects2')}</li>
+            <li>{t('cv.projects3')}</li>
+            <li>{t('cv.projects4')}</li>
+            <li>{t('cv.projects5')}</li>
+            <li>{t('cv.projects6')}</li>
+            <li>{t('cv.projects7')}</li>
+            <li>{t('cv.projects8')}</li>
           </ul>
         </div>
       </div>
-      <div className="cv-section">
-        <h3>{t('cv.skills')}</h3>
-        <ul className="cv-skills">
-          <li>{t('cv.skillsTurkish')}</li>
-          <li>{t('cv.skillsEnglish')}</li>
-          <li>{t('cv.skillsGerman')}</li>
-          <li>{t('cv.skillsProject')}</li>
-        </ul>
-      </div>
-      <div className="cv-section">
-        <h3>{t('cv.certifications')}</h3>
-        <ul className="cv-certs">
-          <li>{t('cv.certs.simulink')}</li>
-          <li>{t('cv.certs.matlab')}</li>
-          <li>{t('cv.certs.aromResearch')}</li>
-          <li>{t('cv.certs.aromZero')}</li>
-          <li>{t('cv.certs.researchTech')}</li>
-          <li>{t('cv.certs.projectWriting')}</li>
-          <li>{t('cv.certs.python')}</li>
-          <li>{t('cv.certs.academicWriting')}</li>
-          <li>{t('cv.certs.firstAid')}</li>
-          <li>{t('cv.certs.aiMl')}</li>
-        </ul>
-      </div>
-      <div className="cv-section">
-        <h3>{t('cv.projects')}</h3>
-        <ul className="cv-projects">
-          <li>{t('cv.projects1')}</li>
-          <li>{t('cv.projects2')}</li>
-          <li>{t('cv.projects3')}</li>
-          <li>{t('cv.projects4')}</li>
-          <li>{t('cv.projects5')}</li>
-          <li>{t('cv.projects6')}</li>
-          <li>{t('cv.projects7')}</li>
-          <li>{t('cv.projects8')}</li>
-        </ul>
-      </div>
     </div>
   );
+}
+
+export async function getStaticProps({ locale }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, ['common', 'translation'], nextI18NextConfig)),
+    },
+    revalidate: 60,
+  };
 }

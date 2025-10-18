@@ -1,10 +1,9 @@
-﻿name: Build and Deploy (GitHub Pages)
+﻿name: Build and Deploy to GitHub Pages
 
 on:
   push:
     branches:
       - main
-      - yeni-ozellik
   pull_request:
     branches:
       - main
@@ -14,13 +13,15 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_PAGES: 'true'
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -30,51 +31,33 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install --force
+        run: npm ci
 
-      - name: Build and export static site
-        env:
-          GITHUB_PAGES: 'true'
+      - name: Build Next.js static site
+        run: npm run build
+
+      - name: Verify build output
         run: |
-          npm run build
           if [ ! -d out ]; then
-            echo "out/ not found, checking for .next/static/..."
-            if [ -d .next ]; then
-              mkdir -p out
-              cp -r .next/static out/ || true
-            fi
-          fi
-
-      - name: Check build output
-        run: |
-          echo "Contents of workspace:"
-          ls -la
-          echo ""
-          if [ -d out ]; then
-            echo "✓ out/ exists"
-            find out -type f | head -20
-          else
-            echo "✗ out/ NOT found - build may have failed"
-            ls -la .next 2>/dev/null | head -10 || echo "No .next/ either"
-          fi
-
-      - name: Deploy to GitHub Pages
-        run: |
-          if [ ! -d out ] || [ -z "$(ls -A out 2>/dev/null)" ]; then
-            echo "ERROR: out/ directory is empty or missing"
+            echo "❌ ERROR: out/ directory not found after build"
             exit 1
           fi
-          
-          mkdir -p deploy
-          cp -r out/* deploy/ || exit 1
-          
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git remote set-url origin "https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/kadirayana/ReactorDesign.git"
-          git checkout --orphan gh-pages
-          git rm -rf .
-          cp -r deploy/* .
-          rm -rf deploy
-          git add .
-          git commit -m "Deploy to GitHub Pages [skip ci]"
-          git push -f origin gh-pages
+          echo "✅ Build successful"
+          du -sh out/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './out'
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

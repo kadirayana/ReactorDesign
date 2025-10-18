@@ -1,0 +1,269 @@
+{
+  "navbar": {
+    "reactor": "Reaktör Tasarımı",
+    "reactorss": {
+      "title": "Özelleştirilebilir Reaktör Tasarımı Hesaplayıcı",
+      "sections": {
+        "product": "Ürün Bilgileri",
+        "reactA": "Reaktan A Bilgileri",
+        "reactB": "Reaktan B Bilgileri",
+        "process": "Proses ve Reaksiyon Koşulları",
+        "kinetics": "Reaksiyon Kinetiği Parametreleri",
+        "feed": "Feed ve Stoikiometri"
+      },
+      "labels": {
+        "prodName": "Ürün Adı:",
+        "prodMolarMass": "Ürün Molar Kütlesi (kg/kmol):",
+        "prodStoich": "Ürün Stoikiometrik Katsayısı (c):",
+        "reactAName": "Reaktan A Adı:",
+        "reactAStoich": "Reaktan A Stoikiometrik Katsayısı (a):",
+        "reactBName": "Reaktan B Adı:",
+        "reactBStoich": "Reaktan B Stoikiometrik Katsayısı (b):",
+        "conversion": "Dönüş (X, ondalık; örn: 0.3 = %30):",
+        "annualProd": "Yıllık Üretim (ton/yıl):",
+        "opHours": "Yıllık Çalışma Saati (h):",
+        "reactionTemp": "Reaksiyon Sıcaklığı (K):",
+        "P_total": "Toplam Basınç (atm):",
+        "k0": "Ön Faktör, k₀ [kmol/(kg_cat·s·atm²)]:",
+        "E": "Aktivasyon Enerjisi, E (kJ/mol):",
+        "orderLim": "Limitleyici Reaktanın Reaksiyon Sırası (nₗ):",
+        "orderExc": "Fazladan Reaktanın Reaksiyon Sırası (nₑ):",
+        "feedRatio": "Feed Oranı (Fazladan reaktan / Limitleyici reaktan, r):",
+        "limiting": "Limitleyici Reaktan Seçimi:",
+        "normalize": "Normalize",
+        "useAbsoluteConc": "Mutlak Konsantrasyon (kmol/h)",
+        "rX": "r(X)",
+        "X": "Dönüşüm X",
+        "rate": "Reaksiyon Hızı",
+        "limAbs": "Limitleyici (kmol/h)",
+        "excAbs": "Fazladan (kmol/h)",
+        "limFrac": "Limitleyici Konsantrasyon (mol fraksiyon)",
+        "excFrac": "Fazladan Konsantrasyon",
+        "molFrac": "Mol Fraksiyonu"
+      },
+      "options": {
+        "reactA": "Reaktan A",
+        "reactB": "Reaktan B"
+      },
+      "buttons": {
+        "calculate": "Hesaplamayı Yap",
+        "export": "CSV İndir",
+        "pause": "Durdur",
+        "play": "Oynat"
+      },
+      "tabs": {
+        "rate": "Hız (r)",
+        "conc": "Konsantrasyon"
+      },
+      "profiles": "Reaksiyon Profilleri",
+      "advanced": {
+        "title": "Gelişmiş Görselleştirme & Adım Adım Analiz",
+        "summary": "Hesaplama Özeti",
+        "prodKmolH": "Saatlik Üretim (kmol/h)",
+        "F0_lim": "Limitleyici Akış F₀ (kmol/h)",
+        "F0_exc": "Fazladan Akış (kmol/h)",
+        "W": "Katalizör Miktarı W (kg)",
+        "k_val": "k (s⁻¹) örnek (k_val)",
+        "k_h": "k (h⁻¹) (k_h)",
+        "rMinMax": "r min / max",
+        "warning": "Uyarı",
+        "slider": "Dönüşüm seçici (X):",
+        "selectedX": "Seçilen X:",
+        "rX": "r(X):",
+        "limFrac": "Limitleyici mol fraksiyonu:",
+        "diagram": "Reaktör Şeması",
+        "diagramTitle": "Özelleştirilebilir Reaktör",
+        "input": "Giriş",
+        "output": "Çıkış",
+        "stepsTitle": "Adım Adım Hesaplama",
+        "step1": "Yıllık üretim → saatlik üretim hesaplandı: <strong>{{prodKmolH}} kmol/h</strong>.",
+        "step2": "Limitleyici reaktanın F₀ hesaplandı: <strong>{{F0_lim}} kmol/h</strong>.",
+        "step3": "Fazladan reaktanın akışı: <strong>{{F0_exc}} kmol/h</strong>.",
+        "step4": "Katalizör ihtiyacı trapezoidal entegrasyon ile hesaplandı: <strong>W = {{W}} kg</strong>."
+      },
+      "results": {
+        "catalyst": "üretimi için gerekli katalizör miktarı",
+        "hourlyProd": "Saatlik Üretim",
+        "limiting": "Limitleyici Reaktan",
+        "F0_lim": "Limitleyici Akış",
+        "F0_exc": "Fazladan Akış"
+      },
+      "note": {
+        "title": "Hesaplama Adımları (Özet):",
+        "content1": "1. Yıllık üretim ton→kg→kmol/yıl ve kmol/h cinsine dönüştürülür.",
+        "content2": "2. Limitleyici reaktanın feed akımı; eğer limitleyici reaktan A ise: F₀₍A₎ = (Üretim [kmol/h] × (a/c)) / X, limitleyici B için benzer şekilde hesaplanır.",
+        "content3": "3. Feed olarak limitleyici reaktanın mol oranı 1, fazladan reaktanın oranı girilen feed oranı (r) alınır.",
+        "content4": "4. Reaksiyon ilerledikçe (X değişkeni) reaktanların kısmi basınçları, stoikiometrik tüketim göz önüne alınarak hesaplanır.",
+        "content5": "5. Arrhenius denklemiyle k = k₀·exp(–E/(R·T)) hesaplanır, k saatlik forma çevrilir.",
+        "content6": "6. Reaksiyon hızı fonksiyonu: r(X) = k_h · [P_lim(X)]^(nₗ) · [P_ex(X)]^(nₑ) şeklinde alınır.",
+        "content7": "7. Katalizör miktarı: W = ∫₀^(X) [F₀_lim / r(X)] dX, trapezoidal entegrasyonla sayısal olarak hesaplanır."
+      }
+    },
+    "chemical": "Kimyasal Denge",
+    "heattransfer": "Isı Transferi",
+    "heatintegration": "Isı Entegrasyonu",
+    "dynamics": "Dinamik Simülasyon",
+    "vaporizer": {
+      "title": "Vaporizer Tasarım Hesaplayıcı",
+      "sections": {
+        "feed": "Besleme & Proses Verileri",
+        "liquidVapor": "Sıvı/Buhar Özellikleri",
+        "coolingWater": "Soğutma Suyu Özellikleri",
+        "tubeFouling": "Boru, Kirlenme & Geometri"
+      },
+      "labels": {
+        "feedFlow": "Besleme Debisi (kg/saat)",
+        "vaporFraction": "Buharlaşma Oranı",
+        "T_feed_in": "Besleme Giriş Sıcaklığı (°C)",
+        "T_feed_out": "Besleme Çıkış Sıcaklığı (°C)",
+        "P_operating": "Çalışma Basıncı (bar)",
+        "Pc_mix": "Kritik Basınç (bar)",
+        "dHvap_mix": "Buharlaşma Isısı (J/mol)",
+        "Cp_mix": "Karışım Isı Kapasitesi (J/mol·K)",
+        "T_water_in": "Su Giriş Sıcaklığı (°C)",
+        "T_water_out": "Su Çıkış Sıcaklığı (°C)",
+        "k_water": "Su Isı İletkenliği (W/m·K)",
+        "Cp_water": "Su Isı Kapasitesi (kJ/kg·K)",
+        "rho_water": "Su Yoğunluğu (kg/m³)",
+        "mu_water": "Su Viskozitesi (Pa·s)",
+        "tubeLength": "Boru Boyu (m)",
+        "d0": "Boru Dış Çapı (m)",
+        "di": "Boru İç Çapı (m)",
+        "Rf_o": "Kirlenme Direnci (Kılıf) (m²K/W)",
+        "Rf_i": "Kirlenme Direnci (Boru) (m²K/W)",
+        "k_tube": "Boru Isı İletkenliği (W/m·K)",
+        "U_initial": "Başlangıç U (W/m²K)",
+        "freeboard": "Serbest Yükseklik (m)",
+        "iterations": "İterasyon Sayısı"
+      },
+      "buttons": {
+        "calculate": "Hesapla",
+        "export": "CSV Dışa Aktar",
+        "reset": "Sıfırla"
+      },
+      "errors": {
+        "title": "Lütfen aşağıdaki hataları düzeltin:",
+        "feedFlow": "Besleme debisi pozitif olmalı.",
+        "waterTemp": "Su giriş sıcaklığı çıkıştan yüksek olmalı.",
+        "iterations": "İterasyon sayısı en az 1 olmalı."
+      },
+      "results": {
+        "title": "Sonuçlar",
+        "Q_total": "Toplam Isı Yükü:",
+        "m_water": "Su Debisi:",
+        "LMTD": "Logaritmik Ortalama Sıcaklık Farkı:",
+        "iteration": "{{n}}. İterasyon (U = {{U}} W/m²K)",
+        "A": "Alan:",
+        "N_tubes": "Boru Sayısı:",
+        "v_water": "Su Hızı:",
+        "Re": "Reynolds Sayısı:",
+        "h_i": "Boru Tarafı h:",
+        "h_nb": "Nükleasyon Kaynama h:",
+        "U_calc": "Hesaplanan U:",
+        "controls": "Mekanik Kontroller",
+        "Db": "Demet Çapı:",
+        "Ds": "Kılıf Çapı:",
+        "freeboard_ratio": "Serbest Yükseklik Oranı:"
+      },
+      "visualization": "3B Görselleştirme",
+      "legacy3d": "Eski 3B görünümü aç"
+    },
+    "form": "Deney Formu",
+    "history": "Geçmiş",
+    "optimization": "Optimizasyon",
+    "cv": "CV"
+  },
+  "logo": "Kimya Mühendisliği",
+  "cv": {
+    "name": "Kadir AYANA",
+    "title": "Kimya Mühendisi & Araştırmacı | Ar-Ge | Proses Geliştirme",
+    "birthdate": "📅 Doğum Tarihi: 25 Ocak 1998",
+    "location": "📍 Konum: İzmir, Türkiye",
+    "phone": "📞 Telefon: +90 536 943 39 43",
+  "summary": "Ege Üniversitesi Kimya Mühendisliği mezunu. Ar-Ge, proses optimizasyonu ve kalite kontrol konusunda uzman. Su bazlı boya formülasyon geliştirme, laboratuvar testleri (ASTM) ve takım yönetiminde kanıtlanmış başarı. Teknik beceriler: proses mühendisliği, reaksiyon kinetiği, termodinamik, MATLAB, Python. Proses geliştirme, ürün inovasyonu ve araştırma mühendisliği fırsatları arıyorum.\n\nResults-driven Chemical Engineer with expertise in R&D, process optimization, and quality control. Proven track record in formulation development, laboratory testing (ASTM), and team leadership. Strong technical skills: process engineering, reaction kinetics, thermodynamics, MATLAB, Python. Seeking opportunities in process development, product innovation, or research engineering.",
+    "workExperience": "Çalışma Deneyimi",
+    "jobs": {
+      "totalEnergies": {
+        "title": "TotalEnergies",
+        "role": "Laboratuvar Mühendisi | Kalite Kontrol & Test",
+        "date": "Nisan 2025 - Temmuz 2025",
+        "desc1": "ASTM standardlarına uygun QC testleri gerçekleştirildi; spesifikasyon uyumu sağlandı.",
+        "desc2": "Laboratuvar ekipmanı bakımı yönetildi; analitik enstrümanlar kalibre edildi.",
+        "desc3": "Test sonuçları belgelendi; iyileştirme için işlevler arası işbirliği yapıldı.",
+        "desc4": "İSG protokolleri uygulandı; %100 güvenlik uyumu sağlandı."
+      },
+      "alpkim": {
+        "title": "Alpkim Yapıştırıcılar",
+        "role": "Satış Temsilcisi | Teknik Hesap Yönetimi",
+        "date": "Ocak 2025 - Nisan 2025",
+        "desc1": "Satış hedeflerini aştı; teknik sunumlar yaparak stratejik müşteri ortaklıkları kurdu.",
+        "desc2": "CRM pipeline yönetildi ve performans metrikleri takip edildi."
+      },
+      "kanatRD": {
+        "title": "Kanat Boyalar ve Kaplamalar",
+        "role": "Ar-Ge Mühendisi | Formülasyon Geliştirme & Test",
+        "date": "Haziran 2023 - Ağustos 2024",
+        "desc1": "Laboratuvar testleri yürütüldü; boya formülasyonları ISO/ASTM standartlarına karşı doğrulanmıştır.",
+        "desc2": "TÜBİTAK 1505 grant projesine ortak yazarı; yenilikçi su bazlı kaplama çözümleri geliştirildi.",
+        "desc3": "15+ formülasyon projesi liderliğinde yönetim; 3 başarılı ürün lansmanı (sıfır kusur); 4 junior araştırmacı mentorluğu.",
+        "desc4": "Ar-Ge Su Bazlı Boyalar bölümünü 3 ay geçici yönetimi; iş akışları optimize edildi (%25 proje hızlanması); mükemmellik için takdir edildi."
+      },
+      "ims": {
+        "title": "IMS Polimerler",
+        "role": "Proses Mühendisliği Stajyeri | Üretim Optimizasyonu",
+        "date": "Ağustos - Eylül 2022",
+        "desc1": "Üretim iş akışları analiz edildi; verimlilik iyileştirme fırsatları belirlendi.",
+        "desc2": "Envanter takibi ve proses dokümantasyonunda destek sağlandı."
+      }
+    },
+    "education": "Eğitim",
+    "edu": {
+      "masters": {
+        "title": "Ege Üniversitesi",
+        "program": "Y.Lisans Kimya Mühendisliği",
+        "date": "Eylül 2023 - Haziran 2026 (Beklenen)",
+        "courses": "Katı Atık Geri Dönüşümü, Katalizör Deaktivasyonu, Deneysel Tasarımda İstatistiksel Yöntemler, Mühendislik Termoplastiği, Uygulamalı Mühendislik Matematiği, Minitab"
+      },
+      "bachelors": {
+        "title": "Ege Üniversitesi",
+        "program": "Lisans Kimya Mühendisliği",
+        "date": "Eylül 2017 - Temmuz 2023",
+        "courses": "Proses Kontrolü, Kimya Mühendisliği Tasarımı, Kütle Transferi, Isı Transferi, Termodinamik, Reaksiyon Mühendisliği, MATLAB, AutoCAD, PolyMATH, MS Office"
+      }
+    },
+    "skills": "Diller",
+    "skillsTurkish": "🇹🇷 Türkçe - Ana Dil",
+    "skillsEnglish": "🇬🇧 İngilizce - Akıcı",
+    "skillsGerman": "🇩🇪 Almanca - Başlangıç",
+    "skillsTechnical": "Teknik Beceriler",
+    "certifications": "Profesyonel Sertifikalar & Eğitim",
+    "certs": {
+      "simulink": "MATLAB Simulink Onramp",
+      "matlab": "MATLAB Onramp",
+      "aromResearch": "AROM ARAŞTIRMACI ÖĞRENCİ (Araştırmacı Öğrenci)",
+      "aromZero": "AROM SIFIR ATIK VE UYGULAMALARI (Sıfır Atık ve İşleme)",
+      "researchTech": "ARAŞTIRMA TEKNİKLERİ EĞİTİMİ",
+      "projectWriting": "PROJE YAZIMI EĞİTİM SERTİFİKA PROGRAMI",
+      "python": "PYTHON EĞİTİM SERTİFİKA PROGRAMI",
+      "academicWriting": "TEMEL AKADEMİK YAZARLIK BECERİLERİ",
+      "firstAid": "TEMEL İLK YARDIM EĞİTİMİ",
+      "aiMl": "YAPAY ZEKA TABANLI MAKİNE ÖĞRENMESİ VE TEMEL ALGORİTMALAR EĞİTİMİ"
+    },
+    "projects": "Önemli Projeler & Başarılar",
+    "projects1": "Yüksek yüzey toleransı ile su bazlı akrilik reçine geliştirme (Kanat Boyalar ve Kaplamalar - TUBITAK 1505 Projeleri)",
+    "projects2": "PMMA yüzeylerine yapışabilen çizilmeye dirençli maşalarla uygulanabilen su bazlı boya geliştirme (Kanat Boyalar ve Kaplamalar)",
+    "projects3": "Isıya dayanıklı elektrik izolasyon vernişi geliştirme (Kanat Boyalar ve Kaplamalar)",
+    "projects4": "Askeri araçlar için ısıl yalıtım sağlayan su bazlı boya geliştirme (Kanat Boyalar ve Kaplamalar)",
+    "projects5": "Uçak kabin plastik parçalarına yapışabilen yüksek kimyasal dirençli su bazlı boya geliştirme (Kanat Boyalar ve Kaplamalar)",
+    "projects6": "NİTROBENZENDEN ANİLİN ÜRETİMİ (Ege Üniversitesi - Kimya Mühendisliği Tasarım Projesi)",
+    "projects7": "PROPILEN KLORLAMAS İYLE ALİL KLORID ÜRETİMİ (Ege Üniversitesi - Kimya Mühendisliği Tasarım Projesi)",
+    "projects8": "UV KÜRLENEBİLİR KAPLAMA İÇİN EPOKSİDİZE SOY FASULYESI YAĞININSENTEZİ (Akzo Nobel ile işbirliğinde tamamlanan mezuniyet projesi - Ege Üniversitesi)"
+  },
+  "cvDownload": {
+    "button": "CV'yi PDF Olarak İndir",
+    "title": "Kadir_AYANA_CV",
+    "success": "CV başarıyla indirildi!",
+    "error": "CV indirilirken hata oluştu",
+    "word": "CV'yi Word Olarak İndir"
+  }
+}

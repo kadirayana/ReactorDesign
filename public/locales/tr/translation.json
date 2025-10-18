@@ -173,5 +173,90 @@
     "optimization": "Optimizasyon",
     "cv": "CV"
   },
-  "logo": "Kimya Mühendisliği"
+  "logo": "Kimya Mühendisliği",
+  "cv": {
+    "name": "Kadir AYANA",
+    "title": "Kimya Mühendisi & Araştırmacı | Ar-Ge | Proses Geliştirme",
+    "birthdate": "📅 Doğum Tarihi: 25 Ocak 1998",
+    "location": "📍 Konum: İzmir, Türkiye",
+    "phone": "📞 Telefon: +90 536 943 39 43",
+    "summary": "Ege Üniversitesi Kimya Mühendisliği mezunu. Ar-Ge, proses optimizasyonu ve kalite kontrol konusunda uzman. Su bazlı boya formülasyon geliştirme, laboratuvar testleri (ASTM) ve takım yönetiminde kanıtlanmış başarı. Teknik beceriler: proses mühendisliği, reaksiyon kinetiği, termodinamik, MATLAB, Python. Proses geliştirme, ürün inovasyonu ve araştırma mühendisliği fırsatları arıyorum.",
+    "workExperience": "Çalışma Deneyimi",
+    "jobs": {
+      "totalEnergies": {
+        "title": "TotalEnergies",
+        "role": "Laboratuvar Mühendisi | Kalite Kontrol & Test",
+        "date": "Nisan 2025 - Temmuz 2025",
+        "desc1": "ASTM standardlarına uygun QC testleri gerçekleştirildi; spesifikasyon uyumu sağlandı.",
+        "desc2": "Laboratuvar ekipmanı bakımı yönetildi; analitik enstrümanlar kalibre edildi.",
+        "desc3": "Test sonuçları belgelendi; iyileştirme için işlevler arası işbirliği yapıldı.",
+        "desc4": "İSG protokolleri uygulandı; %100 güvenlik uyumu sağlandı."
+      },
+      "alpkim": {
+        "title": "Alpkim Yapıştırıcılar",
+        "role": "Satış Temsilcisi | Teknik Hesap Yönetimi",
+        "date": "Ocak 2025 - Nisan 2025",
+        "desc1": "Satış hedeflerini aştı; teknik sunumlar yaparak stratejik müşteri ortaklıkları kurdu.",
+        "desc2": "CRM pipeline yönetildi ve performans metrikleri takip edildi."
+      },
+      "kanatRD": {
+        "title": "Kanat Boyalar ve Kaplamalar",
+        "role": "Ar-Ge Mühendisi | Formülasyon Geliştirme & Test",
+        "date": "Haziran 2023 - Ağustos 2024",
+        "desc1": "Laboratuvar testleri yürütüldü; boya formülasyonları ISO/ASTM standartlarına karşı doğrulanmıştır.",
+        "desc2": "TÜBİTAK 1505 grant projesine ortak yazarı; yenilikçi su bazlı kaplama çözümleri geliştirildi.",
+        "desc3": "15+ formülasyon projesi liderliğinde yönetim; 3 başarılı ürün lansmanı (sıfır kusur); 4 junior araştırmacı mentorluğu.",
+        "desc4": "Ar-Ge Su Bazlı Boyalar bölümünü 3 ay geçici yönetimi; iş akışları optimize edildi (%25 proje hızlanması); mükemmellik için takdir edildi."
+      },
+      "ims": {
+        "title": "IMS Polimerler",
+        "role": "Proses Mühendisliği Stajyeri | Üretim Optimizasyonu",
+        "date": "Ağustos - Eylül 2022",
+        "desc1": "Üretim iş akışları analiz edildi; verimlilik iyileştirme fırsatları belirlendi.",
+        "desc2": "Envanter takibi ve proses dokümantasyonunda destek sağlandı."
+      }
+    },
+    "education": "Eğitim",
+    "edu": {
+      "masters": {
+        "title": "Ege Üniversitesi",
+        "program": "Y.Lisans Kimya Mühendisliği",
+        "date": "Eylül 2023 - Haziran 2026 (Beklenen)",
+        "courses": "Katı Atık Geri Dönüşümü, Katalizör Deaktivasyonu, Deneysel Tasarımda İstatistiksel Yöntemler, Mühendislik Termoplastiği, Uygulamalı Mühendislik Matematiği, Minitab"
+      },
+      "bachelors": {
+        "title": "Ege Üniversitesi",
+        "program": "Lisans Kimya Mühendisliği",
+        "date": "Eylül 2017 - Temmuz 2023",
+        "courses": "Proses Kontrolü, Kimya Mühendisliği Tasarımı, Kütle Transferi, Isı Transferi, Termodinamik, Reaksiyon Mühendisliği, MATLAB, AutoCAD, PolyMATH, MS Office"
+      }
+    },
+    "skills": "Diller & Teknik Beceriler",
+    "skillsTurkish": "🇹🇷 Türkçe - Ana Dil",
+    "skillsEnglish": "🇬🇧 İngilizce - Akıcı",
+    "skillsGerman": "🇩🇪 Almanca - Başlangıç",
+    "skillsTechnical": "Teknik Beceriler",
+    "certifications": "Profesyonel Sertifikalar & Eğitim",
+    "certs": {
+      "simulink": "MATLAB Simulink Onramp",
+      "matlab": "MATLAB Onramp",
+      "aromResearch": "AROM ARAŞTIRMACI ÖĞRENCİ (Araştırmacı Öğrenci)",
+      "aromZero": "AROM SIFIR ATIK VE UYGULAMALARI (Sıfır Atık ve İşleme)",
+      "researchTech": "ARAŞTIRMA TEKNİKLERİ EĞİTİMİ",
+      "projectWriting": "PROJE YAZIMI EĞİTİM SERTİFİKA PROGRAMI",
+      "python": "PYTHON EĞİTİM SERTİFİKA PROGRAMI",
+      "academicWriting": "TEMEL AKADEMİK YAZARLIK BECERİLERİ",
+      "firstAid": "TEMEL İLK YARDIM EĞİTİMİ",
+      "aiMl": "YAPAY ZEKA TABANLI MAKİNE ÖĞRENMESİ VE TEMEL ALGORİTMALAR EĞİTİMİ"
+    },
+    "projects": "Önemli Projeler & Başarılar",
+    "projects1": "Yüksek yüzey toleransı ile su bazlı akrilik reçine geliştirme (Kanat Boyalar ve Kaplamalar - TUBITAK 1505 Projeleri)",
+    "projects2": "PMMA yüzeylerine yapışabilen çizilmeye dirençli maşalarla uygulanabilen su bazlı boya geliştirme (Kanat Boyalar ve Kaplamalar)",
+    "projects3": "Isıya dayanıklı elektrik izolasyon vernişi geliştirme (Kanat Boyalar ve Kaplamalar)",
+    "projects4": "Askeri araçlar için ısıl yalıtım sağlayan su bazlı boya geliştirme (Kanat Boyalar ve Kaplamalar)",
+    "projects5": "Uçak kabin plastik parçalarına yapışabilen yüksek kimyasal dirençli su bazlı boya geliştirme (Kanat Boyalar ve Kaplamalar)",
+    "projects6": "NİTROBENZENDEN ANİLİN ÜRETİMİ (Ege Üniversitesi - Kimya Mühendisliği Tasarım Projesi)",
+    "projects7": "PROPILEN KLORLAMAS İYLE ALİL KLORID ÜRETİMİ (Ege Üniversitesi - Kimya Mühendisliği Tasarım Projesi)",
+    "projects8": "UV KÜRLENEBİLİR KAPLAMA İÇİN EPOKSİDİZE SOY FASULYESI YAĞININSENTEZİ (Akzo Nobel ile işbirliğinde tamamlanan mezuniyet projesi - Ege Üniversitesi)"
+  }
 }

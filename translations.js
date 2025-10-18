@@ -197,7 +197,7 @@ const translations = {
             vaporizerDesignDesc: "Bu sayfa, bir vaporizer tasarımı için gerekli hesaplamaları gerçekleşirmek amacıyla kullanıcıya çeşitli veriler girmesi için bir platform sunmaktadır.",
             selectModule: "Menüden ihtiyacınız olan bölümü seçerek ilgili hesaplamaları gerçekleştirebilirsiniz."
         }
-    }
+    },
     chemical: {
         en: {
             title: "Chemical Equilibrium Calculation",
@@ -269,7 +269,7 @@ const translations = {
             deltaS: "Entropi Değişimi (ΔS) [J/(mol·K)]",
             concDistribution: "Konsantrasyon Dağılım Grafiği"
         }
-    }
+    },
     heatTransfer: {
         en: {
             title: "Heat Transfer Calculation",

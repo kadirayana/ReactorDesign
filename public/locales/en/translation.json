@@ -175,5 +175,90 @@
       "content6": "6. Reaction rate function: r(X) = k_h · [P_lim(X)]^(nₗ) · [P_ex(X)]^(nₑ).",
       "content7": "7. Catalyst amount: W = ∫₀^(X) [F₀_lim / r(X)] dX, numerically by trapezoidal integration."
     }
+  },
+  "cv": {
+    "name": "Kadir AYANA",
+    "title": "Chemical Engineer & Researcher | R&D | Process Development",
+    "birthdate": "📅 Date of Birth: 25 Jan 1998",
+    "location": "📍 Location: İzmir, Turkey",
+    "phone": "📞 Phone: +90 536 943 39 43",
+    "summary": "Results-driven Chemical Engineer with expertise in R&D, process optimization, and quality control. Proven track record in formulation development, laboratory testing (ASTM), and team leadership. Strong technical skills: process engineering, reaction kinetics, thermodynamics, MATLAB, Python. Seeking opportunities in process development, product innovation, or research engineering.",
+    "workExperience": "Work Experience",
+    "jobs": {
+      "totalEnergies": {
+        "title": "TotalEnergies",
+        "role": "Laboratory Engineer | Quality Control & Testing",
+        "date": "April 2025 - July 2025",
+        "desc1": "Executed ASTM-compliant QC testing; ensured raw material & product specifications compliance.",
+        "desc2": "Managed laboratory equipment maintenance; calibrated analytical instruments.",
+        "desc3": "Documented test results; collaborated cross-functionally for continuous improvement.",
+        "desc4": "Enforced HSE protocols; maintained 100% safety compliance."
+      },
+      "alpkim": {
+        "title": "Alpkim Adhesives",
+        "role": "Sales Representative | Technical Account Management",
+        "date": "January 2025 - April 2025",
+        "desc1": "Exceeded sales targets; delivered technical presentations & built strategic customer partnerships.",
+        "desc2": "Managed CRM pipeline & tracked performance metrics."
+      },
+      "kanatRD": {
+        "title": "Kanat Paints and Coatings",
+        "role": "R&D Engineer | Formulation Development & Testing",
+        "date": "June 2023 - August 2024",
+        "desc1": "Conducted laboratory testing; validated paint formulations vs. ISO/ASTM standards.",
+        "desc2": "Co-authored TUBITAK 1505 grant project; developed innovative water-based coating solutions.",
+        "desc3": "Led 15+ formulation projects; achieved 3 successful product launches with zero defects; mentored 4 junior researchers.",
+        "desc4": "Temporarily managed R&D Waterborne Paints division (3 months); optimized workflows resulting in 25% faster project delivery; received recognition for excellence."
+      },
+      "ims": {
+        "title": "IMS Polymers",
+        "role": "Process Engineering Intern | Production Optimization",
+        "date": "August - September 2022",
+        "desc1": "Analyzed production workflows; identified efficiency improvement opportunities.",
+        "desc2": "Supported inventory tracking and process documentation."
+      }
+    },
+    "education": "Education",
+    "edu": {
+      "masters": {
+        "title": "Ege University",
+        "program": "M.Sc. Chemical Engineering",
+        "date": "September 2023 - June 2026 (Expected)",
+        "courses": "Solid Waste Recycling, Catalyst Deactivation, Statistical Methods in Experimental Design, Engineering Thermoplastics, Applied Engineering Mathematics, Minitab"
+      },
+      "bachelors": {
+        "title": "Ege University",
+        "program": "B.Sc. Chemical Engineering",
+        "date": "September 2017 - July 2023",
+        "courses": "Process Control, Chemical Engineering Design, Mass Transfer, Heat Transfer, Thermodynamics, Reaction Engineering, MATLAB, AutoCAD, PolyMATH, MS Office"
+      }
+    },
+    "skills": "Languages",
+    "skillsTurkish": "🇹🇷 Turkish - Native",
+    "skillsEnglish": "🇬🇧 English - Fluent",
+    "skillsGerman": "🇩🇪 German - Beginner",
+    "skillsTechnical": "Technical Skills",
+    "certifications": "Professional Certifications & Training",
+    "certs": {
+      "simulink": "MATLAB Simulink Onramp",
+      "matlab": "MATLAB Onramp",
+      "aromResearch": "AROM ARAŞTIRMACI ÖĞRENCİ (Researcher Student)",
+      "aromZero": "AROM SIFIR ATIK VE UYGULAMALARI (Zero Waste and Processing)",
+      "researchTech": "RESEARCH TECHNIQUES TRAINING",
+      "projectWriting": "PROJECT WRITING TRAINING CERTIFICATE PROGRAM",
+      "python": "PYTHON EDUCATION CERTIFICATE PROGRAM",
+      "academicWriting": "BASIC ACADEMIC WRITING SKILLS",
+      "firstAid": "BASIC FIRST AID TRAINING",
+      "aiMl": "ARTIFICIAL INTELLIGENCE BASED MACHINE LEARNING AND BASIC ALGORITHMS TRAINING"
+    },
+    "projects": "Notable Projects & Achievements",
+    "projects1": "Development of water-based acrylic resin with high surface tolerance (Kanat Paints and Coatings - TUBITAK 1505 Projects)",
+    "projects2": "Development of water-based paint that can be applied with scratch-resistant rollers that can adhere to PMMA surfaces (Kanat Paints and Coatings)",
+    "projects3": "Development of heat resistant electrical insulation varnish (Kanat Paints and Coatings)",
+    "projects4": "Development of water-based paint providing thermal insulation for military vehicles (Kanat Paints and Coatings)",
+    "projects5": "Development of high chemical resistance water-based paint that can adhere to aircraft cabin plastic parts (Kanat Paints and Coatings)",
+    "projects6": "ANILINE PRODUCTION FROM NITROBENZENE (Ege University - Chemical Engineering Design Project)",
+    "projects7": "ALLYL CHLORIDE PRODUCTION BY PROPYLENE CHLORINATION (Ege University - Chemical Engineering Design Project)",
+    "projects8": "SYNTHESIS OF EPOXIDIZED SOYBEAN OIL FOR UV CURABLE COATING (Graduation project completed in collaboration with Akzo Nobel - Ege University)"
   }
 }
