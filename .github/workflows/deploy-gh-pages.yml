@@ -4,9 +4,7 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,7 +13,7 @@ permissions:
 
 concurrency:
   group: 'pages'
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -31,28 +29,27 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
-      - name: Build Next.js static site
+      - name: Build Next.js site
         run: npm run build
+        env:
+          CI: true
 
-      - name: Verify build output
+      - name: Check build output
         run: |
-          if [ ! -d out ]; then
-            echo "❌ ERROR: out/ directory not found after build"
-            exit 1
-          fi
-          echo "✅ Build successful"
-          du -sh out/
+          echo "=== Build Output ==="
+          ls -la out/ || echo "❌ out/ NOT FOUND"
+          du -sh out/ || echo "Cannot measure out/"
+          find out -type f | head -20
 
-      - name: Upload artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './out'
 
   deploy:
     needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

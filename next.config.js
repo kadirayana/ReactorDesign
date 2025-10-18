@@ -1,13 +1,18 @@
 /** @type {import('next').NextConfig} */
-const { i18n } = require('./next-i18next.config');
+const { i18n } = require('./next-i18next.config.js');
 
 const nextConfig = {
-  reactStrictMode: false,
   i18n,
-  output: 'export', // Enable static exports for GitHub Pages
-  distDir: 'out',   // Output directory for static files
+  output: 'export',
+  distDir: 'out',
   images: {
-    unoptimized: true, // Required for static export
+    unoptimized: true,
   },
-}
+  swcMinify: true,
+  reactStrictMode: true,
+  trailingSlash: true,
+  basePath: '/ReactorDesign',
+  assetPrefix: '/ReactorDesign/',
+};
+
 module.exports = nextConfig;
