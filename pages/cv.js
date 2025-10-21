@@ -8,11 +8,11 @@ export default function CVPage() {
         <h1>Kadir AYANA</h1>
         <h2>Chemical Engineer & Researcher | R&D | Process Development</h2>
         <div className="cv-contact">
-          <span>Date of Birth: 1998</span>
-          <span>Location: Izmir, Turkey</span>
-          <span>Phone: +90 536 943 39 43</span>
-          <span><a href="mailto:Ayanakadir@hotmail.com">Ayanakadir@hotmail.com</a></span>
-          <span><a href="https://Linkedin.com/in/kadirayana" target="_blank" rel="noopener noreferrer">linkedin.com/in/kadirayana</a></span>
+          <span>📅 Date of Birth: 1998</span>
+          <span>📍 Location: Izmir, Turkey</span>
+          <span>📞 Phone: +90 536 943 39 43</span>
+          <span>✉️ <a href="mailto:Ayanakadir@hotmail.com">Ayanakadir@hotmail.com</a></span>
+          <span>🔗 <a href="https://Linkedin.com/in/kadirayana" target="_blank" rel="noopener noreferrer">linkedin.com/in/kadirayana</a></span>
         </div>
       </div>
       <div className="cv-summary">
@@ -20,7 +20,6 @@ export default function CVPage() {
       </div>
       <div className="cv-section">
         <h3>Work Experience</h3>
-        {/* Total Energies */}
         <div className="cv-job">
           <div className="cv-job-title">Total Energies <span>| Laboratory Engineer | Quality Control & Testing</span></div>
           <div className="cv-job-date">April 2025 - July 2025</div>
@@ -31,7 +30,6 @@ export default function CVPage() {
             <li>Enforced HSE protocols; maintained 100% safety compliance.</li>
           </ul>
         </div>
-        {/* Alpkim Adhesives */}
         <div className="cv-job">
           <div className="cv-job-title">Alpkim Adhesives <span>| Sales Representative | Technical Account Management</span></div>
           <div className="cv-job-date">January 2025 - April 2025</div>
@@ -40,7 +38,6 @@ export default function CVPage() {
             <li>Managed CRM pipeline & tracked performance metrics.</li>
           </ul>
         </div>
-        {/* Kanat Paints and Coatings */}
         <div className="cv-job">
           <div className="cv-job-title">Kanat Paints and Coatings <span>| R&D Engineer | Formulation Development & Testing</span></div>
           <div className="cv-job-date">June 2023 - August 2024</div>
@@ -51,7 +48,6 @@ export default function CVPage() {
             <li>Temporarily managed R&D Waterborne Paints division (3 months); optimized workflows resulting in 25% faster project delivery; received recognition for excellence.</li>
           </ul>
         </div>
-        {/* IMS Polymers */}
         <div className="cv-job">
           <div className="cv-job-title">IMS Polymers <span>| Process Engineering Intern | Production Optimization</span></div>
           <div className="cv-job-date">August - September 2022</div>
@@ -63,7 +59,6 @@ export default function CVPage() {
       </div>
       <div className="cv-section">
         <h3>Education</h3>
-        {/* Ege University - Master's */}
         <div className="cv-edu">
           <div className="cv-edu-title">Ege University <span>| M.Sc. Chemical Engineering</span></div>
           <div className="cv-edu-date">September 2023 - June 2026 (Expected)</div>
@@ -71,7 +66,6 @@ export default function CVPage() {
             <li>Solid Waste Recycling, Catalyst Deactivation, Statistical Methods in Experimental Design, Engineering Thermoplastics, Applied Engineering Mathematics, and Minitab</li>
           </ul>
         </div>
-        {/* Ege University - Bachelor's */}
         <div className="cv-edu">
           <div className="cv-edu-title">Ege University <span>| B.Sc. Chemical Engineering</span></div>
           <div className="cv-edu-date">September 2017 - July 2023</div>
