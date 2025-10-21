@@ -1,135 +1,114 @@
 .navbar {
-  position: fixed;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 240px;
-  background: linear-gradient(180deg,#00539C,#003458);
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  z-index: 1000;
-  transition: width 0.22s ease;
-  box-shadow: 2px 0 8px rgba(0,0,0,0.08);
-  font-family: 'Poppins','Inter',sans-serif;
-  color: #fff;
-}
+  border: 5px solid red !important;
 
-/* collapsed (narrow) sidebar */
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 240px;
+  background: linear-gradient(180deg,#00539C,#003458);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 1000;
+  transition: width 0.22s ease;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+  font-family: 'Poppins','Inter',sans-serif;
+  color: #fff;
+}
 .navbar.collapsed {
-  width: 72px;
+  width: 72px;
 }
-
-/* brand row */
 .brand {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-
-/* logo */
 .logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  color: #fff;
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #fff;
+  font-weight: 700;
 }
 .logoIcon {
-  display: inline-block;
-  width: 36px;
-  text-align: center;
+  display: inline-block;
+  width: 36px;
+  text-align: center;
 }
 .logoText {
-  transition: opacity 0.18s, transform 0.18s;
-  white-space: nowrap;
+  transition: opacity 0.18s, transform 0.18s;
+  white-space: nowrap;
 }
-
-/* NEW: inline logo image */
 .logoImg {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-  display: inline-block;
-  border-radius: 6px;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  display: inline-block;
+  border-radius: 6px;
 }
-
-/* hide text when collapsed */
 .navbar.collapsed .logoText {
-  opacity: 0;
-  transform: translateX(-6px);
-  pointer-events: none;
-  width: 0;
+  opacity: 0;
+  transform: translateX(-6px);
+  pointer-events: none;
+  width: 0;
 }
-
-/* toggle button */
 .toggle {
-  background: transparent;
-  border: none;
-  color: #fff;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
 }
 .toggle:focus { outline: 2px solid rgba(255,255,255,0.12); }
 .toggleBar {
-  display: inline-block;
-  width: 20px;
-  height: 2px;
-  background: #fff;
-  border-radius: 2px;
-  transform-origin: center;
+  display: inline-block;
+  width: 20px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+  transform-origin: center;
 }
-
-/* links column */
 .links {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 6px;
-  padding: 6px 0;
-  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 6px 0;
+  list-style: none;
 }
-
-/* link item */
 .links a {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  text-decoration: none;
-  color: #fff;
-  padding: 10px;
-  border-radius: 8px;
-  transition: background 0.12s, transform 0.12s;
-  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  transition: background 0.12s, transform 0.12s;
+  font-weight: 500;
 }
 .links a:hover {
-  background: rgba(255,255,255,0.06);
-  transform: translateX(4px);
+  background: rgba(255,255,255,0.06);
+  transform: translateX(4px);
 }
-
-/* when collapsed hide the link text and center icons (we use the text as label; hiding acceptable) */
 .navbar.collapsed .links a {
-  justify-content: center;
-  padding: 8px 6px;
+  justify-content: center;
+  padding: 8px 6px;
 }
 .navbar.collapsed .links .linkText {
-  display: none;
+  display: none;
 }
-
-/* responsiveness: on small screens overlay the sidebar */
 @media (max-width: 640px) {
-  .navbar {
-    transform: translateX(-100%);
-    transition: transform 0.22s ease;
-  }
-  /* when body has no collapsed attribute set to true, show as overlay when a class is toggled by JS.
-     We'll rely on body[data-nav-collapsed="false"] to open it on small screens if necessary. */
-  body[data-nav-collapsed="false"] .navbar {
-    transform: translateX(0);
-    width: 260px;
-  }
-  /* ensure main content margin-left is 0 on mobile (handled in globals.css) */
+  .navbar {
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+  }
+  body[data-nav-collapsed="false"] .navbar {
+    transform: translateX(0);
+    width: 260px;
+  }
 }
