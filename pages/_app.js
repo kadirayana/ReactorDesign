@@ -9,5 +9,3 @@ function App({ Component, pageProps }) {
     </Layout>
   )
 }
-
-export default appWithTranslation(App, nextI18NextConfig)
