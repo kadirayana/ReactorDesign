@@ -545,6 +545,7 @@ tr:hover {
 	padding: 12px;
 	max-width: 100%;
 	margin: 0 auto;
+	/* scale base font-size for the CV section by 20% */
 	font-size: 120%;
 	transition: margin-left 0.22s ease;
 	margin-left: 240px;
@@ -598,10 +599,11 @@ body[data-nav-collapsed="true"] .cv-page {
 
 .cv-contact span {
 	white-space: nowrap;
+	color: white;
 }
 
 .cv-contact a {
-	color: #e9ecef;
+	color: #ffffff;
 	text-decoration: none;
 	font-weight: 500;
 }
@@ -1167,10 +1169,11 @@ body[data-nav-collapsed="true"] .cv-page {
 
 .cv-contact span {
 	white-space: nowrap;
+	color: white;
 }
 
 .cv-contact a {
-	color: #e9ecef;
+	color: #ffffff;
 	text-decoration: none;
 	font-weight: 500;
 }
@@ -1450,7 +1453,7 @@ body[data-nav-collapsed="true"] .cv-page {
 		max-width: 100% !important;
 		margin: 0 !important;
 		background: #fff !important;
-		font-size: 8.5px !important;
+		font-size: 12px !important;
 		line-height: 1.15 !important;
 	}
 	
@@ -1459,32 +1462,39 @@ body[data-nav-collapsed="true"] .cv-page {
 		padding-bottom: 2px !important;
 		border-bottom: 1px solid #333 !important;
 		text-align: center !important;
+		background: linear-gradient(135deg, #00539C, #003458) !important;
+		color: white !important;
+		border-radius: 8px !important;
+		padding: 8px !important;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 	}
 	
 	.cv-header h1 {
-		font-size: 14px !important;
+		font-size: 18px !important;
 		margin: 0 !important;
 		padding: 0 !important;
 		font-weight: 700 !important;
 		letter-spacing: normal !important;
+		color: white !important;
 	}
 	
 	.cv-header h2 {
-		font-size: 8.5px !important;
+		font-size: 12px !important;
 		margin: 0 !important;
 		padding: 0 !important;
 		font-weight: 500 !important;
 		letter-spacing: normal !important;
+		color: #e9ecef !important;
 	}
 	
 	.cv-contact {
 		display: flex !important;
 		flex-wrap: wrap !important;
 		justify-content: center !important;
-		gap: 2px !important;
+		gap: 4px !important;
 		margin: 1px 0 0 0 !important;
-		font-size: 7px !important;
-		color: #000 !important;
+		font-size: 10px !important;
+		color: white !important;
 		width: 100% !important;
 	}
 	
@@ -1492,6 +1502,7 @@ body[data-nav-collapsed="true"] .cv-page {
 		white-space: nowrap !important;
 		margin: 0 !important;
 		padding: 0 !important;
+		color: white !important;
 	}
 	
 	.cv-contact span:before {
@@ -1504,64 +1515,67 @@ body[data-nav-collapsed="true"] .cv-page {
 	}
 	
 	.cv-contact a {
-		color: #000 !important;
+		color: white !important;
 		text-decoration: none !important;
 		font-weight: normal !important;
 	}
 	
 	.cv-summary {
-		background: transparent !important;
-		padding: 1px 0 !important;
-		margin: 2px 0 !important;
+		background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+		padding: 4px 0 !important;
+		margin: 4px 0 !important;
 		border: none !important;
-		border-left: none !important;
-		font-size: 8.5px !important;
+		border-left: 3px solid #00539C !important;
+		font-size: 10px !important;
 		line-height: 1.15 !important;
-		color: #000 !important;
+		color: #2d3748 !important;
 	}
 	
 	.cv-summary p {
 		margin: 0 !important;
 		padding: 0 !important;
-		font-size: 8.5px !important;
+		font-size: 10px !important;
 		line-height: 1.15 !important;
 	}
 	
 	.cv-section {
-		margin: 2px 0 !important;
-		padding: 0 !important;
+		margin: 4px 0 !important;
+		padding: 4px !important;
 		page-break-inside: avoid !important;
 		break-inside: avoid !important;
+		background: white !important;
+		border-radius: 8px !important;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 	}
 	
 	.cv-section h3 {
-		font-size: 9px !important;
-		margin: 0 0 1px 0 !important;
-		padding: 0 0 0 0 !important;
+		font-size: 12px !important;
+		margin: 0 0 2px 0 !important;
+		padding: 0 0 2px 0 !important;
 		border-bottom: 0.5px solid #000 !important;
 		font-weight: 600 !important;
 		letter-spacing: normal !important;
-		color: #000 !important;
+		color: #00539C !important;
 	}
 	
 	.cv-job,
 	.cv-edu {
-		background: transparent !important;
-		padding: 1px 0 !important;
-		margin: 1px 0 !important;
+		background: #f8f9fa !important;
+		padding: 2px 0 !important;
+		margin: 2px 0 !important;
 		border: none !important;
-		border-left: none !important;
-		page-break-inside: avoid !important;
-		break-inside: avoid !important;
+		border-left: 3px solid #00539C !important;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+		border-radius: 6px !important;
 	}
 	
 	.cv-job-title,
 	.cv-edu-title {
-		font-size: 8.5px !important;
+		font-size: 10px !important;
 		font-weight: 600 !important;
 		margin: 0 !important;
 		padding: 0 !important;
-		color: #000 !important;
+		color: #00539C !important;
 		display: inline !important;
 		letter-spacing: normal !important;
 	}
@@ -1569,18 +1583,18 @@ body[data-nav-collapsed="true"] .cv-page {
 	.cv-job-title span,
 	.cv-edu-title span {
 		font-weight: normal !important;
-		color: #000 !important;
-		font-size: 8.5px !important;
+		color: #495057 !important;
+		font-size: 10px !important;
 	}
 	
 	.cv-job-date,
 	.cv-edu-date {
-		font-size: 7px !important;
+		font-size: 9px !important;
 		margin: 0 !important;
 		padding: 0 !important;
 		font-style: italic !important;
 		display: block !important;
-		color: #000 !important;
+		color: #6c757d !important;
 	}
 	
 	.cv-job ul,
@@ -1592,11 +1606,11 @@ body[data-nav-collapsed="true"] .cv-page {
 	
 	.cv-job li,
 	.cv-edu li {
-		font-size: 8.5px !important;
+		font-size: 9px !important;
 		margin: 0.5px 0 !important;
 		padding: 0 !important;
 		line-height: 1.15 !important;
-		color: #000 !important;
+		color: #2d3748 !important;
 		display: list-item !important;
 	}
 	
@@ -1610,11 +1624,12 @@ body[data-nav-collapsed="true"] .cv-page {
 	
 	.cv-certs li,
 	.cv-projects li {
-		font-size: 8px !important;
+		font-size: 9px !important;
 		margin: 0.5px 0 !important;
 		line-height: 1.1 !important;
+		color: #2d3748 !important;
 	}
-
+	
 	.cv-section-break {
 		page-break-before: auto !important;
 		margin-top: 0 !important;
@@ -1636,14 +1651,14 @@ body[data-nav-collapsed="true"] .cv-page {
 	}
 
 	.cv-grid-2:first-of-type .cv-section h3 {
-		font-size: 8.8px !important;
+		font-size: 11px !important;
 		margin: 0 0 3px 0 !important;
 		padding-bottom: 2px !important;
 		border-bottom: 0.5px solid #00539C !important;
 	}
 
 	.cv-grid-2:first-of-type .cv-skills-body {
-		font-size: 8px !important;
+		font-size: 9px !important;
 		line-height: 1.2 !important;
 	}
 
@@ -1667,7 +1682,7 @@ body[data-nav-collapsed="true"] .cv-page {
 	}
 
 	.cv-grid-2:last-of-type .cv-section h3 {
-		font-size: 8.8px !important;
+		font-size: 11px !important;
 		margin: 0 0 3px 0 !important;
 		padding-bottom: 2px !important;
 		border-bottom: 0.5px solid #00539C !important;
@@ -1682,20 +1697,9 @@ body[data-nav-collapsed="true"] .cv-page {
 
 	.cv-grid-2:last-of-type .cv-certs li,
 	.cv-grid-2:last-of-type .cv-projects li {
-		font-size: 8px !important;
+		font-size: 9px !important;
 		margin: 1px 0 !important;
 		line-height: 1.2 !important;
 		page-break-inside: avoid !important;
 	}
-}
-
-.main-content {
-  transition: margin-left 0.22s ease, padding 0.22s ease;
-  margin-left: 240px; 
-  padding-top: 16px;
-}
-
-
-body[data-nav-collapsed="true"] .main-content {
-  margin-left: 72px;
 }
