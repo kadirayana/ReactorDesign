@@ -12,9 +12,6 @@ const nextConfig = {
     unoptimized: true,
   },
 
-  // Rust tabanlı derleyici ile minify işlemini hızlandırır
-  swcMinify: true,
-
   // React'in potansiyel problemleri belirlemesine yardımcı olur
   reactStrictMode: true,
 
