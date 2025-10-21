@@ -1,6 +1,11 @@
-import '../styles/globals.css'; 
-function ReactorDesign({ Component, pageProps }) {
-  return <Component {...pageProps} />;
-}
+import '../styles/globals.css';
+import Navbar from '../components/Navbar';
 
-export default ReactorDesign;
+export default function App({ Component, pageProps }) {
+  return (
+    <>
+      <Navbar />
+      <Component {...pageProps} />
+    </>
+  );
+}
