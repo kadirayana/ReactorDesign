@@ -1,5 +1,5 @@
 import '../styles/globals.css'; 
-function MyApp({ Component, pageProps }) {
+function ReactorDesign({ Component, pageProps }) {
   return <Component {...pageProps} />;
 }
 
