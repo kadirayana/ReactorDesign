@@ -141,9 +141,6 @@ export default function CVPage() {
 
 export async function getStaticProps({ locale }) {
   return {
-    props: {
-      ...(await serverSideTranslations(locale, ['common', 'translation'], nextI18NextConfig)),
-    },
     revalidate: 60,
   };
 }
