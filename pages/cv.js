@@ -1,7 +1,6 @@
 import CVDownloadButton from '../components/CVDownloadButton';
 
 export default function CVPage() {
-  const { t } = useTranslation('common');
   return (
     <div className="page-container cv-page">
       <CVDownloadButton />
