@@ -1,7 +1,4 @@
 
-import { useTranslation } from 'next-i18next';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import nextI18NextConfig from '../next-i18next.config.js';
 import CVDownloadButton from '../components/CVDownloadButton';
 
 export default function CVPage() {
