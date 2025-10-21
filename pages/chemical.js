@@ -1,6 +1,10 @@
-import { useState } from 'react';
-import ChartClient from '../components/ChartClient';
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { equilibriumSolve, solveTemperature } from '../src/lib/chemicalSolver';
+
+const ChartClient = dynamic(() => import('../components/ChartClient'), {
+  ssr: false,
+});
 
 const reactionTypes = [
   { value: 'aA+bB=cC+dD', label: 'aA + bB ⇌ cC + dD' },
@@ -19,9 +23,9 @@ const defaultInputs = {
   concA: 1.0, concB: 1.0, concC: 0.0, concD: 0.0,
   equilibriumConstant: 10,
   temperature: 298,
-  deltaH0: 0.0, // standard enthalpy change [kJ/mol]
-  deltaS0: 0.0, // standard entropy change [J/mol/K]
-  deltaG0: 0.0, // standard Gibbs energy [kJ/mol] (optional)
+  deltaH0: 0.0, 
+  deltaS0: 0.0,
+  deltaG0: 0.0, 
   pressure: 1.0,
   calculationType: 'equilibrium',
 };
@@ -30,6 +34,12 @@ export default function ChemicalPage() {
   const [inputs, setInputs] = useState(defaultInputs);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
+  const [isClient, setIsClient] = useState(false);
+
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   function handleChange(e) {
     const { name, value, type } = e.target;
@@ -38,7 +48,6 @@ export default function ChemicalPage() {
 
   function calculateEquilibrium() {
     setError(null);
-    // basic validation
     if (!isFinite(inputs.equilibriumConstant) || inputs.equilibriumConstant <= 0) {
       setError('Lütfen geçerli ve pozitif bir denge sabiti (K) girin.');
       setResults(null);
@@ -59,27 +68,19 @@ export default function ChemicalPage() {
   }
 
   function calculateTemperature() {
-    // Solve for temperature where K matches van't Hoff relation using ΔH° and ΔS°
-    // van't Hoff (approx): ln K = -ΔH°/(R T) + ΔS°/R  (ΔH° in J/mol, ΔS° in J/mol/K)
-    const R = 8.314462618; // J/mol/K
     const { deltaH0, deltaS0, equilibriumConstant: K } = inputs;
-    // Provided deltaH0 is in kJ/mol in the input; convert to J/mol if necessary
-    const dH = Number(deltaH0) * 1000; // J/mol
-    const dS = Number(deltaS0); // J/mol/K
     if (!K || K <= 0) { setError('Geçerli bir K değeri girin.'); setResults(null); return; }
     setError(null);
     try {
       const T = solveTemperature(inputs);
-      setResults({ temperatureSolved: T, used: 'vanthoff_newton', K, deltaH0: deltaH0, deltaS0: deltaS0 });
+      setResults({ temperatureSolved: T, used: 'vanthoff_newton', K, deltaH0, deltaS0 });
     } catch (err) {
       setResults(null);
       setError(String(err));
     }
-    
   }
 
   function calculateThermodynamics() {
-    // Compute ΔG° from K (ΔG° = -RT ln K) and relate ΔG°, ΔH°, ΔS° when available
     const R = 8.314462618; // J/mol/K
     const { equilibriumConstant: K, temperature, deltaH0, deltaS0, deltaG0 } = inputs;
     const T = Number(temperature) || 298;
@@ -90,7 +91,6 @@ export default function ChemicalPage() {
       out.deltaG_calc_kJpermol = dG / 1000;
     }
     if (deltaH0 && deltaS0) {
-      // If user gave ΔH° (kJ/mol) and ΔS° (J/mol/K), compute ΔG° = ΔH°*1000 - T*ΔS°
       const dH = Number(deltaH0) * 1000;
       const dS = Number(deltaS0);
       const dG_fromHS = dH - T * dS; // J/mol
@@ -103,15 +103,22 @@ export default function ChemicalPage() {
     setError(null);
     setResults({ thermodynamics: out, temperature: T });
   }
+  
+
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <div className="page-container">
       <h1 className="page-title">Kimyasal Denge Hesaplaması</h1>
-      <form onSubmit={e => { e.preventDefault(); setError(null);
-          if (inputs.calculationType === 'equilibrium') calculateEquilibrium();
-          else if (inputs.calculationType === 'temperature') calculateTemperature();
-          else if (inputs.calculationType === 'thermodynamics') calculateThermodynamics();
-        }}>
+      <form onSubmit={e => {
+        e.preventDefault();
+        setError(null);
+        if (inputs.calculationType === 'equilibrium') calculateEquilibrium();
+        else if (inputs.calculationType === 'temperature') calculateTemperature();
+        else if (inputs.calculationType === 'thermodynamics') calculateThermodynamics();
+      }}>
         <Section title="Reaksiyon Tipi Seçin">
           <select name="reactionType" value={inputs.reactionType} onChange={handleChange} style={{ width: '100%', padding: 10, borderRadius: 4, border: '1px solid #ced4da' }}>
             {reactionTypes.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
@@ -142,13 +149,10 @@ export default function ChemicalPage() {
             {calculationTypes.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
           </select>
         </Section>
-    <button type="submit" style={{ width: 200, margin: '20px auto', display: 'block' }}>Hesapla</button>
+        <button type="submit" style={{ width: 200, margin: '20px auto', display: 'block' }}>Hesapla</button>
       </form>
-    {error && <div style={{ marginTop: 12, color: 'crimson', fontWeight: 600 }}>{error}</div>}
-    {results && <ChemicalResults results={results} inputs={inputs} />}
-      <div style={{ marginTop: 32, background: '#f8f9fa', borderRadius: 8, minHeight: 120, textAlign: 'center', padding: 24 }}>
-        <strong>Gelişmiş denge ve termodinamik hesaplamalar yakında eklenecek.</strong>
-      </div>
+      {error && <div style={{ marginTop: 12, color: 'crimson', fontWeight: 600 }}>{error}</div>}
+      {results && <ChemicalResults results={results} inputs={inputs} />}
     </div>
   );
 }
@@ -199,21 +203,21 @@ function ChemicalResults({ results, inputs }) {
 
       {hasEquilibrium ? (
         <>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 15 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 15, textAlign: 'center' }}>
             <thead>
               <tr>
-                <th>A</th>
-                <th>B</th>
-                <th>C</th>
-                <th>D</th>
+                <th style={{padding: 8, border: '1px solid #ccc'}}>A</th>
+                <th style={{padding: 8, border: '1px solid #ccc'}}>B</th>
+                <th style={{padding: 8, border: '1px solid #ccc'}}>C</th>
+                <th style={{padding: 8, border: '1px solid #ccc'}}>D</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>{Number(results.eqA).toFixed(4)}</td>
-                <td>{Number(results.eqB).toFixed(4)}</td>
-                <td>{Number(results.eqC).toFixed(4)}</td>
-                <td>{Number(results.eqD).toFixed(4)}</td>
+                <td style={{padding: 8, border: '1px solid #ccc'}}>{Number(results.eqA).toFixed(4)}</td>
+                <td style={{padding: 8, border: '1px solid #ccc'}}>{Number(results.eqB).toFixed(4)}</td>
+                <td style={{padding: 8, border: '1px solid #ccc'}}>{Number(results.eqC).toFixed(4)}</td>
+                <td style={{padding: 8, border: '1px solid #ccc'}}>{Number(results.eqD).toFixed(4)}</td>
               </tr>
             </tbody>
           </table>
@@ -232,7 +236,6 @@ function ChemicalResults({ results, inputs }) {
 }
 
 function ConcentrationChart({ results, inputs }) {
-  // Build sample points from 0..maxExtent
   const maxE = results.maxExtent || Math.max(1, results.x * 2);
   const points = 80;
   const labels = [];
@@ -253,19 +256,34 @@ function ConcentrationChart({ results, inputs }) {
   const data = {
     labels,
     datasets: [
-      { label: 'A', data: Adata, borderColor: 'rgba(255,99,132,0.9)', fill: false },
-      { label: 'B', data: Bdata, borderColor: 'rgba(54,162,235,0.9)', fill: false },
-      { label: 'C', data: Cdata, borderColor: 'rgba(75,192,192,0.9)', fill: false },
-      { label: 'D', data: Ddata, borderColor: 'rgba(153,102,255,0.9)', fill: false },
+      { label: 'A', data: Adata, borderColor: 'rgba(255,99,132,0.9)', fill: false, tension: 0.1 },
+      { label: 'B', data: Bdata, borderColor: 'rgba(54,162,235,0.9)', fill: false, tension: 0.1 },
+      { label: 'C', data: Cdata, borderColor: 'rgba(75,192,192,0.9)', fill: false, tension: 0.1 },
+      { label: 'D', data: Ddata, borderColor: 'rgba(153,102,255,0.9)', fill: false, tension: 0.1 },
     ]
   };
 
   const options = {
     responsive: true,
-    scales: { x: { display: true, title: { display: true, text: 'Extent x' } }, y: { display: true, title: { display: true, text: 'Concentration [mol/L]' } } },
+    scales: { x: { display: true, title: { display: true, text: 'Reaksiyon İlerlemesi (x)' } }, y: { display: true, title: { display: true, text: 'Konsantrasyon [mol/L]' } } },
     plugins: {
       legend: { position: 'bottom' },
-      verticalLine: { index: Math.round((results.x / (results.maxExtent || results.x || 1)) * labels.length) }
+      annotation: {
+        annotations: {
+          line1: {
+            type: 'line',
+            xMin: results.x,
+            xMax: results.x,
+            borderColor: 'rgb(255, 99, 132)',
+            borderWidth: 2,
+            label: {
+              content: `Denge x=${results.x.toExponential(2)}`,
+              enabled: true,
+              position: 'start'
+            }
+          }
+        }
+      }
     }
   };
 
@@ -276,3 +294,4 @@ function ConcentrationChart({ results, inputs }) {
     </div>
   );
 }
+
