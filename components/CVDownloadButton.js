@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 
 // Dynamically import jsPDF and html2canvas to avoid SSR issues
@@ -7,7 +6,6 @@ const jsPDF = dynamic(() => import('jspdf').then(mod => mod.jsPDF), { ssr: false
 const html2canvas = dynamic(() => import('html2canvas'), { ssr: false });
 
 export default function CVDownloadButton() {
-  const { t } = useTranslation('common');
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
@@ -21,7 +19,7 @@ export default function CVDownloadButton() {
       const element = document.querySelector('.cv-page');
       
       if (!element) {
-        alert(t('cvDownload.error'));
+        alert('Error generating file.');
         setIsDownloading(false);
         return;
       }
@@ -73,7 +71,7 @@ export default function CVDownloadButton() {
           heightLeft -= availableHeight;
         }
 
-        pdf.save(t('cvDownload.title') + '.pdf');
+        pdf.save('KadirAyanaCV.pdf');
       } finally {
         // Show the download buttons again
         downloadBtns.forEach(b => b.style.display = 'inline-block');
@@ -82,7 +80,7 @@ export default function CVDownloadButton() {
       
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert(t('cvDownload.error'));
+      alert('Error generating file.');
       setIsDownloading(false);
     }
   };
@@ -120,7 +118,7 @@ export default function CVDownloadButton() {
           }
         }}
       >
-        📥 {isDownloading ? t('cvDownload.button') + '...' : t('cvDownload.button')}
+        📥 {isDownloading ? 'Download CV as PDF...' : 'Download CV as PDF'}
       </button>
 
       <button
@@ -129,7 +127,7 @@ export default function CVDownloadButton() {
             setIsDownloading(true);
             const element = document.querySelector('.cv-page');
             if (!element) {
-              alert(t('cvDownload.error'));
+              alert('Error generating file.');
               setIsDownloading(false);
               return;
             }
@@ -155,7 +153,7 @@ export default function CVDownloadButton() {
 
                   const criticalCSS = gatherStyles();
 
-                  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${t('cvDownload.title')}</title><style>${criticalCSS}</style></head><body>${element.innerHTML}</body></html>`;
+                  const html = `<!doctype html><html><head><meta charset="utf-8"><title>KadirAyanaCV</title><style>${criticalCSS}</style></head><body>${element.innerHTML}</body></html>`;
 
                   // POST the HTML to our server-side API which uses html-to-docx
                   try {
@@ -176,21 +174,21 @@ export default function CVDownloadButton() {
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = t('cvDownload.title') + '.docx';
+                    a.download = 'KadirAyanaCV.docx';
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
                     URL.revokeObjectURL(url);
                   } catch (serverErr) {
                     console.error('Server-side docx generation failed:', serverErr);
-                    alert(t('cvDownload.error'));
+                    alert('Error generating file.');
                   }
 
             // restore buttons
             downloadBtns.forEach(b => b.style.display = 'inline-block');
           } catch (err) {
             console.error('Error generating Word:', err);
-            alert(t('cvDownload.error'));
+            alert('Error generating file.');
           } finally {
             setIsDownloading(false);
           }
@@ -210,7 +208,7 @@ export default function CVDownloadButton() {
           opacity: isDownloading ? 0.7 : 1,
         }}
       >
-        📝 {t('cvDownload.word')}
+        📝 Download CV as Word
       </button>
     </div>
   );
