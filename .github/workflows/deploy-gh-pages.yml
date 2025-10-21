@@ -1,59 +1,51 @@
-# GitHub Pages'a dağıtım için basit bir iş akışı
-name: Deploy Next.js site to Pages
+name: Deploy Next.js to GitHub Pages
 
 on:
-  # 'main' dalına yapılan her push işleminde çalışır
   push:
-    branches: ['main']
-  # GitHub Actions sekmesinden manuel olarak çalıştırmanıza olanak tanır
-  workflow_dispatch:
+    branches:
+      - main
 
-# Yalnızca bir dağıtımın aynı anda çalışmasına izin verir
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 concurrency:
-  group: 'pages'
+  group: "pages"
   cancel-in-progress: true
 
 jobs:
-  # Build adımı
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Kodu Checkout Yap
         uses: actions/checkout@v4
-      - name: Setup Node
+
+      - name: Node.js Ortamını Kur
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
           cache: 'npm'
-      - name: Install Dependencies
-        run: npm ci --legacy-peer-deps
-      - name: Build
+
+      - name: Bağımlılıkları Yükle
+        run: npm ci
+
+      - name: Next.js Sitesini Build Et
         run: npm run build
-        env:
-          CI: true
-      - name: Verify build output
-        run: |
-          if [ ! -d out ]; then
-            echo "❌ HATA: Build sonrası 'out/' dizini bulunamadı."
-            exit 1
-          fi
-          echo "✅ Build başarılı."
-      - name: Upload artifact
+
+      - name: Artifact'ı Yükle
         uses: actions/upload-pages-artifact@v3
         with:
-          # 'out' klasöründeki statik içeriği yükle
-          path: './out'
+          path: ./out
 
-  # Dağıtım adımı
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
-    # Yalnızca 'main' dalına push yapıldığında çalışır
-    if: github.ref == 'refs/heads/main'
     steps:
-      - name: Deploy to GitHub Pages
+      - name: GitHub Pages'a Dağıt
         id: deployment
         uses: actions/deploy-pages@v4
