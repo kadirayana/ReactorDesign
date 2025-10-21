@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import ResultsTable from '../components/ResultsTable';
-const dyn = require('../src/lib/dynamics');
 
-// P5Client bileşenini sadece istemci tarafında (SSR olmadan) yüklüyoruz.
 const P5Client = dynamic(() => import('../components/P5Client'), {
   ssr: false,
 });
@@ -45,8 +43,6 @@ export default function DynamicsPage() {
   const [error, setError] = useState(null);
   const [isClient, setIsClient] = useState(false);
 
-  // Bu useEffect, bileşenin sadece istemci tarafında render edilmesini sağlar.
-  // Bu sayede 'window' gibi tarayıcıya özel API'ler güvenle kullanılabilir.
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -57,9 +53,11 @@ export default function DynamicsPage() {
   }
 
   function calculate() {
+
+    const dyn = require('../src/lib/dynamics');
     setError(null);
     const { simType, C0, kDyn, simTime, tau, Q, deltaG, temp, dT, area, U, Vmax, Km, S0, kA, kB } = inputs;
-    // ... (validasyon kodunuz burada değişiklik yok) ...
+
     if (!isFinite(C0) || C0 <= 0) { setError('Lütfen geçerli pozitif Başlangıç Konsantrasyonu C₀ giriniz.'); return }
     if (!isFinite(kDyn) || kDyn <= 0) { setError('Lütfen geçerli pozitif hız sabiti k giriniz.'); return }
     if (!isFinite(simTime) || simTime <= 0) { setError('Lütfen geçerli pozitif Simülasyon Süresi giriniz.'); return }
@@ -124,9 +122,7 @@ export default function DynamicsPage() {
      }
 
     setResults(res);
-    
-    // localStorage'a erişimi `window` kontrolü ile güvenli hale getiriyoruz.
-    if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined') {
       try {
         const kayit = { tip: simType, C0, kDyn, simTime, tarih: new Date().toISOString() };
         const hesaplamalar = JSON.parse(window.localStorage.getItem('hesaplamalar') || '[]');
@@ -145,7 +141,6 @@ export default function DynamicsPage() {
   }
 
   function renderFields() {
-    // ... (renderFields fonksiyonunuz burada değişiklik yok) ...
     switch (inputs.simType) {
       case 'dynamic':
         return <>
@@ -197,8 +192,7 @@ export default function DynamicsPage() {
     }
   }
 
-  // Eğer kod henüz istemcide çalışmıyorsa, hiçbir şey render etme (veya bir yükleniyor animasyonu göster).
-  // Bu, build işleminin hatasız tamamlanmasını sağlar.
+
   if (!isClient) {
     return null; 
   }
@@ -235,7 +229,6 @@ export default function DynamicsPage() {
   );
 }
 
-// ... (InputRow ve DynamicsResults bileşenleriniz burada değişiklik yok) ...
 function InputRow({ label, name, value, onChange }) {
   return (
     <div style={{ marginTop: 10 }}>
@@ -315,9 +308,9 @@ function DynamicsResults({ results }) {
   return null;
 }
 
-// p5 sketch factory fonksiyonu
+
 function makeSketch(results) {
-  // ... (makeSketch fonksiyonunuz burada değişiklik yok) ...
+
   return function (p) {
     let padding = 50
     let series = results.data || []
