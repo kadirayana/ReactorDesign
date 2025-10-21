@@ -1,11 +1,6 @@
 /** @type {import('next').NextConfig} */
 
-const { i18n } = require('./next-i18next.config.js');
-
 const nextConfig = {
-  // i18n yapılandırmasını ekler
-  i18n,
-
   // GitHub Pages için statik HTML'e export etmeyi sağlar
   output: 'export',
   
@@ -34,3 +29,4 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
+
