@@ -194,14 +194,14 @@ export default function OptimizationPage() {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1fr) 2fr', gap: 24 }} className="responsive-opt-grid">
         <div style={{ flex: 1, minWidth: 260 }}>
-          <div style={{ marginBottom: 12, border: '1px solid #e9ecef', borderRadius: 8, padding: 16, background: 'white' }}>
+          <div className="card">
             <label style={{ fontWeight: 500, color: '#2D3748', display: 'block', marginBottom: 8 }}>Reaktör Tipi</label>
             <select value={reactorType} onChange={e => setReactorType(e.target.value)} style={{ width: '100%', marginTop: 4, padding: 12, border: '1px solid #ddd', borderRadius: 6 }}>
               <option value="CSTR">CSTR</option>
               <option value="PFR">PFR</option>
             </select>
           </div>
-          <div style={{ marginBottom: 12, border: '1px solid #e9ecef', borderRadius: 8, padding: 16, background: 'white' }}>
+          <div className="card">
             <label style={{ fontWeight: 500, color: '#2D3748', display: 'block', marginBottom: 8 }}>Optimizasyon Hedefi</label>
             <select value={objective} onChange={e => setObjective(e.target.value)} style={{ width: '100%', marginTop: 4, padding: 12, border: '1px solid #ddd', borderRadius: 6 }}>
               <option value="conversion">Maksimum Dönüşüm</option>
@@ -209,7 +209,7 @@ export default function OptimizationPage() {
               <option value="cost">Minimum Maliyet</option>
             </select>
           </div>
-          <div style={{ marginBottom: 12, border: '1px solid #e9ecef', borderRadius: 8, padding: 16, background: 'white' }}>
+          <div className="card">
             <label style={{ fontWeight: 500, color: '#2D3748', display: 'block', marginBottom: 8 }}>Kısıtlamalar</label>
             <div>
               <label style={{ display: 'block', marginBottom: 8, fontWeight: 500, color: '#666' }}>
@@ -221,7 +221,7 @@ export default function OptimizationPage() {
             </div>
           </div>
 
-          <div style={{ marginBottom: 12, border: '1px solid #e9ecef', borderRadius: 8, padding: 16, background: 'white' }}>
+          <div className="card">
             <label style={{ fontWeight: 500, color: '#2D3748', display: 'block', marginBottom: 8 }}>Sıcaklık Aralığı (°C)</label>
             <div className="param-input-flex" style={{ display: 'flex', gap: 8, marginTop: 6 }}>
               <input type="number" value={ranges.temp_min} onChange={e => setRanges({ ...ranges, temp_min: Number(e.target.value) })} style={{ flex: 1, minWidth: 0, padding: 10, border: '1px solid #ddd', borderRadius: 6 }} />
@@ -229,7 +229,7 @@ export default function OptimizationPage() {
             </div>
           </div>
 
-          <div style={{ marginBottom: 12, border: '1px solid #e9ecef', borderRadius: 8, padding: 16, background: 'white' }}>
+          <div className="card">
             <label style={{ fontWeight: 500, color: '#2D3748', display: 'block', marginBottom: 8 }}>Hacim Aralığı (L)</label>
             <div className="param-input-flex" style={{ display: 'flex', gap: 8, marginTop: 6 }}>
               <input type="number" value={ranges.volume_min} onChange={e => setRanges({ ...ranges, volume_min: Number(e.target.value) })} style={{ flex: 1, minWidth: 0, padding: 10, border: '1px solid #ddd', borderRadius: 6 }} />
@@ -237,13 +237,13 @@ export default function OptimizationPage() {
             </div>
           </div>
 
-          <div style={{ marginBottom: 12, border: '1px solid #e9ecef', borderRadius: 8, padding: 16, background: 'white' }}>
+          <div className="card">
             <label style={{ fontWeight: 500, color: '#2D3748', display: 'block', marginBottom: 8 }}>Volumetrik Akış (L/s)</label>
             <input type="number" value={flowRate} onChange={e => setFlowRate(Number(e.target.value))} style={{ width: '100%', marginTop: 6, padding: 10, border: '1px solid #ddd', borderRadius: 6 }} />
             <div style={{ fontSize: 12, color: '#666', marginTop: 6 }}>Not: Residence time τ = V / Q (s). Burada V L, Q L/s kabul edilir.</div>
           </div>
 
-          <div style={{ marginBottom: 12, border: '1px solid #e9ecef', borderRadius: 8, padding: 16, background: 'white' }}>
+          <div className="card">
             <label style={{ fontWeight: 500, color: '#2D3748', display: 'block', marginBottom: 8 }}>Kinetik Parametreler (Arrhenius)</label>
             <div className="param-input-flex" style={{ display: 'flex', gap: 8, marginTop: 6 }}>
               <input type="number" value={k0} onChange={e => setK0(Number(e.target.value))} style={{ flex: 1, minWidth: 0, padding: 10, border: '1px solid #ddd', borderRadius: 6 }} />
@@ -254,7 +254,7 @@ export default function OptimizationPage() {
 
           <button style={{ width: '100%', padding: 12 }} onClick={runOptimize}>Optimize Et</button>
 
-          <div style={{ marginTop: 16, border: '1px solid #e9ecef', borderRadius: 8, padding: 16, background: 'white' }}>
+          <div className="card">
             <h4 style={{ color: '#00539C', fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}>Sonuçlar</h4>
             <div>{resultsHtml}</div>
           </div>
@@ -294,7 +294,7 @@ export default function OptimizationPage() {
           )}
 
           {tab === 'sensitivity' && (
-            <div style={{ background: 'white', borderRadius: 8, padding: 12, border: '1px solid #e9ecef' }}>
+            <div className="card">
               <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   Parametre:

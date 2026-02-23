@@ -164,7 +164,7 @@ export default function HeatTransferPage() {
         <TabButton active={tab === 'radiation'} onClick={() => setTab('radiation')}>Işınım</TabButton>
         <TabButton active={tab === 'exchanger'} onClick={() => setTab('exchanger')}>Isı Değiştiricisi</TabButton>
       </div>
-      <div style={{ background: 'white', padding: 20, borderRadius: '0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', minHeight: 400 }}>
+      <div className="content-card">
         {tab === 'conduction' && <ConductionCalculator />}
         {tab === 'exchanger' && (
           <div>

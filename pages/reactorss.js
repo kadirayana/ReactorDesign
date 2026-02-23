@@ -123,7 +123,7 @@ export default function ReactorssPage() {
             )}
           </div>
           <div style={{ marginTop: 8 }}>
-            <button onClick={() => downloadCSV('reactorss_profile.csv', ['X','r'], results.Xpoints.map((x,i) => [x, results.rpoints[i]]))}>CSV İndir</button>
+            <button onClick={() => downloadCSV('reactorss_profile.csv', ['X', 'r'], results.Xpoints.map((x, i) => [x, results.rpoints[i]]))}>CSV İndir</button>
           </div>
         </div>
       )}
@@ -135,7 +135,7 @@ export default function ReactorssPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 16, '@media (max-width: 768px)': { gridTemplateColumns: '1fr', gap: 16 } }}>
             <div>
               <h4>Hesaplama Özeti</h4>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <table className="table-modern">
                 <tbody>
                   <tr><td style={{ padding: 6 }}>Saatlik Üretim (kmol/h)</td><td style={{ padding: 6 }}>{results.prodKmolH.toFixed(3)}</td></tr>
                   <tr><td style={{ padding: 6 }}>Limitleyici Akış F₀ (kmol/h)</td><td style={{ padding: 6 }}>{results.F0_lim.toFixed(3)}</td></tr>
@@ -217,7 +217,7 @@ export default function ReactorssPage() {
 
 function Section({ title, children }) {
   return (
-    <fieldset style={{ border: '1px solid #e9ecef', borderRadius: 8, padding: 16, marginBottom: 20, background: 'white' }}>
+    <fieldset className="card">
       <legend style={{ color: '#00539C', padding: '0 10px', fontWeight: 600, fontSize: 16, fontFamily: "'Poppins', sans-serif" }}>{title}</legend>
       {children}
     </fieldset>
@@ -244,7 +244,7 @@ function InputRow({ label, name, value, onChange, type = 'number', ...rest }) {
 function ReactorResults({ results }) {
   return (
     <div className="result" style={{ marginTop: 20, padding: 20, backgroundColor: '#f8f9fa', borderRadius: 4, borderLeft: '4px solid #00539C' }}>
-      <p><strong>{results.prodName}</strong> üretimi için gerekli katalizör miktarı: {results.W.toFixed(2)} kg ({(results.W/1000).toFixed(2)} ton)</p>
+      <p><strong>{results.prodName}</strong> üretimi için gerekli katalizör miktarı: {results.W.toFixed(2)} kg ({(results.W / 1000).toFixed(2)} ton)</p>
       <p>Saatlik Üretim: {results.prodKmolH.toFixed(3)} kmol/h</p>
       <p>Limitleyici Reaktan: {results.limitingName}</p>
       <p>Limitleyici Akış: {results.F0_lim.toFixed(2)} kmol/h</p>

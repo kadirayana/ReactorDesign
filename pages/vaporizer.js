@@ -69,7 +69,7 @@ export default function VaporizerPage() {
   function exportCSV() {
     if (!results) return;
     const rows = [];
-    rows.push(["Parameter","Value"]);
+    rows.push(["Parameter", "Value"]);
     rows.push(["Q_total_kJ_h", results.Q_total_kJ_h]);
     rows.push(["Q_total_kW", results.Q_total_kW]);
     rows.push(["m_water_kg_per_s", results.m_water]);
@@ -167,8 +167,8 @@ export default function VaporizerPage() {
                   for (let r = Math.max(-ring, -q - ring); r <= Math.min(ring, -q + ring); r++) {
                     const s = -q - r;
                     // axial to cartesian (pointy-top hex) approximate
-                    const x = pitch * (q + r/2);
-                    const y = pitch * (Math.sqrt(3)/2 * r);
+                    const x = pitch * (q + r / 2);
+                    const y = pitch * (Math.sqrt(3) / 2 * r);
                     if (positions.length < N) positions.push([x, y]);
                   }
                 }
@@ -197,9 +197,9 @@ export default function VaporizerPage() {
               // add end caps as thin cylinders
               const cap = new THREE.Mesh(new THREE.CylinderGeometry(tubeRadius * 0.98, tubeRadius * 0.98, 0.02 * tubeLength, 28), capMat);
               cap.rotation.y = Math.PI / 2;
-              cap.position.set(x + tubeLength/2, y, 0);
+              cap.position.set(x + tubeLength / 2, y, 0);
               const cap2 = cap.clone();
-              cap2.position.set(x - tubeLength/2, y, 0);
+              cap2.position.set(x - tubeLength / 2, y, 0);
               group.add(mesh);
               group.add(cap);
               group.add(cap2);
@@ -248,26 +248,26 @@ export default function VaporizerPage() {
             const sheetMat = new THREE.MeshStandardMaterial({ color: 0xd9d9d9, metalness: 0.4, roughness: 0.5 });
             const sheet1 = new THREE.Mesh(sheetGeom, sheetMat);
             const sheet2 = sheet1.clone();
-            sheet1.position.set(tubeLength/2 + sheetThickness/2, 0, 0);
-            sheet2.position.set(-tubeLength/2 - sheetThickness/2, 0, 0);
+            sheet1.position.set(tubeLength / 2 + sheetThickness / 2, 0, 0);
+            sheet2.position.set(-tubeLength / 2 - sheetThickness / 2, 0, 0);
             group.add(sheet1);
             group.add(sheet2);
 
             // add nozzles (tube side inlet/outlet) as short pipes on the tube-sheet
-            const nozzleGeom = new THREE.CylinderGeometry(sheetThickness*0.6, sheetThickness*0.6, sheetThickness*1.8, 20);
+            const nozzleGeom = new THREE.CylinderGeometry(sheetThickness * 0.6, sheetThickness * 0.6, sheetThickness * 1.8, 20);
             const nozzleMat = new THREE.MeshStandardMaterial({ color: 0x1f77b4 });
             const nozzleIn = new THREE.Mesh(nozzleGeom, nozzleMat);
-            nozzleIn.rotation.y = Math.PI/2;
-            nozzleIn.position.set(-tubeLength/2 - sheetThickness, -sheetWidth*0.18, 0);
+            nozzleIn.rotation.y = Math.PI / 2;
+            nozzleIn.position.set(-tubeLength / 2 - sheetThickness, -sheetWidth * 0.18, 0);
             const nozzleOut = nozzleIn.clone();
-            nozzleOut.position.set(tubeLength/2 + sheetThickness, sheetWidth*0.18, 0);
+            nozzleOut.position.set(tubeLength / 2 + sheetThickness, sheetWidth * 0.18, 0);
             group.add(nozzleIn); group.add(nozzleOut);
 
             // shell nozzles (shell-side inlet/outlet) as larger orange pipes
-            const shellNozzleGeom = new THREE.CylinderGeometry(sheetThickness*0.9, sheetThickness*0.9, sheetThickness*2.2, 20);
+            const shellNozzleGeom = new THREE.CylinderGeometry(sheetThickness * 0.9, sheetThickness * 0.9, sheetThickness * 2.2, 20);
             const shellNozzleMat = new THREE.MeshStandardMaterial({ color: 0xff8c00 });
             const shellInNozzle = new THREE.Mesh(shellNozzleGeom, shellNozzleMat);
-            shellInNozzle.rotation.z = Math.PI/2;
+            shellInNozzle.rotation.z = Math.PI / 2;
             shellInNozzle.position.set(-shellRadius - 0.12, 0, 0);
             const shellOutNozzle = shellInNozzle.clone();
             shellOutNozzle.position.set(shellRadius + 0.12, 0, 0);
@@ -278,7 +278,7 @@ export default function VaporizerPage() {
             const fbGeom = new THREE.PlaneGeometry(sheetWidth, sheetWidth);
             const fbMat = new THREE.MeshBasicMaterial({ color: 0x99ccff, transparent: true, opacity: 0.08, side: THREE.DoubleSide });
             const fbPlane = new THREE.Mesh(fbGeom, fbMat);
-            fbPlane.rotation.y = Math.PI/2;
+            fbPlane.rotation.y = Math.PI / 2;
             fbPlane.position.set(0, 0, freeboardHeight);
             group.add(fbPlane);
 
@@ -293,7 +293,7 @@ export default function VaporizerPage() {
             labelWrap.style.fontSize = '13px';
             labelWrap.style.pointerEvents = 'none';
             const fitNote = results.packWarning ? `<div style="color:#b22222"><strong>UYARI:</strong> ${results.packWarning}</div>` : '';
-            labelWrap.innerHTML = `<div><strong>İç çap:</strong> ${(tubeDia*1000).toFixed(1)} mm</div><div><strong>Tüp sayısı (talep/yerleşen):</strong> ${Math.max(1, Math.round(last.N_tubes || N))}/${results.packedCount}</div><div><strong>Shell Ø:</strong> ${(Ds*1000).toFixed(0)} mm</div><div><strong>Freeboard:</strong> ${(freeboardHeight*1000).toFixed(0)} mm</div>${fitNote}<div style="margin-top:6px"><em>Grey plates:</em> tube sheets • Blue pipes: tube-side • Orange pipes: shell-side</div>`;
+            labelWrap.innerHTML = `<div><strong>İç çap:</strong> ${(tubeDia * 1000).toFixed(1)} mm</div><div><strong>Tüp sayısı (talep/yerleşen):</strong> ${Math.max(1, Math.round(last.N_tubes || N))}/${results.packedCount}</div><div><strong>Shell Ø:</strong> ${(Ds * 1000).toFixed(0)} mm</div><div><strong>Freeboard:</strong> ${(freeboardHeight * 1000).toFixed(0)} mm</div>${fitNote}<div style="margin-top:6px"><em>Grey plates:</em> tube sheets • Blue pipes: tube-side • Orange pipes: shell-side</div>`;
             container.style.position = 'relative';
             container.appendChild(labelWrap);
 
@@ -307,11 +307,11 @@ export default function VaporizerPage() {
             // tube-side flow (arrows along tube length on the first and last rows)
             if (positions && positions.length) {
               const firstPos = positions[0];
-              const lastPos = positions[Math.min(positions.length-1, Math.floor(positions.length/2))];
-              const from = new THREE.Vector3(firstPos[0] - tubeLength/2, firstPos[1], 0);
-              const to = new THREE.Vector3(firstPos[0] + tubeLength/2, firstPos[1], 0);
+              const lastPos = positions[Math.min(positions.length - 1, Math.floor(positions.length / 2))];
+              const from = new THREE.Vector3(firstPos[0] - tubeLength / 2, firstPos[1], 0);
+              const to = new THREE.Vector3(firstPos[0] + tubeLength / 2, firstPos[1], 0);
               const arrow1 = makeArrow(from, to, 0x1f77b4);
-              const arrow2 = makeArrow(new THREE.Vector3(lastPos[0] + tubeLength/2, lastPos[1], 0), new THREE.Vector3(lastPos[0] - tubeLength/2, lastPos[1], 0), 0x1f77b4);
+              const arrow2 = makeArrow(new THREE.Vector3(lastPos[0] + tubeLength / 2, lastPos[1], 0), new THREE.Vector3(lastPos[0] - tubeLength / 2, lastPos[1], 0), 0x1f77b4);
               scene.add(arrow1); scene.add(arrow2);
             }
 
@@ -329,10 +329,10 @@ export default function VaporizerPage() {
               scene.remove(hemi);
               scene.remove(amb);
               // remove arrows and nozzles if present
-              try { scene.remove(shellArrow); } catch (e) {}
-              try { if (typeof arrow1 !== 'undefined') scene.remove(arrow1); if (typeof arrow2 !== 'undefined') scene.remove(arrow2); } catch (e) {}
-              try { scene.remove(nozzleIn); scene.remove(nozzleOut); } catch (e) {}
-              try { scene.remove(shellInNozzle); scene.remove(shellOutNozzle); } catch (e) {}
+              try { scene.remove(shellArrow); } catch (e) { }
+              try { if (typeof arrow1 !== 'undefined') scene.remove(arrow1); if (typeof arrow2 !== 'undefined') scene.remove(arrow2); } catch (e) { }
+              try { scene.remove(nozzleIn); scene.remove(nozzleOut); } catch (e) { }
+              try { scene.remove(shellInNozzle); scene.remove(shellOutNozzle); } catch (e) { }
               if (labelWrap && labelWrap.parentElement) labelWrap.parentElement.removeChild(labelWrap);
               // dispose geometries and materials
               tubeGeoms.forEach(g => g.dispose());
@@ -356,7 +356,7 @@ export default function VaporizerPage() {
 
 function Section({ title, children }) {
   return (
-    <div style={{ marginBottom: 24, border: '1px solid #e9ecef', borderRadius: 8, padding: 16, background: 'white' }}>
+    <div className="card">
       <h2 style={{ fontSize: 20, color: '#00539C', borderBottom: '2px solid #00539C', paddingBottom: 8, marginBottom: 12, fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}>{title}</h2>
       {children}
     </div>
@@ -385,10 +385,10 @@ function VaporizerResults({ results }) {
     <div style={{ background: '#f1fdf4', border: '1px solid #c3e9cb', borderLeft: '4px solid #51CF66', padding: 20, borderRadius: 8, marginTop: 20 }}>
       <h2 style={{ fontSize: 20, color: '#00539C', fontFamily: "'Poppins', sans-serif", fontWeight: 600, marginBottom: 16 }}>Tasarım Sonuçları</h2>
       <p style={{ marginBottom: 12 }}><strong>Isı Yükü:</strong> {results.Q_total_kJ_h.toFixed(0)} kJ/h ({results.Q_total_kW.toFixed(2)} kW)</p>
-      <p style={{ marginBottom: 12 }}><strong>Su Kütle Akışı:</strong> {results.m_water.toFixed(3)} kg/s ({(results.m_water*3600).toFixed(2)} kg/h)</p>
+      <p style={{ marginBottom: 12 }}><strong>Su Kütle Akışı:</strong> {results.m_water.toFixed(3)} kg/s ({(results.m_water * 3600).toFixed(2)} kg/h)</p>
       <p style={{ marginBottom: 16 }}><strong>LMTD:</strong> {results.LMTD.toFixed(2)} °C</p>
       {results.iterationResults.map(result => (
-        <div key={result.iteration} style={{ marginTop: 12, padding: 12, background: 'white', borderRadius: 6, border: '1px solid #e9ecef' }}>
+        <div key={result.iteration} className="card" style={{ padding: 12, marginTop: 12, marginBottom: 12 }}>
           <h3 style={{ fontSize: 16, color: '#00539C', fontWeight: 600, marginBottom: 8 }}>İterasyon {result.iteration} (U = {result.U.toFixed(0)} W/m²K)</h3>
           <p style={{ marginBottom: 6 }}><strong>Isı Transfer Alanı:</strong> {result.A.toFixed(2)} m²</p>
           <p style={{ marginBottom: 6 }}><strong>Tüp Sayısı:</strong> {result.N_tubes.toFixed(0)}</p>

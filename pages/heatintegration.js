@@ -80,7 +80,7 @@ export default function HeatIntegrationPage() {
           <InputRow label="Giriş Sıcaklığı (°C):" name="H2_in" value={inputs.H2_in} onChange={handleChange} />
           <InputRow label="Çıkış Sıcaklığı (°C):" name="H2_out" value={inputs.H2_out} onChange={handleChange} />
         </Section>
-    {error && <div style={{ color: 'crimson', marginTop: 12 }}><strong>Hata:</strong> {error}</div>}
+        {error && <div style={{ color: 'crimson', marginTop: 12 }}><strong>Hata:</strong> {error}</div>}
         <button type="submit" style={{ width: 200, margin: '20px auto', display: 'block' }}>Hesaplamayı Yap</button>
       </form>
       {results && <HeatIntegrationResults results={results} />}
@@ -117,7 +117,7 @@ export default function HeatIntegrationPage() {
 
 function Section({ title, children }) {
   return (
-    <fieldset style={{ border: '1px solid #e9ecef', borderRadius: 8, padding: 16, margin: '15px 0', background: 'white' }}>
+    <fieldset className="card">
       <legend style={{ color: '#00539C', padding: '0 10px', fontWeight: 600, fontSize: 16, fontFamily: "'Poppins', sans-serif" }}>{title}</legend>
       {children}
     </fieldset>
@@ -142,7 +142,7 @@ function InputRow({ label, name, value, onChange }) {
 
 function HeatIntegrationResults({ results }) {
   return (
-    <div style={{ marginTop: 20, background: 'white', border: '1px solid #e9ecef', borderLeft: '4px solid #00539C', borderRadius: 8, padding: 20, fontWeight: 500 }}>
+    <div className="card-highlight">
       <h2 style={{ fontSize: 20, color: '#00539C', fontFamily: "'Poppins', sans-serif", fontWeight: 600, marginBottom: 16 }}>Sonuçlar</h2>
       <p style={{ marginBottom: 12 }}><strong>Minimum Hot Utility:</strong> {results.hotUtility.toFixed(2)} kJ/s</p>
       <p style={{ marginBottom: 12 }}><strong>Minimum Cold Utility:</strong> {results.coldUtility.toFixed(2)} kJ/s</p>
@@ -234,7 +234,7 @@ function buildChartOptions(results) {
     },
     plugins: {
       legend: { position: 'top' },
-      verticalLine: { index: pinchIndex, color: 'rgba(0,0,0,0.6)', lineWidth: 1, dash: [4,4] }
+      verticalLine: { index: pinchIndex, color: 'rgba(0,0,0,0.6)', lineWidth: 1, dash: [4, 4] }
     }
   };
 }

@@ -12,7 +12,7 @@ export default function Layout({ children }) {
         <link rel="manifest" href="/manifest.json" />
       </Head>
       <Navbar />
-      <main className="main-content" style={{ paddingTop: 16 }}>{children}</main>
+      <main>{children}</main>
     </>
   );
 }

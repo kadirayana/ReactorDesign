@@ -23,9 +23,9 @@ const defaultInputs = {
   concA: 1.0, concB: 1.0, concC: 0.0, concD: 0.0,
   equilibriumConstant: 10,
   temperature: 298,
-  deltaH0: 0.0, 
+  deltaH0: 0.0,
   deltaS0: 0.0,
-  deltaG0: 0.0, 
+  deltaG0: 0.0,
   pressure: 1.0,
   calculationType: 'equilibrium',
 };
@@ -103,7 +103,7 @@ export default function ChemicalPage() {
     setError(null);
     setResults({ thermodynamics: out, temperature: T });
   }
-  
+
 
   if (!isClient) {
     return null;
@@ -159,7 +159,7 @@ export default function ChemicalPage() {
 
 function Section({ title, children }) {
   return (
-    <div style={{ marginBottom: 24, border: '1px solid #e9ecef', borderRadius: 8, padding: 16, background: 'white' }}>
+    <div className="card">
       <h2 style={{ fontSize: 20, color: '#00539C', borderBottom: '2px solid #00539C', paddingBottom: 8, marginBottom: 12, fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}>{title}</h2>
       {children}
     </div>
@@ -203,21 +203,21 @@ function ChemicalResults({ results, inputs }) {
 
       {hasEquilibrium ? (
         <>
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 15, textAlign: 'center' }}>
+          <table className="table-modern">
             <thead>
               <tr>
-                <th style={{padding: 8, border: '1px solid #ccc'}}>A</th>
-                <th style={{padding: 8, border: '1px solid #ccc'}}>B</th>
-                <th style={{padding: 8, border: '1px solid #ccc'}}>C</th>
-                <th style={{padding: 8, border: '1px solid #ccc'}}>D</th>
+                <th style={{ padding: 8, border: '1px solid #ccc' }}>A</th>
+                <th style={{ padding: 8, border: '1px solid #ccc' }}>B</th>
+                <th style={{ padding: 8, border: '1px solid #ccc' }}>C</th>
+                <th style={{ padding: 8, border: '1px solid #ccc' }}>D</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td style={{padding: 8, border: '1px solid #ccc'}}>{Number(results.eqA).toFixed(4)}</td>
-                <td style={{padding: 8, border: '1px solid #ccc'}}>{Number(results.eqB).toFixed(4)}</td>
-                <td style={{padding: 8, border: '1px solid #ccc'}}>{Number(results.eqC).toFixed(4)}</td>
-                <td style={{padding: 8, border: '1px solid #ccc'}}>{Number(results.eqD).toFixed(4)}</td>
+                <td style={{ padding: 8, border: '1px solid #ccc' }}>{Number(results.eqA).toFixed(4)}</td>
+                <td style={{ padding: 8, border: '1px solid #ccc' }}>{Number(results.eqB).toFixed(4)}</td>
+                <td style={{ padding: 8, border: '1px solid #ccc' }}>{Number(results.eqC).toFixed(4)}</td>
+                <td style={{ padding: 8, border: '1px solid #ccc' }}>{Number(results.eqD).toFixed(4)}</td>
               </tr>
             </tbody>
           </table>

@@ -34,9 +34,9 @@ export default function HistoryPage() {
 
   return (
     <div className="page-container">
-      <div style={{ background: '#fff', borderRadius: 10, boxShadow: '0 4px 6px rgba(0,0,0,0.1)', padding: '2rem', marginBottom: '2rem' }}>
-        <h1 className="page-title" style={{ textAlign: 'center', marginBottom: '2rem' }}>Hesaplama Geçmişi</h1>
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '1rem', background: '#fff', borderRadius: 8, overflow: 'hidden' }}>
+      <div className="content-card">
+        <h1 className="page-title" style={{ textAlign: 'center' }}>Hesaplama Geçmişi</h1>
+        <table className="table-modern">
           <thead>
             <tr>
               <th style={thStyle}>Tarih</th>
@@ -65,9 +65,5 @@ export default function HistoryPage() {
   );
 }
 
-const thStyle = {
-  background: '#00539C', color: '#fff', fontWeight: 500, whiteSpace: 'nowrap', padding: '1rem', textAlign: 'left'
-};
-const tdStyle = {
-  borderBottom: '1px solid #ddd', padding: '1rem', textAlign: 'left'
-};
+const thStyle = {};
+const tdStyle = {};

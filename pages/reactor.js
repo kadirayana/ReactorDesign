@@ -23,7 +23,7 @@ export default function ReactorPage() {
           <TabButton active={tab === 'advanced'} onClick={() => setTab('advanced')}>Gelişmiş Tasarım</TabButton>
           <TabButton active={tab === 'economic'} onClick={() => setTab('economic')}>Ekonomik Analiz</TabButton>
         </div>
-        <div style={{ background: 'white', padding: 20, borderRadius: '0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', minHeight: 400 }}>
+        <div className="content-card">
           {tab === 'basic' && <BasicReactorCalculator />}
           {tab === 'advanced' && <AdvancedReactorCalculator />}
           {tab === 'economic' && <EconomicAnalysisStub />}
@@ -519,59 +519,59 @@ function AdvancedReactorCalculator() {
 
           <div id="reactorPerformance">
             <h4>Performans Parametreleri</h4>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table className="table-modern">
               <thead>
                 <tr>
-                  <th style={{ border: '1px solid #dee2e6', padding: 8 }}>Parametre</th>
-                  <th style={{ border: '1px solid #dee2e6', padding: 8 }}>Değer</th>
-                  <th style={{ border: '1px solid #dee2e6', padding: 8 }}>Birim</th>
+                  <th>Parametre</th>
+                  <th>Değer</th>
+                  <th>Birim</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>Reaktör Hacmi/Uzunluğu</td>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{result.reactorVolume ? result.reactorVolume.toFixed(3) : '-'}</td>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{result.reactorVolume ? (inputs.reactorType === 'batch' ? 'saat' : 'm³') : '-'}</td>
+                  <td>Reaktör Hacmi/Uzunluğu</td>
+                  <td>{result.reactorVolume ? result.reactorVolume.toFixed(3) : '-'}</td>
+                  <td>{result.reactorVolume ? (inputs.reactorType === 'batch' ? 'saat' : 'm³') : '-'}</td>
                 </tr>
                 <tr>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>Uzay Zamanı</td>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{result.spaceTime ? result.spaceTime.toFixed(3) : '-'}</td>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>s</td>
+                  <td>Uzay Zamanı</td>
+                  <td>{result.spaceTime ? result.spaceTime.toFixed(3) : '-'}</td>
+                  <td>s</td>
                 </tr>
                 <tr>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>Uzay Hızı</td>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{result.spaceTime ? (1 / result.spaceTime).toFixed(4) : '-'}</td>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>1/s</td>
+                  <td>Uzay Hızı</td>
+                  <td>{result.spaceTime ? (1 / result.spaceTime).toFixed(4) : '-'}</td>
+                  <td>1/s</td>
                 </tr>
                 <tr>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>Dönüşüm</td>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{(result.targetConversion * 1).toString()}</td>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>-</td>
+                  <td>Dönüşüm</td>
+                  <td>{(result.targetConversion * 1).toString()}</td>
+                  <td>-</td>
                 </tr>
                 <tr>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>Seçicilik</td>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{result.selectivity}</td>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>-</td>
+                  <td>Seçicilik</td>
+                  <td>{result.selectivity}</td>
+                  <td>-</td>
                 </tr>
                 <tr>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>Verim</td>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{result.yield}</td>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>-</td>
+                  <td>Verim</td>
+                  <td>{result.yield}</td>
+                  <td>-</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <div id="reactorDiagram" style={{ marginTop: 20, padding: 10, border: '1px solid #dee2e6', borderRadius: 4, textAlign: 'center' }}>
+          <div id="reactorDiagram" className="card" style={{ textAlign: 'center' }}>
             <h4>Reaktör Şeması</h4>
             <ReactorDiagram reactorType={inputs.reactorType} />
           </div>
 
           <h4 style={{ marginTop: 20 }}>Performans Grafikleri</h4>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <button onClick={() => setChartTab('conversion')} style={{ background: chartTab === 'conversion' ? '#007bff' : '#f1f1f1', color: chartTab === 'conversion' ? 'white' : '#495057', border: 'none', padding: '8px 12px' }}>Dönüşüm</button>
-            <button onClick={() => setChartTab('concentration')} style={{ background: chartTab === 'concentration' ? '#007bff' : '#f1f1f1', color: chartTab === 'concentration' ? 'white' : '#495057', border: 'none', padding: '8px 12px' }}>Konsantrasyon</button>
-            <button onClick={() => setChartTab('temperature')} style={{ background: chartTab === 'temperature' ? '#007bff' : '#f1f1f1', color: chartTab === 'temperature' ? 'white' : '#495057', border: 'none', padding: '8px 12px' }}>Sıcaklık</button>
+          <div className="tabs" style={{ borderBottom: 'none', marginBottom: 8 }}>
+            <button className={chartTab === 'conversion' ? 'active' : ''} onClick={() => setChartTab('conversion')}>Dönüşüm</button>
+            <button className={chartTab === 'concentration' ? 'active' : ''} onClick={() => setChartTab('concentration')}>Konsantrasyon</button>
+            <button className={chartTab === 'temperature' ? 'active' : ''} onClick={() => setChartTab('temperature')}>Sıcaklık</button>
           </div>
 
           <div style={{ height: 300 }}>
