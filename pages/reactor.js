@@ -56,6 +56,12 @@ function BasicReactorCalculator() {
   }
 
   function runCalc() {
+    // Add basic validation error handling identical to advanced form
+    if (!isFinite(inputs.initialConc) || inputs.initialConc <= 0) return;
+    if (!isFinite(inputs.flowRate) || inputs.flowRate <= 0) return;
+    if (!isFinite(inputs.rateConstant) || inputs.rateConstant <= 0) return;
+    if (!isFinite(inputs.targetConversion) || inputs.targetConversion <= 0 || inputs.targetConversion >= 1) return;
+
     const res = calculateBasicReactor(inputs);
     setResult(res);
   }
@@ -223,41 +229,39 @@ function AdvancedReactorCalculator() {
     const reactorTypeCode = reactorType;
     const order = reactionOrder === 'custom' ? 1 : Number(reactionOrder);
 
-    const flow = Number(flowRate);
-    const ca0 = Number(initialConc);
-    const k = Number(rateConstant);
-    const targetX = Number(targetConversion);
+    const flow = Math.max(1e-12, Number(flowRate));
+    const ca0 = Math.max(1e-12, Number(initialConc));
+    const k_val = Math.max(1e-12, Number(rateConstant));
+    const targetX = Math.min(Math.max(0.0001, Number(targetConversion)), 0.9999);
 
     // basic input validation to avoid NaN/Div0
     if (!isFinite(ca0) || ca0 <= 0) { setCalcError('Başlangıç konsantrasyonu (>0) girin.'); return; }
     if (!isFinite(flow) || flow <= 0) { setCalcError('Mol akış hızı (>0) girin.'); return; }
-    if (!isFinite(k) || k <= 0) { setCalcError('Hız sabiti (>0) girin.'); return; }
+    if (!isFinite(k_val) || k_val <= 0) { setCalcError('Hız sabiti (>0) girin.'); return; }
     if (!isFinite(targetX) || targetX <= 0 || targetX >= 1) { setCalcError('Hedef dönüşüm 0 < X < 1 aralığında olmalıdır.'); return; }
 
     let reactorVolume = 0;
     switch (reactorTypeCode) {
       case 'pfr':
-        if (order === 1) reactorVolume = (flow / ca0) * Math.log(1 / (1 - targetX)) / k;
-        else if (order === 2) reactorVolume = (flow / ca0) * (1 / (1 - targetX) - 1) / (k * ca0);
-        else reactorVolume = (flow * targetX) / (k * ca0);
+        if (order === 1) reactorVolume = (flow / ca0) * Math.log(1 / (1 - targetX)) / k_val;
+        else if (order === 2) reactorVolume = (flow / ca0) * (1 / (1 - targetX) - 1) / (k_val * ca0);
+        else reactorVolume = (flow * targetX) / (k_val * ca0);
         break;
       case 'cstr':
-        if (order === 1) reactorVolume = (flow * targetX) / (k * ca0 * (1 - targetX));
-        else if (order === 2) reactorVolume = (flow * targetX) / (k * Math.pow(ca0 * (1 - targetX), 2));
-        else reactorVolume = (flow * targetX) / k;
+        if (order === 1) reactorVolume = (flow * targetX) / (k_val * ca0 * (1 - targetX));
+        else if (order === 2) reactorVolume = (flow * targetX) / (k_val * Math.pow(ca0 * (1 - targetX), 2));
+        else reactorVolume = (flow * targetX) / k_val;
         break;
       case 'pbr':
-        const effK = Number(effectiveRateConstant || 1);
-        const cd = Number(catDensity || 1);
-        const effF = Number(effectivenessFactor || 1);
-        if (order === 1) reactorVolume = (flow / ca0) * Math.log(1 / (1 - targetX)) / (effK * effF * cd);
-        else if (order === 2) reactorVolume = (flow / ca0) * (1 / (1 - targetX) - 1) / (effK * effF * cd * ca0);
-        else reactorVolume = (flow * targetX) / (effK * effF * cd);
+        const effK = Math.max(1e-12, Number(effectiveRateConstant || 1) * Number(effectivenessFactor || 1) * Number(catDensity || 1));
+        if (order === 1) reactorVolume = (flow / ca0) * Math.log(1 / (1 - targetX)) / effK;
+        else if (order === 2) reactorVolume = (flow / ca0) * (1 / (1 - targetX) - 1) / (effK * ca0);
+        else reactorVolume = (flow * targetX) / effK;
         break;
       case 'batch':
-        if (order === 1) reactorVolume = Math.log(1 / (1 - targetX)) / k;
-        else if (order === 2) reactorVolume = (1 / (1 - targetX) - 1) / (k * ca0);
-        else reactorVolume = targetX / (k * ca0);
+        if (order === 1) reactorVolume = Math.log(1 / (1 - targetX)) / k_val;
+        else if (order === 2) reactorVolume = (1 / (1 - targetX) - 1) / (k_val * ca0);
+        else reactorVolume = targetX / k_val; // For batch 0-order, t = x/k
         break;
       default:
         reactorVolume = 0;
@@ -288,9 +292,9 @@ function AdvancedReactorCalculator() {
       for (let i = 0; i <= dataPoints; i++) {
         const z = i / dataPoints;
         let conversion = 0;
-        if (order === 1) conversion = 1 - Math.exp(-k * z * 5);
-        else if (order === 2) conversion = (k * ca0 * z * 5) / (1 + k * ca0 * z * 5);
-        else conversion = Math.min(1, k * z * 5 / ca0);
+        if (order === 1) conversion = 1 - Math.exp(-k_val * z * 5);
+        else if (order === 2) conversion = (k_val * ca0 * z * 5) / (1 + k_val * ca0 * z * 5);
+        else conversion = Math.min(1, k_val * z * 5 / ca0);
 
         const position = z * 5;
         zProfile.push(position);
@@ -317,13 +321,13 @@ function AdvancedReactorCalculator() {
         let conversion = 0;
         if (order === 1) {
           const tauTotal = 5; const tau = tauTotal / numCSTR;
-          if (i > 0) conversion = 1 - 1 / Math.pow(1 + k * tau, i);
+          if (i > 0) conversion = 1 - 1 / Math.pow(1 + k_val * tau, i);
         } else if (order === 2) {
           const tauTotal = 5; const tau = tauTotal / numCSTR;
-          if (i > 0) conversion = i * k * ca0 * tau / (1 + i * k * ca0 * tau);
+          if (i > 0) conversion = i * k_val * ca0 * tau / (1 + i * k_val * ca0 * tau);
         } else {
           const tauTotal = 5; const tau = tauTotal / numCSTR;
-          conversion = Math.min(1, i * k * tau / ca0);
+          conversion = Math.min(1, i * k_val * tau / ca0);
         }
         zProfile.push(i);
         convProfile.push(conversion);
@@ -344,9 +348,9 @@ function AdvancedReactorCalculator() {
       for (let i = 0; i <= dataPoints; i++) {
         const t = i / dataPoints * 5;
         let conversion = 0;
-        if (order === 1) conversion = 1 - Math.exp(-k * t);
-        else if (order === 2) conversion = (k * ca0 * t) / (1 + k * ca0 * t);
-        else conversion = Math.min(1, k * t / ca0);
+        if (order === 1) conversion = 1 - Math.exp(-k_val * t);
+        else if (order === 2) conversion = (k_val * ca0 * t) / (1 + k_val * ca0 * t);
+        else conversion = Math.min(1, k_val * t / ca0);
 
         zProfile.push(t);
         convProfile.push(conversion);
@@ -380,7 +384,7 @@ function AdvancedReactorCalculator() {
       reactionTemp: initialTemp,
       initialConc: ca0,
       flowRate: flow,
-      rateConstant: k,
+      rateConstant: k_val,
       activationEnergy: inputs.activationEnergy,
       heatOfReaction: inputs.heatOfReaction,
       targetConversion: targetX,

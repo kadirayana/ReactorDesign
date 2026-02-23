@@ -17,14 +17,10 @@ export function graybody({ T, A, epsilon, T_surroundings = 0 }) {
 export function twoSurfaceExchange({ T1, A1, eps1, T2, A2, eps2, F12 = 1.0 }) {
   // convert to K if needed (caller should pass K)
   // Solve radiative network with resistances
-  const R1 = (1 - eps1) / (eps1 * A1);
-  const R2 = (1 - eps2) / (eps2 * A2);
-  const Rf = 1 / (A1 * F12);
-  const effective = (1 / (A1 * eps1)) + Rf + (1 / (A2 * eps2));
   const E1 = Math.pow(T1, 4);
   const E2 = Math.pow(T2, 4);
   // common approach: Q = sigma / ( (1/(eps1*A1)) + (1/(A1*F12)) + (1/(eps2*A2)) ) * (T1^4 - T2^4)
-  const denom = (1 / (eps1 * A1)) + (1 / (A1 * F12)) + (1 / (eps2 * A2));
+  const denom = (1 / Math.max(1e-12, (eps1 * A1))) + (1 / Math.max(1e-12, (A1 * F12))) + (1 / Math.max(1e-12, (eps2 * A2)));
   const Q = sigma * (E1 - E2) / denom;
   return { Q };
 }

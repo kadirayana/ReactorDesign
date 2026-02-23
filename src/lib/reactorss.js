@@ -46,12 +46,13 @@ export function calculateReactorss(inputs) {
     let P_lim, P_ex;
     if (limiting === 'A') {
       const pressures = pressuresA_lim(X);
-      P_lim = pressures.PA; P_ex = pressures.PB;
+      P_lim = Math.max(1e-6, pressures.PA); P_ex = Math.max(1e-6, pressures.PB);
     } else {
       const pressures = pressuresB_lim(X);
-      P_lim = pressures.PB; P_ex = pressures.PA;
+      P_lim = Math.max(1e-6, pressures.PB); P_ex = Math.max(1e-6, pressures.PA);
     }
-    return k_h * Math.pow(P_lim, orderLim) * Math.pow(P_ex, orderExc);
+    const rate = k_h * Math.pow(P_lim, orderLim) * Math.pow(P_ex, orderExc);
+    return Math.max(1e-12, rate || 1e-12);
   }
 
   // Integration (trapezoidal) and profiles

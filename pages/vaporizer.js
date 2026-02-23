@@ -47,6 +47,7 @@ export default function VaporizerPage() {
     const newErrors = [];
     if (inputs.feedFlow <= 0) newErrors.push('Feed akışı pozitif olmalıdır.');
     if (inputs.T_water_in <= inputs.T_water_out) newErrors.push('Su giriş sıcaklığı, çıkıştan yüksek olmalıdır.');
+    if (inputs.T_water_out <= inputs.T_feed_in) newErrors.push('Termodinamik Hata: Su çıkış sıcaklığı, feed giriş sıcaklığından yüksek olmalıdır (Sıcaklık Kesişimi).');
     if (inputs.iterations < 1) newErrors.push('İterasyon sayısı en az 1 olmalıdır.');
     setErrors(newErrors);
     if (newErrors.length) return;

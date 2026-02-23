@@ -26,7 +26,7 @@ export function dittusBoelter({ Re, Pr, k }) {
 export function flatPlateForced({ ReL, Pr, k, L }) {
   // Local Nu ~ 0.037 Re_L^{4/5} Pr^{1/3} for turbulent (valid Re_L>5e5)
   const Nu = 0.037 * Math.pow(ReL, 4 / 5) * Math.pow(Pr, 1 / 3);
-  const h = (Nu * k) / L;
+  const h = (Nu * k) / Math.max(1e-12, L);
   return { Nu, h };
 }
 
@@ -42,7 +42,7 @@ export function verticalPlateNatural({ L, T_surface, T_inf, props = null }) {
   const Ra = Gr * Pr;
   // Churchill and Chu correlation for vertical plate (laminar-turbulent blended)
   const Nu = 0.68 + (0.670 * Math.pow(Ra, 1 / 4)) / Math.pow(1 + Math.pow(0.492 / Pr, 9 / 16), 4 / 9);
-  const h = (Nu * p.k) / L;
+  const h = (Nu * p.k) / Math.max(1e-12, L);
   return { Nu, h, Ra, Gr, Pr };
 }
 
@@ -52,21 +52,21 @@ export function computeConvection({ type = 'forced-flat', geometry = {}, fluid =
   const Pr = prFromProps(props);
   if (type === 'forced-tube') {
     // geometry: { D, V }
-    const D = geometry.D;
-    const V = geometry.V;
+    const D = Math.max(1e-12, geometry.D || 1e-12);
+    const V = geometry.V || 0;
     const Re = (props.rho * V * D) / props.mu;
     const { Nu } = dittusBoelter({ Re, Pr, k: props.k });
     const h = (Nu * props.k) / D;
     return { h, Nu, Re, Pr };
   } else if (type === 'forced-flat') {
     // geometry: { L, V }
-    const L = geometry.L;
-    const V = geometry.V;
+    const L = Math.max(1e-12, geometry.L || 1e-12);
+    const V = geometry.V || 0;
     const ReL = (props.rho * V * L) / props.mu;
     const { Nu, h } = flatPlateForced({ ReL, Pr, k: props.k, L });
     return { h, Nu, ReL, Pr };
   } else if (type === 'natural-vertical') {
-    return verticalPlateNatural({ L: geometry.L, T_surface: geometry.Ts, T_inf: geometry.Tinf, props });
+    return verticalPlateNatural({ L: Math.max(1e-12, geometry.L || 1e-12), T_surface: geometry.Ts, T_inf: geometry.Tinf, props });
   }
   // fallback simple h estimate
   return { h: 10, Nu: null, Re: null, Pr };

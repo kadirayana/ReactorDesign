@@ -7,20 +7,27 @@ function computeVaporizer(inputs) {
 
   // Step 1: Heat load
   const moles_vapor = vaporFraction * feedFlow;
-  const moles_liquid = (1 - vaporFraction) * feedFlow;
   const deltaT_feed = T_feed_out - T_feed_in;
-  const Q1 = moles_liquid * Cp_mix * deltaT_feed;
-  const Q2 = moles_liquid * dHvap_mix;
+  // The entire feed is heated to the saturation point
+  const Q1 = feedFlow * Cp_mix * deltaT_feed;
+  // The vapor fraction is vaporized
+  const Q2 = moles_vapor * dHvap_mix;
   const Q_total_kJ_h = Q1 + Q2;
   const Q_total_kW = Q_total_kJ_h / 3600;
   const Q_total_W = Q_total_kW * 1000;
   // Step 2: Cooling water mass flow
   const deltaT_water = T_water_in - T_water_out;
-  const m_water = Q_total_kW / (Cp_water * deltaT_water);
+  const m_water = deltaT_water > 0 ? Q_total_kW / (Cp_water * deltaT_water) : 0;
+
   // LMTD
   const deltaT1 = Math.abs(T_water_in - T_feed_out);
   const deltaT2 = Math.abs(T_water_out - T_feed_in);
-  const LMTD = (deltaT1 - deltaT2) / Math.log(deltaT1 / deltaT2);
+  let LMTD = 0;
+  if (Math.abs(deltaT1 - deltaT2) < 1e-6) {
+    LMTD = (deltaT1 + deltaT2) / 2;
+  } else {
+    LMTD = (deltaT1 - deltaT2) / Math.log((Math.max(deltaT1, 1e-6)) / (Math.max(deltaT2, 1e-6)));
+  }
 
   const iterationResults = [];
   let U_current = U_initial;
@@ -33,7 +40,7 @@ function computeVaporizer(inputs) {
     const v_water_current = m_water / (rho_water * N_tubes_current * area_inner);
     const Re_current = (rho_water * v_water_current * di) / mu_water;
     const Pr = ((Cp_water * 1000) * mu_water) / k_water;
-    const Nu_current = 0.024 * Math.pow(Re_current, 0.8) * Math.pow(Pr, 1/3);
+    const Nu_current = 0.024 * Math.pow(Re_current, 0.8) * Math.pow(Pr, 1 / 3);
     const h_i_current = (Nu_current * k_water) / di;
     const P_reduced = P_operating / Pc_mix;
     const q_flux_current = Q_total_W / A_current;
@@ -60,7 +67,7 @@ function computeVaporizer(inputs) {
     lastResult = iterationResults[iterationResults.length - 1];
   }
 
-  const Db = d0 * Math.pow(Math.pow(lastResult.N_tubes, 0.249), 1/2.207);
+  const Db = d0 * Math.pow(Math.pow(lastResult.N_tubes, 0.249), 1 / 2.207);
   const Ds = 2 * Db;
   const freeboard_ratio = freeboard / Ds;
 
@@ -73,8 +80,8 @@ function computeVaporizer(inputs) {
       ring++;
       for (let q = -ring; q <= ring; q++) {
         for (let r = Math.max(-ring, -q - ring); r <= Math.min(ring, -q + ring); r++) {
-          const x = q + r/2;
-          const y = (Math.sqrt(3)/2) * r;
+          const x = q + r / 2;
+          const y = (Math.sqrt(3) / 2) * r;
           pos.push([x, y]);
           if (pos.length >= limit) break;
         }
@@ -95,7 +102,7 @@ function computeVaporizer(inputs) {
   const packedPositions = candidate.filter(([nx, ny]) => {
     const x = nx * pitch;
     const y = ny * pitch;
-    return Math.sqrt(x*x + y*y) + (d0/2) <= usableRadius;
+    return Math.sqrt(x * x + y * y) + (d0 / 2) <= usableRadius;
   }).map(([nx, ny]) => [nx * pitch, ny * pitch]);
 
   const packableCount = packedPositions.length;

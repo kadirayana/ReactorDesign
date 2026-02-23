@@ -14,6 +14,11 @@ export function calculateBasicReactor(inputs) {
     effectivenessFactor = 0.8
   } = inputs
 
+  const inputK = Math.max(1e-12, rateConstant)
+  const inputC0 = Math.max(1e-12, initialConc)
+  const inputF0 = Math.max(1e-12, flowRate)
+  const X = Math.min(Math.max(0.0001, targetConversion), 0.9999)
+
   let reactorVolume = 0
   let spaceTime = 0
   let spaceVelocity = 0
@@ -21,41 +26,40 @@ export function calculateBasicReactor(inputs) {
   switch (reactorType) {
     case 'pfr':
       if (reactionOrder === 1) {
-        reactorVolume = (flowRate / initialConc) * Math.log(1 / (1 - targetConversion)) / rateConstant
+        reactorVolume = (inputF0 / inputC0) * Math.log(1 / (1 - X)) / inputK
       } else if (reactionOrder === 2) {
-        reactorVolume = (flowRate / initialConc) * (1 / (1 - targetConversion) - 1) / (rateConstant * initialConc)
+        reactorVolume = (inputF0 / inputC0) * (1 / (1 - X) - 1) / (inputK * inputC0)
       } else {
-        reactorVolume = (flowRate * targetConversion) / (rateConstant * initialConc)
+        reactorVolume = (inputF0 * X) / (inputK * inputC0)
       }
       break
     case 'cstr':
       if (reactionOrder === 1) {
-        reactorVolume = (flowRate * targetConversion) / (rateConstant * initialConc * (1 - targetConversion))
+        reactorVolume = (inputF0 * X) / (inputK * inputC0 * (1 - X))
       } else if (reactionOrder === 2) {
-        reactorVolume = (flowRate * targetConversion) / (rateConstant * Math.pow(initialConc * (1 - targetConversion), 2))
+        reactorVolume = (inputF0 * X) / (inputK * Math.pow(inputC0 * (1 - X), 2))
       } else {
-        reactorVolume = (flowRate * targetConversion) / rateConstant
+        reactorVolume = (inputF0 * X) / inputK
       }
       break
     case 'pbr':
+      const effK = Math.max(1e-12, effectiveRateConstant * effectivenessFactor * catDensity)
       if (reactionOrder === 1) {
-        reactorVolume = (flowRate / initialConc) * Math.log(1 / (1 - targetConversion)) /
-          (effectiveRateConstant * effectivenessFactor * catDensity)
+        reactorVolume = (inputF0 / inputC0) * Math.log(1 / (1 - X)) / effK
       } else if (reactionOrder === 2) {
-        reactorVolume = (flowRate / initialConc) * (1 / (1 - targetConversion) - 1) /
-          (effectiveRateConstant * effectivenessFactor * catDensity * initialConc)
+        reactorVolume = (inputF0 / inputC0) * (1 / (1 - X) - 1) / (effK * inputC0)
       } else {
-        reactorVolume = (flowRate * targetConversion) /
-          (effectiveRateConstant * effectivenessFactor * catDensity)
+        reactorVolume = (inputF0 * X) / effK
       }
       break
     case 'batch':
+      // For batch, what is calculated is residence time (t), not physical volume.
       if (reactionOrder === 1) {
-        reactorVolume = Math.log(1 / (1 - targetConversion)) / rateConstant
+        reactorVolume = Math.log(1 / (1 - X)) / inputK
       } else if (reactionOrder === 2) {
-        reactorVolume = (1 / (1 - targetConversion) - 1) / (rateConstant * initialConc)
+        reactorVolume = (1 / (1 - X) - 1) / (inputK * inputC0)
       } else {
-        reactorVolume = targetConversion / (rateConstant * initialConc)
+        reactorVolume = X / inputK // correct zero-order batch time: t = C0*X/k_true, where k_true = k*C0
       }
       break
     default:
@@ -64,9 +68,9 @@ export function calculateBasicReactor(inputs) {
 
   if (reactorType === 'batch') {
     spaceTime = reactorVolume
-    spaceVelocity = reactorVolume === 0 ? 0 : 1 / spaceTime
+    spaceVelocity = spaceTime === 0 ? 0 : 1 / spaceTime
   } else {
-    spaceTime = reactorVolume * initialConc / flowRate || 0
+    spaceTime = reactorVolume * inputC0 / inputF0 || 0
     spaceVelocity = spaceTime === 0 ? 0 : 1 / spaceTime
   }
 
