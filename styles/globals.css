@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
-html,body {
+html,
+body {
 	padding: 0;
 	margin: 0;
 	font-family: 'Inter', sans-serif;
@@ -9,12 +10,29 @@ html,body {
 	-moz-osx-font-smoothing: grayscale;
 	color: #2d3748;
 }
+
 main {
 	max-width: 1100px;
 	margin: 48px auto;
+	margin-left: 256px;
 	padding: 16px;
 	background: #fff;
 	border-radius: 8px;
+	transition: margin-left 0.22s ease;
+}
+
+body[data-nav-collapsed="true"] main {
+	margin-left: 88px;
+}
+
+@media (max-width: 640px) {
+	main {
+		margin-left: 0;
+	}
+
+	body[data-nav-collapsed="true"] main {
+		margin-left: 0;
+	}
 }
 
 h1 {
@@ -25,6 +43,7 @@ h1 {
 	font-weight: 700;
 	letter-spacing: -0.5px;
 }
+
 h2 {
 	font-family: 'Poppins', sans-serif;
 	font-size: 24px;
@@ -33,6 +52,7 @@ h2 {
 	margin-top: 32px;
 	letter-spacing: -0.3px;
 }
+
 h3 {
 	font-family: 'Poppins', sans-serif;
 	font-size: 18px;
@@ -41,6 +61,7 @@ h3 {
 	margin-top: 24px;
 	letter-spacing: -0.2px;
 }
+
 label {
 	display: block;
 	margin-top: 15px;
@@ -49,6 +70,7 @@ label {
 	color: #2D3748;
 	margin-bottom: 8px;
 }
+
 input,
 select {
 	width: 100%;
@@ -64,6 +86,7 @@ select {
 	transition: all 0.3s ease;
 	color: #2d3748;
 }
+
 input:focus,
 select:focus {
 	outline: none;
@@ -71,9 +94,11 @@ select:focus {
 	box-shadow: 0 0 0 3px rgba(0, 83, 156, 0.1);
 	background: #f8fbff;
 }
+
 input::placeholder {
 	color: #adb5bd;
 }
+
 button {
 	background-color: #00539C;
 	color: white;
@@ -88,15 +113,18 @@ button {
 	min-height: 44px;
 	font-family: 'Inter', sans-serif;
 }
+
 button:hover {
 	background-color: #003458;
 	transform: translateY(-2px);
 	box-shadow: 0 4px 12px rgba(0, 83, 156, 0.15);
 }
+
 button:active {
 	transform: translateY(0);
 	box-shadow: 0 2px 4px rgba(0, 83, 156, 0.1);
 }
+
 .tabs {
 	overflow: hidden;
 	border-bottom: 2px solid #e9ecef;
@@ -105,6 +133,7 @@ button:active {
 	display: flex;
 	gap: 8px;
 }
+
 .tabs button {
 	background-color: transparent;
 	float: none;
@@ -119,18 +148,21 @@ button:active {
 	font-weight: 500;
 	min-height: auto;
 }
+
 .tabs button:hover {
 	color: #00539C;
 	background: #f8f9fa;
 	transform: none;
 	box-shadow: none;
 }
+
 .tabs button.active {
 	background-color: transparent;
 	color: #00539C;
 	border-bottom-color: #00539C;
 	font-weight: 600;
 }
+
 .tabcontent {
 	display: none;
 	padding: 20px;
@@ -139,11 +171,13 @@ button:active {
 	border-radius: 0;
 	background: white;
 }
+
 canvas {
 	max-width: 100%;
 	margin-top: 20px;
 	border-radius: 8px;
 }
+
 .results {
 	margin-top: 20px;
 	padding: 20px;
@@ -154,21 +188,26 @@ canvas {
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 	transition: all 0.3s ease;
 }
+
 .results:hover {
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
+
 .results.success {
 	border-left-color: #51CF66;
 	background: #f1fdf4;
 }
+
 .results.warning {
 	border-left-color: #FFD93D;
 	background: #fffbf0;
 }
+
 .results.error {
 	border-left-color: #FF6B6B;
 	background: #ffe0e0;
 }
+
 table {
 	width: 100%;
 	border-collapse: separate;
@@ -179,102 +218,137 @@ table {
 	overflow: hidden;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
-table, th, td {
+
+table,
+th,
+td {
 	border: none;
 }
-th, td {
+
+th,
+td {
 	padding: 14px 16px;
 	text-align: left;
 }
+
 th {
 	background-color: #00539C;
 	color: white;
 	font-weight: 600;
 	font-size: 14px;
 }
+
 td {
 	border-bottom: 1px solid #e9ecef;
 }
+
 tr:last-child td {
 	border-bottom: none;
 }
+
 tr:hover {
 	background-color: #f8f9fa;
 }
+
 @media screen and (max-width: 1024px) {
 	main {
 		max-width: 95%;
 		padding: 15px 20px;
 	}
 }
+
 @media screen and (max-width: 768px) {
 	main {
 		max-width: 100%;
 		margin: 70px auto 15px;
 		padding: 15px;
 	}
+
 	h1 {
 		font-size: 24px;
 	}
+
 	h2 {
 		font-size: 20px;
 	}
-	input, select, button {
+
+	input,
+	select,
+	button {
 		font-size: 14px;
 		min-height: 44px;
 	}
+
 	.tabs button {
 		padding: 8px 12px;
 	}
+
 	table {
 		font-size: 14px;
 	}
 }
+
 @media screen and (max-width: 480px) {
 	main {
 		margin: 60px auto 10px;
 		padding: 10px;
 	}
+
 	h1 {
 		font-size: 20px;
 		margin-bottom: 15px;
 	}
+
 	h2 {
 		font-size: 18px;
 	}
+
 	h3 {
 		font-size: 16px;
 	}
-	p, label {
+
+	p,
+	label {
 		font-size: 14px;
 	}
-	input, select {
+
+	input,
+	select {
 		padding: 8px;
 		margin-bottom: 10px;
 	}
+
 	button {
 		padding: 8px 16px;
 		font-size: 14px;
 	}
+
 	.tabs button {
 		padding: 6px 10px;
 		font-size: 12px;
 	}
+
 	.tabcontent {
 		padding: 10px;
 	}
-	table, th, td {
+
+	table,
+	th,
+	td {
 		font-size: 12px;
 		padding: 6px;
 	}
+
 	canvas {
 		max-width: 100%;
 		height: auto;
 	}
+
 	.results {
 		padding: 10px;
 	}
 }
+
 @media screen and (max-width: 600px) {
 	table {
 		display: block;
@@ -423,7 +497,8 @@ tr:hover {
 		font-size: 12px;
 	}
 
-	th, td {
+	th,
+	td {
 		padding: 10px 8px;
 	}
 }
@@ -515,7 +590,8 @@ tr:hover {
 		white-space: nowrap;
 	}
 
-	th, td {
+	th,
+	td {
 		padding: 6px 4px;
 	}
 
@@ -543,29 +619,29 @@ tr:hover {
 
 
 .sidebar {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 240px;
-  height: 100vh;
-  background: #fff;
-  border-right: 1px solid #e9ecef;
-  transition: width 0.22s ease;
-  z-index: 1000;
-  overflow-y: auto;
-  padding: 16px;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 240px;
+	height: 100vh;
+	background: #fff;
+	border-right: 1px solid #e9ecef;
+	transition: width 0.22s ease;
+	z-index: 1000;
+	overflow-y: auto;
+	padding: 16px;
+	box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
 }
 
 
 body[data-nav-collapsed="true"] .sidebar {
-  width: 72px;
+	width: 72px;
 }
 
 @media screen and (max-width: 640px) {
-  .sidebar {
-    display: none;
-  }
+	.sidebar {
+		display: none;
+	}
 }
 
 .page-container {
@@ -707,7 +783,8 @@ body[data-nav-collapsed="true"] .sidebar {
 		font-size: 12px;
 	}
 
-	th, td {
+	th,
+	td {
 		padding: 10px 8px;
 	}
 }
@@ -799,7 +876,8 @@ body[data-nav-collapsed="true"] .sidebar {
 		white-space: nowrap;
 	}
 
-	th, td {
+	th,
+	td {
 		padding: 6px 4px;
 	}
 
@@ -1150,18 +1228,19 @@ body[data-nav-collapsed="true"] .cv-page {
 		margin: 0 !important;
 		padding: 0 !important;
 	}
-	
+
 	.cv-download-btn {
 		display: none !important;
 	}
-	
+
 	/* Optimize for single A4 page PDF export */
-	html, body {
+	html,
+	body {
 		margin: 0 !important;
 		padding: 0 !important;
 		height: auto !important;
 	}
-	
+
 	.cv-page {
 		padding: 5px !important;
 		max-width: 100% !important;
@@ -1170,7 +1249,7 @@ body[data-nav-collapsed="true"] .cv-page {
 		font-size: 12px !important;
 		line-height: 1.15 !important;
 	}
-	
+
 	.cv-header {
 		margin-bottom: 3px !important;
 		padding-bottom: 2px !important;
@@ -1182,7 +1261,7 @@ body[data-nav-collapsed="true"] .cv-page {
 		padding: 8px !important;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 	}
-	
+
 	.cv-header h1 {
 		font-size: 18px !important;
 		margin: 0 !important;
@@ -1191,7 +1270,7 @@ body[data-nav-collapsed="true"] .cv-page {
 		letter-spacing: normal !important;
 		color: white !important;
 	}
-	
+
 	.cv-header h2 {
 		font-size: 12px !important;
 		margin: 0 !important;
@@ -1200,7 +1279,7 @@ body[data-nav-collapsed="true"] .cv-page {
 		letter-spacing: normal !important;
 		color: #e9ecef !important;
 	}
-	
+
 	.cv-contact {
 		display: flex !important;
 		flex-wrap: wrap !important;
@@ -1211,29 +1290,29 @@ body[data-nav-collapsed="true"] .cv-page {
 		color: white !important;
 		width: 100% !important;
 	}
-	
+
 	.cv-contact span {
 		white-space: nowrap !important;
 		margin: 0 !important;
 		padding: 0 !important;
 		color: white !important;
 	}
-	
+
 	.cv-contact span:before {
 		content: " • " !important;
 		margin: 0 2px !important;
 	}
-	
+
 	.cv-contact span:first-child:before {
 		content: "" !important;
 	}
-	
+
 	.cv-contact a {
 		color: white !important;
 		text-decoration: none !important;
 		font-weight: normal !important;
 	}
-	
+
 	.cv-summary {
 		background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
 		padding: 4px 0 !important;
@@ -1244,14 +1323,14 @@ body[data-nav-collapsed="true"] .cv-page {
 		line-height: 1.15 !important;
 		color: #2d3748 !important;
 	}
-	
+
 	.cv-summary p {
 		margin: 0 !important;
 		padding: 0 !important;
 		font-size: 10px !important;
 		line-height: 1.15 !important;
 	}
-	
+
 	.cv-section {
 		margin: 4px 0 !important;
 		padding: 4px !important;
@@ -1261,7 +1340,7 @@ body[data-nav-collapsed="true"] .cv-page {
 		border-radius: 8px !important;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 	}
-	
+
 	.cv-section h3 {
 		font-size: 12px !important;
 		margin: 0 0 2px 0 !important;
@@ -1271,7 +1350,7 @@ body[data-nav-collapsed="true"] .cv-page {
 		letter-spacing: normal !important;
 		color: #00539C !important;
 	}
-	
+
 	.cv-job,
 	.cv-edu {
 		background: #f8f9fa !important;
@@ -1282,7 +1361,7 @@ body[data-nav-collapsed="true"] .cv-page {
 		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
 		border-radius: 6px !important;
 	}
-	
+
 	.cv-job-title,
 	.cv-edu-title {
 		font-size: 10px !important;
@@ -1293,14 +1372,14 @@ body[data-nav-collapsed="true"] .cv-page {
 		display: inline !important;
 		letter-spacing: normal !important;
 	}
-	
+
 	.cv-job-title span,
 	.cv-edu-title span {
 		font-weight: normal !important;
 		color: #495057 !important;
 		font-size: 10px !important;
 	}
-	
+
 	.cv-job-date,
 	.cv-edu-date {
 		font-size: 9px !important;
@@ -1310,14 +1389,14 @@ body[data-nav-collapsed="true"] .cv-page {
 		display: block !important;
 		color: #6c757d !important;
 	}
-	
+
 	.cv-job ul,
 	.cv-edu ul {
 		margin: 0 0 0 10px !important;
 		padding: 0 !important;
 		list-style: disc !important;
 	}
-	
+
 	.cv-job li,
 	.cv-edu li {
 		font-size: 9px !important;
@@ -1327,7 +1406,7 @@ body[data-nav-collapsed="true"] .cv-page {
 		color: #2d3748 !important;
 		display: list-item !important;
 	}
-	
+
 	.cv-certs,
 	.cv-projects {
 		display: block !important;
@@ -1335,7 +1414,7 @@ body[data-nav-collapsed="true"] .cv-page {
 		padding: 0 0 0 10px !important;
 		margin: 0 !important;
 	}
-	
+
 	.cv-certs li,
 	.cv-projects li {
 		font-size: 9px !important;
@@ -1343,7 +1422,7 @@ body[data-nav-collapsed="true"] .cv-page {
 		line-height: 1.1 !important;
 		color: #2d3748 !important;
 	}
-	
+
 	.cv-section-break {
 		page-break-before: auto !important;
 		margin-top: 0 !important;
