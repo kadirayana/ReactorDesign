@@ -1,0 +1,16 @@
+{
+  "name": "Kimya Mühendisliği Hesaplama Platformu",
+  "short_name": "Reaktör",
+  "start_url": "/ReactorDesign/",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#00539C",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

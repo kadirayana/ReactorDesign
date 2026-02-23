@@ -2,35 +2,12 @@
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import calculateHeatTransfer from '../src/lib/heattransfer';
+import TabButton from '../components/TabButton';
 
 const ChartClient = dynamic(() => import('../components/ChartClient'), { ssr: false });
 import ConvectionCalculator from '../components/ConvectionCalculator';
 import RadiationCalculator from '../components/RadiationCalculator';
 
-function TabButton({ active, onClick, children }) {
-  return (
-    <button
-      style={{
-        background: active ? '#00539C' : 'transparent',
-        color: active ? 'white' : '#666',
-        border: 'none',
-        outline: 'none',
-        cursor: 'pointer',
-        padding: '12px 20px',
-        borderRadius: '0',
-        marginRight: 0,
-        fontWeight: active ? '600' : '500',
-        transition: '0.3s',
-        borderBottom: active ? '3px solid #00539C' : '3px solid transparent',
-        minHeight: 'auto',
-        transform: 'none',
-      }}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  );
-}
 
 function ConductionCalculator() {
   const [geometry, setGeometry] = useState('wall');
@@ -77,16 +54,16 @@ function ConductionCalculator() {
   // Chart data for temperature profile
   const chartData = result
     ? {
-        labels: ['Başlangıç', 'Bitiş'],
-        datasets: [
-          {
-            label: 'Sıcaklık (°C)',
-            data: [result.T1, result.T2],
-            borderColor: 'red',
-            fill: false,
-          },
-        ],
-      }
+      labels: ['Başlangıç', 'Bitiş'],
+      datasets: [
+        {
+          label: 'Sıcaklık (°C)',
+          data: [result.T1, result.T2],
+          borderColor: 'red',
+          fill: false,
+        },
+      ],
+    }
     : null;
 
   return (
@@ -196,8 +173,8 @@ export default function HeatTransferPage() {
           </div>
         )}
 
-  {tab === 'convection' && <ConvectionCalculator />}
-  {tab === 'radiation' && <RadiationCalculator />}
+        {tab === 'convection' && <ConvectionCalculator />}
+        {tab === 'radiation' && <RadiationCalculator />}
       </div>
     </div>
   );

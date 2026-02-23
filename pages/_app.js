@@ -1,11 +1,13 @@
 import '../styles/globals.css';
-import Navbar from '../components/Navbar';
+import Layout from '../components/Layout';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 export default function App({ Component, pageProps }) {
   return (
-    <>
-      <Navbar />
-      <Component {...pageProps} />
-    </>
+    <ErrorBoundary>
+      <Layout>
+        <Component {...pageProps} />
+      </Layout>
+    </ErrorBoundary>
   );
 }

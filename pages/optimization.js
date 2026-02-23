@@ -1,32 +1,9 @@
 import { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import TabButton from '../components/TabButton';
+
 
 const PlotlyClient = dynamic(() => import('../components/PlotlyClient'), { ssr: false });
-
-function TabButton({ active, onClick, children }) {
-  return (
-    <button
-      style={{
-        background: active ? '#00539C' : 'transparent',
-        color: active ? 'white' : '#666',
-        border: 'none',
-        outline: 'none',
-        cursor: 'pointer',
-        padding: '12px 20px',
-        borderRadius: '0',
-        marginRight: 0,
-        fontWeight: active ? '600' : '500',
-        transition: '0.3s',
-        borderBottom: active ? '3px solid #00539C' : '3px solid transparent',
-        minHeight: 'auto',
-        transform: 'none',
-      }}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  );
-}
 
 export default function OptimizationPage() {
   const [tab, setTab] = useState('pareto');
@@ -83,10 +60,10 @@ export default function OptimizationPage() {
         // - this.flow is volumetric flow in L/s
         // - k computed below is taken as 1/s (first-order rate constant)
         // Therefore residence time tau = V (L) / Q (L/s) -> seconds; k * tau is dimensionless.
-  const T_K = solution.temperature + 273.15;
-  // Arrhenius: k = k0 * exp(-Ea/(R*T)), Ea in J/mol, R = 8.314 J/mol/K
-  const R = 8.314;
-  const k = (this.k0 || 0.01) * Math.exp(- (this.Ea || 50000) / (R * T_K));
+        const T_K = solution.temperature + 273.15;
+        // Arrhenius: k = k0 * exp(-Ea/(R*T)), Ea in J/mol, R = 8.314 J/mol/K
+        const R = 8.314;
+        const k = (this.k0 || 0.01) * Math.exp(- (this.Ea || 50000) / (R * T_K));
         const Q = this.flow && this.flow > 0 ? this.flow : 1;
         const tau = solution.volume / Q; // seconds
         let conversion = 0;
@@ -104,7 +81,7 @@ export default function OptimizationPage() {
 
       getFitness(solution) {
         const r = this.evaluate(solution);
-        switch(this.objective) {
+        switch (this.objective) {
           case 'conversion': return r.conversion;
           case 'selectivity': return r.selectivity;
           case 'cost': return -r.cost;
@@ -114,19 +91,19 @@ export default function OptimizationPage() {
 
       selectParent() {
         const tournament = [];
-        for (let i = 0; i < 3; i++) tournament.push(this.population[Math.floor(Math.random()*this.population.length)]);
-        return tournament.sort((a,b)=> this.getFitness(b)-this.getFitness(a))[0];
+        for (let i = 0; i < 3; i++) tournament.push(this.population[Math.floor(Math.random() * this.population.length)]);
+        return tournament.sort((a, b) => this.getFitness(b) - this.getFitness(a))[0];
       }
 
-      crossover(a,b) {
+      crossover(a, b) {
         const r = Math.random();
-        return { temperature: r*a.temperature + (1-r)*b.temperature, volume: r*a.volume + (1-r)*b.volume };
+        return { temperature: r * a.temperature + (1 - r) * b.temperature, volume: r * a.volume + (1 - r) * b.volume };
       }
 
       mutate(sol) {
         if (Math.random() < 0.1) {
-          sol.temperature += (Math.random()-0.5)*10;
-          sol.volume += (Math.random()-0.5)*5;
+          sol.temperature += (Math.random() - 0.5) * 10;
+          sol.volume += (Math.random() - 0.5) * 5;
           sol.temperature = Math.max(this.ranges.temp_min, Math.min(this.ranges.temp_max, sol.temperature));
           sol.volume = Math.max(this.ranges.volume_min, Math.min(this.ranges.volume_max, sol.volume));
         }
@@ -134,20 +111,20 @@ export default function OptimizationPage() {
 
       optimize() {
         this.initialize();
-        for (let gen=0; gen<this.generations; gen++) {
+        for (let gen = 0; gen < this.generations; gen++) {
           const newPop = [];
-          const sorted = [...this.population].sort((a,b)=> this.getFitness(b)-this.getFitness(a));
-          newPop.push(...sorted.slice(0,2));
+          const sorted = [...this.population].sort((a, b) => this.getFitness(b) - this.getFitness(a));
+          newPop.push(...sorted.slice(0, 2));
           while (newPop.length < this.populationSize) {
             const p1 = this.selectParent();
             const p2 = this.selectParent();
-            const child = this.crossover(p1,p2);
+            const child = this.crossover(p1, p2);
             this.mutate(child);
             newPop.push(child);
           }
           this.population = newPop;
         }
-        return this.population.sort((a,b)=> this.getFitness(b)-this.getFitness(a))[0];
+        return this.population.sort((a, b) => this.getFitness(b) - this.getFitness(a))[0];
       }
     })(objectiveArg, typeArg, constraintsArg, rangesArg, flowRateArg);
   }
@@ -161,8 +138,8 @@ export default function OptimizationPage() {
       <div>
         <p>Optimum Sıcaklık: {solution.temperature.toFixed(2)} °C</p>
         <p>Optimum Hacim: {solution.volume.toFixed(2)} L</p>
-        <p>Dönüşüm: {(res.conversion*100).toFixed(2)}%</p>
-        <p>Seçicilik: {(res.selectivity*100).toFixed(2)}%</p>
+        <p>Dönüşüm: {(res.conversion * 100).toFixed(2)}%</p>
+        <p>Seçicilik: {(res.selectivity * 100).toFixed(2)}%</p>
         <p>Maliyet: ${res.cost.toFixed(2)}</p>
       </div>
     );
@@ -172,12 +149,12 @@ export default function OptimizationPage() {
       return { conversion: e.conversion, selectivity: e.selectivity, cost: e.cost };
     });
 
-    setParetoData({ x: pareto.map(d=>d.conversion), y: pareto.map(d=>d.cost), color: pareto.map(d=>d.selectivity) });
+    setParetoData({ x: pareto.map(d => d.conversion), y: pareto.map(d => d.cost), color: pareto.map(d => d.selectivity) });
 
     // compute surface
-    const tRange = Array.from({length:30}, (_,i)=> ranges.temp_min + (ranges.temp_max-ranges.temp_min)*i/29);
-    const vRange = Array.from({length:30}, (_,i)=> ranges.volume_min + (ranges.volume_max-ranges.volume_min)*i/29);
-    const z = tRange.map(t => vRange.map(v => opt.evaluate({temperature: t, volume: v})[objective === 'cost' ? 'cost' : 'conversion']));
+    const tRange = Array.from({ length: 30 }, (_, i) => ranges.temp_min + (ranges.temp_max - ranges.temp_min) * i / 29);
+    const vRange = Array.from({ length: 30 }, (_, i) => ranges.volume_min + (ranges.volume_max - ranges.volume_min) * i / 29);
+    const z = tRange.map(t => vRange.map(v => opt.evaluate({ temperature: t, volume: v })[objective === 'cost' ? 'cost' : 'conversion']));
     setSurfaceData({ x: tRange, y: vRange, z });
   }
 
@@ -189,7 +166,7 @@ export default function OptimizationPage() {
     const n = Math.max(3, Math.floor(steps));
     const xs = Array.from({ length: n }, (_, i) => min + (max - min) * i / (n - 1));
     const ys = xs.map(x => {
-      const sol = { temperature: (param === 'temperature' ? x : (ranges.temp_min + ranges.temp_max)/2), volume: (param === 'volume' ? x : (ranges.volume_min + ranges.volume_max)/2) };
+      const sol = { temperature: (param === 'temperature' ? x : (ranges.temp_min + ranges.temp_max) / 2), volume: (param === 'volume' ? x : (ranges.volume_min + ranges.volume_max) / 2) };
       const ev = opt.evaluate(sol);
       // choose objective value
       return objective === 'cost' ? ev.cost : (objective === 'selectivity' ? ev.selectivity : ev.conversion);
@@ -247,16 +224,16 @@ export default function OptimizationPage() {
           <div style={{ marginBottom: 12, border: '1px solid #e9ecef', borderRadius: 8, padding: 16, background: 'white' }}>
             <label style={{ fontWeight: 500, color: '#2D3748', display: 'block', marginBottom: 8 }}>Sıcaklık Aralığı (°C)</label>
             <div className="param-input-flex" style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-              <input type="number" value={ranges.temp_min} onChange={e => setRanges({...ranges, temp_min: Number(e.target.value)})} style={{ flex: 1, minWidth: 0, padding: 10, border: '1px solid #ddd', borderRadius: 6 }} />
-              <input type="number" value={ranges.temp_max} onChange={e => setRanges({...ranges, temp_max: Number(e.target.value)})} style={{ flex: 1, minWidth: 0, padding: 10, border: '1px solid #ddd', borderRadius: 6 }} />
+              <input type="number" value={ranges.temp_min} onChange={e => setRanges({ ...ranges, temp_min: Number(e.target.value) })} style={{ flex: 1, minWidth: 0, padding: 10, border: '1px solid #ddd', borderRadius: 6 }} />
+              <input type="number" value={ranges.temp_max} onChange={e => setRanges({ ...ranges, temp_max: Number(e.target.value) })} style={{ flex: 1, minWidth: 0, padding: 10, border: '1px solid #ddd', borderRadius: 6 }} />
             </div>
           </div>
 
           <div style={{ marginBottom: 12, border: '1px solid #e9ecef', borderRadius: 8, padding: 16, background: 'white' }}>
             <label style={{ fontWeight: 500, color: '#2D3748', display: 'block', marginBottom: 8 }}>Hacim Aralığı (L)</label>
             <div className="param-input-flex" style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-              <input type="number" value={ranges.volume_min} onChange={e => setRanges({...ranges, volume_min: Number(e.target.value)})} style={{ flex: 1, minWidth: 0, padding: 10, border: '1px solid #ddd', borderRadius: 6 }} />
-              <input type="number" value={ranges.volume_max} onChange={e => setRanges({...ranges, volume_max: Number(e.target.value)})} style={{ flex: 1, minWidth: 0, padding: 10, border: '1px solid #ddd', borderRadius: 6 }} />
+              <input type="number" value={ranges.volume_min} onChange={e => setRanges({ ...ranges, volume_min: Number(e.target.value) })} style={{ flex: 1, minWidth: 0, padding: 10, border: '1px solid #ddd', borderRadius: 6 }} />
+              <input type="number" value={ranges.volume_max} onChange={e => setRanges({ ...ranges, volume_max: Number(e.target.value) })} style={{ flex: 1, minWidth: 0, padding: 10, border: '1px solid #ddd', borderRadius: 6 }} />
             </div>
           </div>
 
@@ -321,22 +298,22 @@ export default function OptimizationPage() {
               <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   Parametre:
-                  <select value={sensitivityParams.param} onChange={e => setSensitivityParams({...sensitivityParams, param: e.target.value})} style={{ padding: 6, border: '1px solid #ddd', borderRadius: 4 }}>
+                  <select value={sensitivityParams.param} onChange={e => setSensitivityParams({ ...sensitivityParams, param: e.target.value })} style={{ padding: 6, border: '1px solid #ddd', borderRadius: 4 }}>
                     <option value="temperature">Sıcaklık</option>
                     <option value="volume">Hacim</option>
                   </select>
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   Min:
-                  <input type="number" value={sensitivityParams.min} onChange={e => setSensitivityParams({...sensitivityParams, min: Number(e.target.value)})} style={{ width: 100, padding: 6, border: '1px solid #ddd', borderRadius: 4 }} />
+                  <input type="number" value={sensitivityParams.min} onChange={e => setSensitivityParams({ ...sensitivityParams, min: Number(e.target.value) })} style={{ width: 100, padding: 6, border: '1px solid #ddd', borderRadius: 4 }} />
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   Max:
-                  <input type="number" value={sensitivityParams.max} onChange={e => setSensitivityParams({...sensitivityParams, max: Number(e.target.value)})} style={{ width: 100, padding: 6, border: '1px solid #ddd', borderRadius: 4 }} />
+                  <input type="number" value={sensitivityParams.max} onChange={e => setSensitivityParams({ ...sensitivityParams, max: Number(e.target.value) })} style={{ width: 100, padding: 6, border: '1px solid #ddd', borderRadius: 4 }} />
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   Adım Sayısı:
-                  <input type="number" min={3} value={sensitivityParams.steps} onChange={e => setSensitivityParams({...sensitivityParams, steps: Number(e.target.value)})} style={{ width: 80, padding: 6, border: '1px solid #ddd', borderRadius: 4 }} />
+                  <input type="number" min={3} value={sensitivityParams.steps} onChange={e => setSensitivityParams({ ...sensitivityParams, steps: Number(e.target.value) })} style={{ width: 80, padding: 6, border: '1px solid #ddd', borderRadius: 4 }} />
                 </label>
                 <button onClick={runSensitivity} style={{ marginLeft: 'auto', padding: 8 }}>Çalıştır</button>
               </div>

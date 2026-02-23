@@ -1,48 +1,35 @@
 import React, { useState } from 'react';
+import Head from 'next/head';
 import ChartClient from '../components/ChartClient';
+import TabButton from '../components/TabButton';
+import ReactorDiagram from '../components/ReactorDiagram';
 import { calculateBasicReactor } from '../src/lib/reactor';
+import { downloadCSV } from '../src/lib/utils';
 
-function TabButton({ active, onClick, children }) {
-  return (
-    <button
-      style={{
-        background: active ? '#00539C' : 'transparent',
-        color: active ? 'white' : '#666',
-        border: 'none',
-        outline: 'none',
-        cursor: 'pointer',
-        padding: '12px 20px',
-        borderRadius: '0',
-        marginRight: 0,
-        fontWeight: active ? '600' : '500',
-        transition: '0.3s',
-        borderBottom: active ? '3px solid #00539C' : '3px solid transparent',
-        minHeight: 'auto',
-        transform: 'none',
-      }}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  );
-}
+
 
 export default function ReactorPage() {
   const [tab, setTab] = useState('basic');
   return (
-    <div className="page-container">
-      <h1 className="page-title">Reaktör Tasarım ve Görselleştirme</h1>
-      <div className="tabs">
-        <TabButton active={tab === 'basic'} onClick={() => setTab('basic')}>Temel Tasarım</TabButton>
-        <TabButton active={tab === 'advanced'} onClick={() => setTab('advanced')}>Gelişmiş Tasarım</TabButton>
-        <TabButton active={tab === 'economic'} onClick={() => setTab('economic')}>Ekonomik Analiz</TabButton>
+    <>
+      <Head>
+        <title>Reaktör Tasarımı - Kimya Mühendisliği Hesaplama Platformu</title>
+        <meta name="description" content="PFR, CSTR, PBR ve Batch reaktör tasarımı, görselleştirme ve ekonomik analiz araçları." />
+      </Head>
+      <div className="page-container">
+        <h1 className="page-title">Reaktör Tasarım ve Görselleştirme</h1>
+        <div className="tabs">
+          <TabButton active={tab === 'basic'} onClick={() => setTab('basic')}>Temel Tasarım</TabButton>
+          <TabButton active={tab === 'advanced'} onClick={() => setTab('advanced')}>Gelişmiş Tasarım</TabButton>
+          <TabButton active={tab === 'economic'} onClick={() => setTab('economic')}>Ekonomik Analiz</TabButton>
+        </div>
+        <div style={{ background: 'white', padding: 20, borderRadius: '0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', minHeight: 400 }}>
+          {tab === 'basic' && <BasicReactorCalculator />}
+          {tab === 'advanced' && <AdvancedReactorCalculator />}
+          {tab === 'economic' && <EconomicAnalysisStub />}
+        </div>
       </div>
-      <div style={{ background: 'white', padding: 20, borderRadius: '0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', minHeight: 400 }}>
-  {tab === 'basic' && <BasicReactorCalculator />}
-  {tab === 'advanced' && <AdvancedReactorCalculator />}
-  {tab === 'economic' && <EconomicAnalysisStub />}
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -73,17 +60,11 @@ function BasicReactorCalculator() {
     setResult(res);
   }
 
-  function downloadCSV(filename, headers, rows) {
-    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  }
+
 
   function handleDownloadBasic(res) {
     if (!res) return;
-    const headers = ['x','conversion','concA'];
+    const headers = ['x', 'conversion', 'concA'];
     const conv = res.conversionProfile || [];
     const conc = res.concentrationProfile || [];
     const rows = conv.map((p, i) => [p.x, p.y, (conc[i] && conc[i].y) || '']);
@@ -209,7 +190,7 @@ function AdvancedReactorCalculator() {
   // Keep UI toggles in sync when inputs change
   // useEffect not imported at top, but useState/useEffect available from React via same import
   // We'll create local effects below
-  
+
   // show/hide catalyst params when reactor type changes
   React.useEffect(() => {
     setShowCatParams(inputs.reactorType === 'pbr');
@@ -242,16 +223,16 @@ function AdvancedReactorCalculator() {
     const reactorTypeCode = reactorType;
     const order = reactionOrder === 'custom' ? 1 : Number(reactionOrder);
 
-  const flow = Number(flowRate);
-  const ca0 = Number(initialConc);
-  const k = Number(rateConstant);
-  const targetX = Number(targetConversion);
+    const flow = Number(flowRate);
+    const ca0 = Number(initialConc);
+    const k = Number(rateConstant);
+    const targetX = Number(targetConversion);
 
-  // basic input validation to avoid NaN/Div0
-  if (!isFinite(ca0) || ca0 <= 0) { setCalcError('Başlangıç konsantrasyonu (>0) girin.'); return; }
-  if (!isFinite(flow) || flow <= 0) { setCalcError('Mol akış hızı (>0) girin.'); return; }
-  if (!isFinite(k) || k <= 0) { setCalcError('Hız sabiti (>0) girin.'); return; }
-  if (!isFinite(targetX) || targetX <= 0 || targetX >= 1) { setCalcError('Hedef dönüşüm 0 < X < 1 aralığında olmalıdır.'); return; }
+    // basic input validation to avoid NaN/Div0
+    if (!isFinite(ca0) || ca0 <= 0) { setCalcError('Başlangıç konsantrasyonu (>0) girin.'); return; }
+    if (!isFinite(flow) || flow <= 0) { setCalcError('Mol akış hızı (>0) girin.'); return; }
+    if (!isFinite(k) || k <= 0) { setCalcError('Hız sabiti (>0) girin.'); return; }
+    if (!isFinite(targetX) || targetX <= 0 || targetX >= 1) { setCalcError('Hedef dönüşüm 0 < X < 1 aralığında olmalıdır.'); return; }
 
     let reactorVolume = 0;
     switch (reactorTypeCode) {
@@ -292,7 +273,7 @@ function AdvancedReactorCalculator() {
       spaceVelocity = spaceTime && isFinite(spaceTime) ? 1 / spaceTime : 0;
     }
 
-    const selectivity = 0.95;
+    const selectivity = 0.95; // TODO: Add user input for selectivity
     const yld = targetX * selectivity;
 
     // profiles
@@ -413,17 +394,11 @@ function AdvancedReactorCalculator() {
     });
   }
 
-  function downloadCSV(filename, headers, rows) {
-    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  }
+
 
   function handleDownloadAdvanced(res) {
     if (!res) return;
-    const headers = ['position','conversion','temperature'];
+    const headers = ['position', 'conversion', 'temperature'];
     const z = res.zProfile || [];
     const conv = res.convProfile || [];
     const temp = res.tempProfile || [];
@@ -431,88 +406,6 @@ function AdvancedReactorCalculator() {
     downloadCSV('advanced_reactor_profile.csv', headers, rows);
   }
 
-  // diagram container ref and drawing function (ported from reactor.html)
-  const diagramRef = React.useRef(null);
-
-  function drawReactorDiagram(reactorType) {
-    if (!diagramRef.current) return;
-    const container = diagramRef.current;
-    let svg = '';
-    switch (reactorType) {
-      case 'pfr':
-        svg = `
-          <svg width="400" height="150" viewBox="0 0 400 150">
-            <rect x="50" y="50" width="300" height="50" fill="none" stroke="#007bff" stroke-width="2" />
-            <polygon points="30,75 50,65 50,85" fill="#007bff" />
-            <polygon points="370,75 350,65 350,85" fill="#007bff" />
-            <text x="200" y="85" text-anchor="middle" fill="#333">PFR</text>
-            <text x="20" y="75" text-anchor="end" fill="#333">Giriş</text>
-            <text x="380" y="75" text-anchor="start" fill="#333">Çıkış</text>
-          </svg>
-        `;
-        break;
-      case 'cstr':
-        svg = `
-          <svg width="400" height="150" viewBox="0 0 400 150">
-            <circle cx="200" cy="75" r="50" fill="none" stroke="#007bff" stroke-width="2" />
-            <line x1="120" y1="75" x2="150" y2="75" stroke="#007bff" stroke-width="2" />
-            <polygon points="150,75 140,70 140,80" fill="#007bff" />
-            <line x1="200" y1="125" x2="200" y2="150" stroke="#007bff" stroke-width="2" />
-            <polygon points="200,150 195,140 205,140" fill="#007bff" />
-            <text x="200" y="85" text-anchor="middle" fill="#333">CSTR</text>
-            <text x="110" y="75" text-anchor="end" fill="#333">Giriş</text>
-            <text x="200" y="150" text-anchor="middle" dominant-baseline="hanging" fill="#333">Çıkış</text>
-            <line x1="170" y1="60" x2="230" y2="90" stroke="#333" stroke-width="1.5" />
-            <line x1="170" y1="90" x2="230" y2="60" stroke="#333" stroke-width="1.5" />
-          </svg>
-        `;
-        break;
-      case 'pbr':
-        svg = `
-          <svg width="400" height="150" viewBox="0 0 400 150">
-            <rect x="50" y="50" width="300" height="50" fill="none" stroke="#007bff" stroke-width="2" />
-            <polygon points="30,75 50,65 50,85" fill="#007bff" />
-            <polygon points="370,75 350,65 350,85" fill="#007bff" />
-            <text x="200" y="85" text-anchor="middle" fill="#333">PBR</text>
-            <text x="20" y="75" text-anchor="end" fill="#333">Giriş</text>
-            <text x="380" y="75" text-anchor="start" fill="#333">Çıkış</text>
-            <circle cx="100" cy="65" r="3" fill="#666" />
-            <circle cx="120" cy="75" r="3" fill="#666" />
-            <circle cx="140" cy="65" r="3" fill="#666" />
-            <circle cx="160" cy="75" r="3" fill="#666" />
-            <circle cx="180" cy="65" r="3" fill="#666" />
-            <circle cx="200" cy="75" r="3" fill="#666" />
-            <circle cx="220" cy="65" r="3" fill="#666" />
-            <circle cx="240" cy="75" r="3" fill="#666" />
-            <circle cx="260" cy="65" r="3" fill="#666" />
-            <circle cx="280" cy="75" r="3" fill="#666" />
-            <circle cx="300" cy="65" r="3" fill="#666" />
-          </svg>
-        `;
-        break;
-      case 'batch':
-        svg = `
-          <svg width="400" height="150" viewBox="0 0 400 150">
-            <rect x="150" y="25" width="100" height="100" rx="5" ry="5" fill="none" stroke="#007bff" stroke-width="2" />
-            <line x1="200" y1="25" x2="200" y2="10" stroke="#007bff" stroke-width="2" />
-            <circle cx="200" cy="10" r="5" fill="#007bff" />
-            <text x="200" y="75" text-anchor="middle" fill="#333">Batch</text>
-            <text x="250" y="30" text-anchor="start" fill="#333">Karıştırıcı</text>
-            <line x1="200" y1="25" x2="200" y2="100" stroke="#333" stroke-width="1.5" />
-            <line x1="180" y1="80" x2="220" y2="80" stroke="#333" stroke-width="1.5" />
-            <line x1="190" y1="70" x2="210" y2="90" stroke="#333" stroke-width="1.5" />
-            <line x1="190" y1="90" x2="210" y2="70" stroke="#333" stroke-width="1.5" />
-          </svg>
-        `;
-        break;
-    }
-    container.innerHTML = svg;
-  }
-
-  // draw diagram whenever reactor type or result changes
-  React.useEffect(() => {
-    drawReactorDiagram(inputs.reactorType);
-  }, [inputs.reactorType, result]);
 
   return (
     <div>
@@ -652,7 +545,7 @@ function AdvancedReactorCalculator() {
                 </tr>
                 <tr>
                   <td style={{ border: '1px solid #dee2e6', padding: 8 }}>Dönüşüm</td>
-                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{(result.targetConversion*1).toString()}</td>
+                  <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{(result.targetConversion * 1).toString()}</td>
                   <td style={{ border: '1px solid #dee2e6', padding: 8 }}>-</td>
                 </tr>
                 <tr>
@@ -671,7 +564,7 @@ function AdvancedReactorCalculator() {
 
           <div id="reactorDiagram" style={{ marginTop: 20, padding: 10, border: '1px solid #dee2e6', borderRadius: 4, textAlign: 'center' }}>
             <h4>Reaktör Şeması</h4>
-            <div ref={diagramRef}></div>
+            <ReactorDiagram reactorType={inputs.reactorType} />
           </div>
 
           <h4 style={{ marginTop: 20 }}>Performans Grafikleri</h4>
@@ -696,8 +589,8 @@ function AdvancedReactorCalculator() {
                 data={{
                   labels: result.zProfile,
                   datasets: [
-                    { label: 'A Konsantrasyonu', data: result.zProfile.map((_,i) => (result.initialConc * (1 - (result.convProfile[i] || 0)))), borderColor: 'rgb(255,99,132)', tension: 0.1, fill: false },
-                    { label: 'B Konsantrasyonu', data: result.zProfile.map((_,i) => (result.initialConc * ((result.convProfile[i] || 0)))), borderColor: 'rgb(54,162,235)', tension: 0.1, fill: false }
+                    { label: 'A Konsantrasyonu', data: result.zProfile.map((_, i) => (result.initialConc * (1 - (result.convProfile[i] || 0)))), borderColor: 'rgb(255,99,132)', tension: 0.1, fill: false },
+                    { label: 'B Konsantrasyonu', data: result.zProfile.map((_, i) => (result.initialConc * ((result.convProfile[i] || 0)))), borderColor: 'rgb(54,162,235)', tension: 0.1, fill: false }
                   ]
                 }}
                 options={{ responsive: true, maintainAspectRatio: false }}
@@ -854,7 +747,7 @@ function EconomicAnalysisStub() {
               </tr>
               <tr>
                 <td style={{ border: '1px solid #dee2e6', padding: 8 }}>İç Karlılık Oranı (IRR)</td>
-                <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{result.irr ? (result.irr*100).toFixed(1) + '%' : '-'}</td>
+                <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{result.irr ? (result.irr * 100).toFixed(1) + '%' : '-'}</td>
               </tr>
               <tr>
                 <td style={{ border: '1px solid #dee2e6', padding: 8 }}>Geri Ödeme Süresi</td>

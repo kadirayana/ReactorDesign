@@ -7,7 +7,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  swcMinify: true,
   reactStrictMode: true,
   trailingSlash: true,
   basePath: '/ReactorDesign',

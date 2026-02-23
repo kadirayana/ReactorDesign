@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import LanguageToggle from "./LanguageToggle";
 import styles from "../styles/Navbar.module.css";
 
 // Statik dışa aktarma (output: 'export') ile uyumluluk için
@@ -50,7 +51,7 @@ export default function Navbar() {
 	];
 
 	// Logo dosyasının yolu, `next.config.js` dosyasındaki `basePath`'e göre
-    // Next.js tarafından otomatik olarak ayarlanacaktır.
+	// Next.js tarafından otomatik olarak ayarlanacaktır.
 	const logoPath = "/logo.png";
 
 	return (
@@ -97,6 +98,10 @@ export default function Navbar() {
 					);
 				})}
 			</ul>
+
+			<div className={styles.navFooter} style={{ padding: '12px', borderTop: '1px solid #e9ecef', marginTop: 'auto' }}>
+				<LanguageToggle />
+			</div>
 		</nav>
 	);
 }

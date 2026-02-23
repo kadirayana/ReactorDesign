@@ -1,7 +1,1 @@
-{
-  "/_app": "pages/_app.js",
-  "/_error": "pages/_error.js",
-  "/_document": "pages/_document.js",
-  "/cv": "pages/cv.js",
-  "/": "pages/index.js"
-}
+{"/_app":"pages/_app.js","/_error":"pages/_error.js","/dynamics":"pages/dynamics.html","/heatintegration":"pages/heatintegration.html","/cv":"pages/cv.html","/heattransfer":"pages/heattransfer.html","/chemical":"pages/chemical.html","/history":"pages/history.html","/":"pages/index.html","/optimization":"pages/optimization.html","/reactor":"pages/reactor.html","/reactorss":"pages/reactorss.html","/vaporizer":"pages/vaporizer.html","/api/generate-docx":"pages/api/generate-docx.js","/legacy":"pages/legacy.js","/legacy/[...slug]":"pages/legacy/[...slug].js","/_document":"pages/_document.js","/404":"pages/404.html"}

@@ -6,9 +6,10 @@ export default function Layout({ children }) {
     <>
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>ReactorDesign Migration</title>
-        {/* favicon for browser tab (place public/logo.png) */}
-        <link rel="icon" href="public/logo.png" />
+        <title>Kimya Mühendisliği Hesaplama Platformu</title>
+        <meta name="description" content="Reaktör tasarımı, kimyasal denge, ısı transferi ve dinamik simülasyon hesaplamaları için kapsamlı platform." />
+        <link rel="icon" href="/logo.png" />
+        <link rel="manifest" href="/manifest.json" />
       </Head>
       <Navbar />
       <main className="main-content" style={{ paddingTop: 16 }}>{children}</main>
