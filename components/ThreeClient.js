@@ -24,7 +24,22 @@ export default function ThreeClient({ onInit }) {
         renderer.render(scene, camera)
       }
       animate()
-      if (onInit) cleanup = onInit({ THREE, scene, camera, renderer })
+      // keep the canvas sized to its container
+      const onResize = () => {
+        const el = mountRef.current
+        if (!el) return
+        camera.aspect = el.clientWidth / el.clientHeight
+        camera.updateProjectionMatrix()
+        renderer.setSize(el.clientWidth, el.clientHeight)
+      }
+      window.addEventListener('resize', onResize)
+      const userCleanup = onInit ? onInit({ THREE, scene, camera, renderer }) : null
+      cleanup = () => {
+        window.removeEventListener('resize', onResize)
+        if (typeof userCleanup === 'function') userCleanup()
+        controls.dispose()
+        renderer.dispose()
+      }
     })()
     return () => {
       mounted = false
@@ -33,5 +48,5 @@ export default function ThreeClient({ onInit }) {
     }
   }, [onInit])
 
-  return <div ref={mountRef} style={{ width: '100%', height: 400 }} />
+  return <div ref={mountRef} className="three-box" />
 }

@@ -1,122 +1,94 @@
 import React, { useState } from 'react';
-import dynamic from 'next/dynamic';
+import {
+  Section, FormGrid, Field, SelectField, ButtonRow, Alert, StatGrid, Stat, EmptyState, fmt,
+} from './ui';
 import { computeConvection } from '../src/lib/convection';
-const ChartClient = dynamic(() => import('./ChartClient'), { ssr: false });
+import { saveHistory } from '../src/lib/history';
+
+const MODES = [
+  { value: 'forced-flat', label: 'Zorlanmış — düz levha üzerinde' },
+  { value: 'forced-tube', label: 'Zorlanmış — boru içi akış' },
+  { value: 'natural-vertical', label: 'Doğal — düşey levha' },
+];
+
+const REGIME = { laminar: 'Laminer', transition: 'Geçiş', turbulent: 'Türbülanslı', mixed: 'Karma (laminer + türbülanslı)' };
+
+const CORRELATION = {
+  'forced-flat': 'Laminer: Nu = 0,664·Re^½·Pr^⅓   ·   Karma: Nu = (0,037·Re^0,8 − 871)·Pr^⅓',
+  'forced-tube': 'Re < 2300: Nu = 3,66   ·   Re ≥ 2300: Gnielinski',
+  'natural-vertical': 'Churchill–Chu: Nu = {0,825 + 0,387·Ra^(1/6) / [1 + (0,492/Pr)^(9/16)]^(8/27)}²',
+};
 
 export default function ConvectionCalculator() {
   const [mode, setMode] = useState('forced-flat');
-  const [geometry, setGeometry] = useState({ L: 1.0, V: 2.0, D: 0.05 });
-  const [temps, setTemps] = useState({ T_surface: 80, T_fluid: 20 });
-  const [A, setA] = useState(1.0);
+  const [inputs, setInputs] = useState({ L: 1.0, V: 2.0, D: 0.05, A: 1.0, Ts: 80, Tf: 20 });
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
 
-  function handleGeomChange(e) {
+  const onChange = e => {
     const { name, value } = e.target;
-    setGeometry(prev => ({ ...prev, [name]: Number(value) }));
-  }
+    setInputs(prev => ({ ...prev, [name]: value === '' ? '' : Number(value) }));
+  };
 
-  function handleTemps(e) {
-    const { name, value } = e.target;
-    setTemps(prev => ({ ...prev, [name]: Number(value) }));
-  }
-
-  function calculate() {
+  function calculate(e) {
+    e?.preventDefault();
     setError('');
     try {
       // natural convection needs the surface/fluid temperatures for the Grashof number
-      const conv = computeConvection({
-        type: mode,
-        geometry: { ...geometry, Ts: temps.T_surface, Tinf: temps.T_fluid },
-        fluid: null,
-      });
-      const Q = conv.h * A * (temps.T_surface - temps.T_fluid);
-      setResult({ ...conv, Q });
+      const conv = computeConvection({ type: mode, geometry: { L: inputs.L, V: inputs.V, D: inputs.D, Ts: inputs.Ts, Tinf: inputs.Tf } });
+      const Q = conv.h * inputs.A * (inputs.Ts - inputs.Tf);
+      setResult({ ...conv, Q, mode });
+      saveHistory('Taşınım', { Mod: MODES.find(m => m.value === mode).label }, `h = ${fmt(conv.h, 2)} W/(m²·K)`);
     } catch (err) {
       setResult(null);
       setError(err.message);
     }
   }
 
-  const chartData = result
-    ? {
-        labels: ['Fluid', 'Surface'],
-        datasets: [{ label: 'Temperature (°C)', data: [temps.T_fluid, temps.T_surface], borderColor: 'orange', fill: false }],
-      }
-    : null;
-
   return (
-    <div style={{ maxWidth: 640 }}>
-      <h3>Convection Calculator</h3>
-      <label>Mode:
-        <select value={mode} onChange={e => setMode(e.target.value)}>
-          <option value="forced-flat">Forced (flat plate)</option>
-          <option value="forced-tube">Forced (tube)</option>
-          <option value="natural-vertical">Natural (vertical plate)</option>
-        </select>
-      </label>
-
-      {mode === 'forced-flat' && (
-        <>
-          <label>Plate length in flow direction L (m)
-            <input type="number" name="L" value={geometry.L} step="0.01" onChange={handleGeomChange} />
-          </label>
-          <label>Velocity V (m/s)
-            <input type="number" name="V" value={geometry.V} step="0.1" onChange={handleGeomChange} />
-          </label>
-        </>
-      )}
-
-      {mode === 'forced-tube' && (
-        <>
-          <label>Diameter D (m)
-            <input type="number" name="D" value={geometry.D} step="0.001" onChange={handleGeomChange} />
-          </label>
-          <label>Velocity V (m/s)
-            <input type="number" name="V" value={geometry.V} step="0.1" onChange={handleGeomChange} />
-          </label>
-        </>
-      )}
-
-      {mode === 'natural-vertical' && (
-        <>
-          <label>Plate height L (m)
-            <input type="number" name="L" value={geometry.L} step="0.01" onChange={handleGeomChange} />
-          </label>
-        </>
-      )}
-
-      <label>Area A (m²)
-        <input type="number" value={A} step="0.1" onChange={e => setA(Number(e.target.value))} />
-      </label>
-
-      <label>Surface temperature (°C)
-        <input type="number" name="T_surface" value={temps.T_surface} onChange={handleTemps} />
-      </label>
-      <label>Fluid temperature (°C)
-        <input type="number" name="T_fluid" value={temps.T_fluid} onChange={handleTemps} />
-      </label>
-
-      <button onClick={calculate} style={{ marginTop: 8 }}>Calculate</button>
-
-      {error && <p style={{ color: '#c0392b' }}>{error}</p>}
-      {result && (
-        <div style={{ marginTop: 12 }}>
-          {result.regime && <div><strong>Akış rejimi: </strong>{result.regime}</div>}
-          {result.warning && <div style={{ color: '#b22222' }}>{result.warning}</div>}
-          <div><strong>h: </strong>{result.h ? result.h.toFixed(3) + ' W/m²K' : '—'}</div>
-          <div><strong>Q: </strong>{result.Q.toFixed(2)} W</div>
-          <div style={{ marginTop: 8, fontSize: 13, color: '#555' }}>
-            <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify({ Nu: result.Nu, Re: result.Re || result.ReL, Pr: result.Pr, Ra: result.Ra }, null, 2)}</pre>
-          </div>
-        </div>
-      )}
-
-      {chartData && (
-        <div style={{ marginTop: 12 }}>
-          <ChartClient data={chartData} options={{ responsive: true }} type="bar" />
-        </div>
-      )}
+    <div className="split">
+      <form onSubmit={calculate} noValidate>
+        <Section title="Akış ve geometri" icon="🌬️" description="Akışkan: ~20–40 °C hava (k = 0,026 W/(m·K), Pr ≈ 0,72)">
+          <FormGrid>
+            <SelectField className="span-all" label="Taşınım tipi" value={mode} onChange={e => { setMode(e.target.value); setResult(null); }} options={MODES} />
+            {mode === 'forced-flat' && (
+              <>
+                <Field label="Akış yönünde uzunluk L" unit="m" name="L" value={inputs.L} onChange={onChange} />
+                <Field label="Akış hızı V" unit="m/s" name="V" value={inputs.V} onChange={onChange} />
+              </>
+            )}
+            {mode === 'forced-tube' && (
+              <>
+                <Field label="Boru iç çapı D" unit="m" name="D" value={inputs.D} onChange={onChange} />
+                <Field label="Ortalama hız V" unit="m/s" name="V" value={inputs.V} onChange={onChange} />
+              </>
+            )}
+            {mode === 'natural-vertical' && <Field label="Levha yüksekliği L" unit="m" name="L" value={inputs.L} onChange={onChange} />}
+            <Field label="Isı transfer alanı A" unit="m²" name="A" value={inputs.A} onChange={onChange} />
+            <Field label="Yüzey sıcaklığı Tₛ" unit="°C" name="Ts" value={inputs.Ts} onChange={onChange} />
+            <Field label="Akışkan sıcaklığı T∞" unit="°C" name="Tf" value={inputs.Tf} onChange={onChange} />
+          </FormGrid>
+          <ButtonRow><button type="submit">Hesapla</button></ButtonRow>
+        </Section>
+      </form>
+      <div>
+        {error && <Alert type="error">{error}</Alert>}
+        {!result ? <EmptyState icon="🌬️" title="Isı taşınım katsayısı burada görünecek" /> : (
+          <Section title="Sonuçlar" icon="📊" description={`Rejim: ${REGIME[result.regime] || '—'}`}>
+            <StatGrid>
+              <Stat primary label="h" value={result.h} unit="W/(m²·K)" digits={3} />
+              <Stat label="Isı akış hızı Q" value={result.Q} unit="W" digits={2} />
+              <Stat label="Nusselt Nu" value={result.Nu} digits={2} />
+              {result.mode === 'natural-vertical'
+                ? <Stat label="Rayleigh Ra" value={result.Ra} />
+                : <Stat label="Reynolds Re" value={result.Re ?? result.ReL} digits={0} />}
+              <Stat label="Prandtl Pr" value={result.Pr} digits={3} />
+            </StatGrid>
+            {result.warning && <Alert type="warning">{result.warning}</Alert>}
+            <div className="formula">{CORRELATION[result.mode]}</div>
+          </Section>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,8 +1,15 @@
 import { useState } from 'react';
-import { computeVaporizer } from '../src/lib/vaporizer';
+import Head from 'next/head';
 import dynamic from 'next/dynamic';
+import {
+  PageHeader, Section, FormGrid, Field, ButtonRow, Alert, StatGrid, Stat, EmptyState, DataTable, fmt,
+} from '../components/ui';
+import { computeVaporizer } from '../src/lib/vaporizer';
+import { downloadCSV } from '../src/lib/utils';
+import { saveHistory } from '../src/lib/history';
 
 const ThreeClient = dynamic(() => import('../components/ThreeClient'), { ssr: false });
+const ChartClient = dynamic(() => import('../components/ChartClient'), { ssr: false });
 
 const defaultInputs = {
   feedFlow: 503.32,
@@ -27,7 +34,7 @@ const defaultInputs = {
   k_tube: 14,
   U_initial: 740,
   freeboard: 0.08,
-  iterations: 2
+  iterations: 5,
 };
 
 export default function VaporizerPage() {
@@ -36,125 +43,180 @@ export default function VaporizerPage() {
   const [errors, setErrors] = useState([]);
 
   function handleChange(e) {
-    const { name, value, type } = e.target;
-    // parse number inputs; allow clearing
-    const parsed = type === 'number' ? (value === '' ? '' : Number(value)) : value;
-    setInputs(i => ({ ...i, [name]: parsed }));
+    const { name, value } = e.target;
+    setInputs(i => ({ ...i, [name]: value === '' ? '' : Number(value) }));
   }
 
-  function calculateDesign() {
-    // basic validation
+  function calculateDesign(e) {
+    e?.preventDefault();
     const newErrors = [];
-    if (inputs.feedFlow <= 0) newErrors.push('Feed akışı pozitif olmalıdır.');
-    if (inputs.T_water_in <= inputs.T_water_out) newErrors.push('Su giriş sıcaklığı, çıkıştan yüksek olmalıdır.');
-    if (inputs.T_water_out <= inputs.T_feed_in) newErrors.push('Termodinamik Hata: Su çıkış sıcaklığı, feed giriş sıcaklığından yüksek olmalıdır (Sıcaklık Kesişimi).');
-    if (inputs.iterations < 1) newErrors.push('İterasyon sayısı en az 1 olmalıdır.');
+    if (!(inputs.feedFlow > 0)) newErrors.push('Besleme akışı pozitif olmalıdır.');
+    if (!(inputs.vaporFraction >= 0 && inputs.vaporFraction <= 1)) newErrors.push('Buhar kesri 0 ile 1 arasında olmalıdır.');
+    if (!(inputs.T_water_in > inputs.T_water_out)) newErrors.push('Su giriş sıcaklığı çıkıştan yüksek olmalıdır.');
+    if (!(inputs.d0 > inputs.di && inputs.di > 0)) newErrors.push('Tüp dış çapı iç çaptan büyük olmalıdır.');
+    if (!(inputs.iterations >= 1)) newErrors.push('İterasyon sayısı en az 1 olmalıdır.');
     setErrors(newErrors);
-    if (newErrors.length) return;
-    const {
-      feedFlow, vaporFraction, T_feed_in, T_feed_out, P_operating,
-      Pc_mix, dHvap_mix, Cp_mix, T_water_in, T_water_out, k_water, Cp_water, rho_water, mu_water,
-      tubeLength, d0, di, Rf_o, Rf_i, k_tube, U_initial, freeboard, iterations
-    } = inputs;
-    let computed;
+    if (newErrors.length) { setResults(null); return; }
     try {
-      computed = computeVaporizer(inputs);
+      const computed = computeVaporizer(inputs);
+      // unique key + inputs so the 3D viewer remounts with the new geometry
+      setResults({ ...computed, _key: Date.now(), _inputs: { ...inputs } });
+      const last = computed.iterationResults[computed.iterationResults.length - 1];
+      saveHistory('Buharlaştırıcı', { Besleme: `${inputs.feedFlow} kmol/h`, 'Buhar kesri': inputs.vaporFraction }, `A = ${fmt(last.A, 1)} m², ${Math.round(last.N_tubes)} tüp`);
     } catch (err) {
       setErrors([err.message]);
       setResults(null);
-      return;
     }
-    // attach a unique key and the inputs used so the 3D viewer can remount/update
-    setResults({ ...computed, _key: Date.now(), _inputs: { ...inputs } });
-  }
-
-  function resetDefaults() {
-    setInputs(defaultInputs);
-    setResults(null);
-    setErrors([]);
   }
 
   function exportCSV() {
     if (!results) return;
-    const rows = [];
-    rows.push(["Parameter", "Value"]);
-    rows.push(["Q_total_kJ_h", results.Q_total_kJ_h]);
-    rows.push(["Q_total_kW", results.Q_total_kW]);
-    rows.push(["m_water_kg_per_s", results.m_water]);
-    rows.push(["LMTD_C", results.LMTD]);
-    results.iterationResults.forEach(r => {
-      rows.push([`iteration_${r.iteration}_U_W_m2K`, r.U]);
-      rows.push([`iteration_${r.iteration}_A_m2`, r.A]);
-      rows.push([`iteration_${r.iteration}_N_tubes`, r.N_tubes]);
-    });
-    rows.push(["Db_m", results.Db]);
-    rows.push(["Ds_m", results.Ds]);
-    const csvContent = rows.map(r => r.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'vaporizer_results.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    const rows = [
+      ['Q_toplam_kW', results.Q_total_kW],
+      ['m_su_kg_s', results.m_water],
+      ['LMTD_C', results.LMTD],
+      ...results.iterationResults.flatMap(r => [
+        [`iter${r.iteration}_U_W_m2K`, r.U],
+        [`iter${r.iteration}_A_m2`, r.A],
+        [`iter${r.iteration}_N_tup`, r.N_tubes],
+      ]),
+      ['Db_m', results.Db],
+      ['Ds_m', results.Ds],
+    ];
+    downloadCSV('buharlastirici_sonuclar.csv', ['Parametre', 'Deger'], rows);
   }
 
+  const f = (label, name, unit, extra) => <Field key={name} label={label} unit={unit} name={name} value={inputs[name]} onChange={handleChange} {...extra} />;
+  const last = results ? results.iterationResults[results.iterationResults.length - 1] : null;
+
   return (
-    <div className="page-container">
-      <h1 className="page-title">Vaporizer Tasarım Hesaplayıcı</h1>
-      <form onSubmit={e => { e.preventDefault(); calculateDesign(); }}>
-        {errors.length > 0 && (
-          <div style={{ background: '#fff1f0', color: '#611a15', border: '1px solid #f5c6cb', padding: 10, marginBottom: 12, borderRadius: 6 }}>
-            <strong>Hatalar:</strong>
-            <ul>
-              {errors.map((er, idx) => <li key={idx}>{er}</li>)}
-            </ul>
+    <>
+      <Head><title>Buharlaştırıcı Tasarımı · Kimya Mühendisliği Hesaplama Platformu</title></Head>
+      <div className="page-container">
+        <PageHeader
+          eyebrow="Isı ve Kütle Transferi"
+          title="Buharlaştırıcı Tasarımı"
+          lead="Kettle tipi buharlaştırıcı: tüp tarafında ısıtma suyu, gövde tarafında çekirdek kaynama (Mostinski). U iteratif olarak güncellenir; tüp demeti ve gövde çapı hesaplanır."
+        />
+
+        <form onSubmit={calculateDesign} noValidate>
+          <div className="split split-even">
+            <div>
+              <Section title="Besleme ve proses" icon="🧪">
+                <FormGrid>
+                  {f('Besleme akışı', 'feedFlow', 'kmol/h')}
+                  {f('Buharlaşan kesir', 'vaporFraction', '0–1', { step: 0.01 })}
+                  {f('Besleme giriş sıcaklığı', 'T_feed_in', '°C')}
+                  {f('Kaynama (çıkış) sıcaklığı', 'T_feed_out', '°C')}
+                  {f('Çalışma basıncı', 'P_operating', 'bar')}
+                  {f('Kritik basınç Pc', 'Pc_mix', 'bar')}
+                  {f('Buharlaşma ısısı ΔHvap', 'dHvap_mix', 'kJ/kmol')}
+                  {f('Sıvı ısı kapasitesi cₚ', 'Cp_mix', 'kJ/(kmol·K)')}
+                </FormGrid>
+              </Section>
+              <Section title="Isıtma suyu (tüp tarafı)" icon="💧">
+                <FormGrid>
+                  {f('Su giriş sıcaklığı', 'T_water_in', '°C')}
+                  {f('Su çıkış sıcaklığı', 'T_water_out', '°C')}
+                  {f('Isıl iletkenlik k', 'k_water', 'W/(m·K)')}
+                  {f('Isı kapasitesi cₚ', 'Cp_water', 'kJ/(kg·K)')}
+                  {f('Yoğunluk ρ', 'rho_water', 'kg/m³')}
+                  {f('Viskozite μ', 'mu_water', 'Pa·s')}
+                </FormGrid>
+              </Section>
+            </div>
+            <div>
+              <Section title="Tüpler ve kirlenme" icon="🧰">
+                <FormGrid>
+                  {f('Tüp uzunluğu L', 'tubeLength', 'm')}
+                  {f('Tüp dış çapı d₀', 'd0', 'm')}
+                  {f('Tüp iç çapı dᵢ', 'di', 'm')}
+                  {f('Tüp ısıl iletkenliği', 'k_tube', 'W/(m·K)')}
+                  {f('Dış kirlenme Rf,o', 'Rf_o', 'm²·K/W')}
+                  {f('İç kirlenme Rf,i', 'Rf_i', 'm²·K/W')}
+                </FormGrid>
+              </Section>
+              <Section title="Çözücü" icon="🔁">
+                <FormGrid>
+                  {f('Başlangıç U tahmini', 'U_initial', 'W/(m²·K)')}
+                  {f('Maks. iterasyon', 'iterations', '–', { step: 1, min: 1, max: 20 })}
+                  {f('Serbest bölge yüksekliği', 'freeboard', 'm')}
+                </FormGrid>
+                <ButtonRow>
+                  <button type="submit">Tasarımı hesapla</button>
+                  <button type="button" className="btn-secondary" onClick={() => { setInputs(defaultInputs); setResults(null); setErrors([]); }}>Sıfırla</button>
+                </ButtonRow>
+              </Section>
+            </div>
           </div>
+        </form>
+
+        {errors.length > 0 && (
+          <Alert type="error" title="Hesaplanamadı:">
+            <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>{errors.map((er, idx) => <li key={idx}>{er}</li>)}</ul>
+          </Alert>
         )}
-        <Section title="Feed & Süreç Verileri">
-          <InputRow label="Feed Akış (kmol/h):" name="feedFlow" value={inputs.feedFlow} onChange={handleChange} />
-          <InputRow label="Vapor fraksiyonu:" name="vaporFraction" value={inputs.vaporFraction} step="0.01" onChange={handleChange} />
-          <InputRow label="Feed Giriş Sıcaklığı (°C):" name="T_feed_in" value={inputs.T_feed_in} onChange={handleChange} />
-          <InputRow label="Feed Çıkış Sıcaklığı (°C):" name="T_feed_out" value={inputs.T_feed_out} onChange={handleChange} />
-          <InputRow label="Çalışma Basıncı (atm):" name="P_operating" value={inputs.P_operating} step="0.1" onChange={handleChange} />
-        </Section>
-        <Section title="Liquid-Vapor Karışım Özellikleri">
-          <InputRow label="Pc (atm):" name="Pc_mix" value={inputs.Pc_mix} step="0.01" onChange={handleChange} />
-          <InputRow label="ΔHvap (kJ/kmol):" name="dHvap_mix" value={inputs.dHvap_mix} onChange={handleChange} />
-          <InputRow label="Cp (kJ/kmolK):" name="Cp_mix" value={inputs.Cp_mix} onChange={handleChange} />
-        </Section>
-        <Section title="Soğutma Suyu Özellikleri">
-          <InputRow label="Su Giriş Sıcaklığı (°C):" name="T_water_in" value={inputs.T_water_in} onChange={handleChange} />
-          <InputRow label="Su Çıkış Sıcaklığı (°C):" name="T_water_out" value={inputs.T_water_out} onChange={handleChange} />
-          <InputRow label="Isı İletkenliği, k (W/mK):" name="k_water" value={inputs.k_water} step="0.001" onChange={handleChange} />
-          <InputRow label="Cp (kJ/kgK):" name="Cp_water" value={inputs.Cp_water} step="0.01" onChange={handleChange} />
-          <InputRow label="Yoğunluk (kg/m³):" name="rho_water" value={inputs.rho_water} onChange={handleChange} />
-          <InputRow label="Viskozite (kg/m·s):" name="mu_water" value={inputs.mu_water} step="0.00001" onChange={handleChange} />
-        </Section>
-        <Section title="Tüp & Fouling Verileri">
-          <InputRow label="Tüp Uzunluğu, L (m):" name="tubeLength" value={inputs.tubeLength} step="0.1" onChange={handleChange} />
-          <InputRow label="Dış Tüp Çapı, d₀ (m):" name="d0" value={inputs.d0} step="0.0001" onChange={handleChange} />
-          <InputRow label="İç Tüp Çapı, dᵢ (m):" name="di" value={inputs.di} step="0.0001" onChange={handleChange} />
-          <InputRow label="Fouling Faktörü, Rf,o (m²K/W):" name="Rf_o" value={inputs.Rf_o} step="0.0001" onChange={handleChange} />
-          <InputRow label="Fouling Faktörü, Rf,i (m²K/W):" name="Rf_i" value={inputs.Rf_i} step="0.0001" onChange={handleChange} />
-          <InputRow label="Tüp Malzeme Isı İletkenliği (W/mK):" name="k_tube" value={inputs.k_tube} step="0.1" onChange={handleChange} />
-          <InputRow label="Varsayılan Başlangıç U (W/m²K):" name="U_initial" value={inputs.U_initial} onChange={handleChange} />
-          <InputRow label="Freeboard (m):" name="freeboard" value={inputs.freeboard} step="0.01" onChange={handleChange} />
-          <InputRow label="İterasyon Sayısı:" name="iterations" value={inputs.iterations} min="1" max="10" step="1" onChange={handleChange} />
-        </Section>
-        <button type="submit" style={{ width: 200, margin: '20px auto', display: 'block' }}>Tasarımı Hesapla</button>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-          <button type="button" onClick={exportCSV} style={{ padding: '8px 12px' }} disabled={!results}>CSV İndir</button>
-          <button type="button" onClick={resetDefaults} style={{ padding: '8px 12px' }}>Sıfırla</button>
-        </div>
-      </form>
-      {results && <VaporizerResults results={results} />}
-      {results && (
-        <div style={{ marginTop: 24 }}>
-          <h3>3D Görselleştirme</h3>
+
+        {!results ? (
+          <EmptyState icon="🌫️" title="Tasarım sonuçları burada görünecek">Isı yükü, iterasyon geçmişi, tüp sayısı ve 3B demet görünümü.</EmptyState>
+        ) : (
+          <>
+            <Section
+              title="Tasarım özeti"
+              icon="📊"
+              actions={<button type="button" className="btn-secondary btn-sm" onClick={exportCSV}>CSV indir</button>}
+            >
+              <StatGrid>
+                <Stat primary label="Isı yükü" value={results.Q_total_kW} unit="kW" digits={1} />
+                <Stat primary label="Isı transfer alanı" value={last.A} unit="m²" digits={2} />
+                <Stat label="Tüp sayısı" value={Math.ceil(last.N_tubes)} digits={0} />
+                <Stat label="Hesaplanan U" value={last.U_calc} unit="W/(m²·K)" digits={0} />
+                <Stat label="Su debisi" value={results.m_water} unit="kg/s" digits={2} />
+                <Stat label="LMTD" value={results.LMTD} unit="°C" digits={2} />
+                <Stat label="Demet çapı Db" value={results.Db} unit="m" digits={3} />
+                <Stat label="Gövde çapı Ds" value={results.Ds} unit="m" digits={3} />
+              </StatGrid>
+              {!results.converged && <Alert type="warning">U yakınsamadı (son iterasyonda %{fmt(results.relativeUChange * 100, 1)} değişim). İterasyon sayısını artırın.</Alert>}
+              {results.reWarning && <Alert type="warning">{results.reWarning}</Alert>}
+              {results.packWarning && <Alert type="warning">{results.packWarning}</Alert>}
+            </Section>
+
+            <Section title="U iterasyonları" icon="🔁">
+              <ChartClient
+                data={{
+                  labels: results.iterationResults.map(r => r.iteration),
+                  datasets: [
+                    { label: 'Varsayılan U', data: results.iterationResults.map(r => r.U) },
+                    { label: 'Hesaplanan U', data: results.iterationResults.map(r => r.U_calc) },
+                  ],
+                }}
+                xLabel="İterasyon"
+                yLabel="U [W/(m²·K)]"
+                height={260}
+              />
+              <DataTable
+                columns={[
+                  { key: 'iteration', label: '#', digits: 0 },
+                  { key: 'U', label: 'U [W/m²K]', digits: 0 },
+                  { key: 'A', label: 'A [m²]', digits: 2 },
+                  { key: 'N_tubes', label: 'Tüp', digits: 0 },
+                  { key: 'v_water', label: 'v [m/s]', digits: 2 },
+                  { key: 'Re', label: 'Re', digits: 0 },
+                  { key: 'h_i', label: 'hᵢ [W/m²K]', digits: 0 },
+                  { key: 'h_nb', label: 'h_nb [W/m²K]', digits: 0 },
+                  { key: 'U_calc', label: 'U hesap', digits: 0 },
+                ]}
+                rows={results.iterationResults}
+              />
+            </Section>
+
+            <Section title="3B tüp demeti" icon="🧊" description="Sürükleyerek döndürün">
           <ThreeClient key={results._key} onInit={({ THREE, scene, camera, renderer }) => {
             // set white background for the renderer
-            if (renderer && renderer.setClearColor) renderer.setClearColor(0xffffff, 1);
+            if (renderer && renderer.setClearColor) {
+              const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg-subtle').trim() || '#F8FAFC';
+              renderer.setClearColor(new THREE.Color(bg), 1);
+            }
             // nicer visualization: hexagonal packing, metal material, tube end caps, transparent shell, soft lighting, and slow auto-rotate
             const inputs = results._inputs || {};
             const last = results.iterationResults[results.iterationResults.length - 1] || {};
@@ -296,12 +358,16 @@ export default function VaporizerPage() {
             labelWrap.style.position = 'absolute';
             labelWrap.style.top = '8px';
             labelWrap.style.left = '8px';
-            labelWrap.style.color = '#0b4f6c';
-            labelWrap.style.fontFamily = 'Arial, sans-serif';
+            labelWrap.style.color = 'var(--text-main)';
+            labelWrap.style.fontFamily = 'var(--font-body)';
+            labelWrap.style.background = 'color-mix(in srgb, var(--bg-surface) 85%, transparent)';
+            labelWrap.style.padding = '8px 10px';
+            labelWrap.style.borderRadius = '8px';
+            labelWrap.style.lineHeight = '1.5';
             labelWrap.style.fontSize = '13px';
             labelWrap.style.pointerEvents = 'none';
-            const fitNote = results.packWarning ? `<div style="color:#b22222"><strong>UYARI:</strong> ${results.packWarning}</div>` : '';
-            labelWrap.innerHTML = `<div><strong>İç çap:</strong> ${(tubeDia * 1000).toFixed(1)} mm</div><div><strong>Tüp sayısı (talep/yerleşen):</strong> ${Math.max(1, Math.round(last.N_tubes || N))}/${results.packedCount}</div><div><strong>Shell Ø:</strong> ${(Ds * 1000).toFixed(0)} mm</div><div><strong>Freeboard:</strong> ${(freeboardHeight * 1000).toFixed(0)} mm</div>${fitNote}<div style="margin-top:6px"><em>Grey plates:</em> tube sheets • Blue pipes: tube-side • Orange pipes: shell-side</div>`;
+            const fitNote = results.packWarning ? `<div style="color:var(--error)"><strong>UYARI:</strong> ${results.packWarning}</div>` : '';
+            labelWrap.innerHTML = `<div><strong>İç çap:</strong> ${(tubeDia * 1000).toFixed(1)} mm</div><div><strong>Tüp sayısı (talep/yerleşen):</strong> ${Math.max(1, Math.round(last.N_tubes || N))}/${results.packedCount}</div><div><strong>Shell Ø:</strong> ${(Ds * 1000).toFixed(0)} mm</div><div><strong>Freeboard:</strong> ${(freeboardHeight * 1000).toFixed(0)} mm</div>${fitNote}<div style="margin-top:6px"><em>Gri plakalar:</em> tüp aynaları • Mavi: tüp tarafı • Turuncu: gövde tarafı</div>`;
             container.style.position = 'relative';
             container.appendChild(labelWrap);
 
@@ -355,68 +421,10 @@ export default function VaporizerPage() {
               if (fbGeom) fbGeom.dispose();
             };
           }} />
-          <p style={{ marginTop: 8 }}><a href="/legacy/vaporizer.html" target="_blank" rel="noreferrer">Ayrıntılı Legacy 3D Görselleştirme</a></p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Section({ title, children }) {
-  return (
-    <div className="card">
-      <h2 style={{ fontSize: 20, color: '#00539C', borderBottom: '2px solid #00539C', paddingBottom: 8, marginBottom: 12, fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}>{title}</h2>
-      {children}
-    </div>
-  );
-}
-
-function InputRow({ label, name, value, onChange, ...rest }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
-      <label htmlFor={name} style={{ flex: '1 0 300px', fontWeight: 500, color: '#2D3748' }}>{label}</label>
-      <input
-        type="number"
-        id={name}
-        name={name}
-        value={value}
-        onChange={onChange}
-        style={{ flex: '1 0 150px', padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 14 }}
-        {...rest}
-      />
-    </div>
-  );
-}
-
-function VaporizerResults({ results }) {
-  return (
-    <div style={{ background: '#f1fdf4', border: '1px solid #c3e9cb', borderLeft: '4px solid #51CF66', padding: 20, borderRadius: 8, marginTop: 20 }}>
-      <h2 style={{ fontSize: 20, color: '#00539C', fontFamily: "'Poppins', sans-serif", fontWeight: 600, marginBottom: 16 }}>Tasarım Sonuçları</h2>
-      <p style={{ marginBottom: 12 }}><strong>Isı Yükü:</strong> {results.Q_total_kJ_h.toFixed(0)} kJ/h ({results.Q_total_kW.toFixed(2)} kW)</p>
-      <p style={{ marginBottom: 12 }}><strong>Su Kütle Akışı:</strong> {results.m_water.toFixed(3)} kg/s ({(results.m_water * 3600).toFixed(2)} kg/h)</p>
-      <p style={{ marginBottom: 16 }}><strong>LMTD:</strong> {results.LMTD.toFixed(2)} °C</p>
-      {results.iterationResults.map(result => (
-        <div key={result.iteration} className="card" style={{ padding: 12, marginTop: 12, marginBottom: 12 }}>
-          <h3 style={{ fontSize: 16, color: '#00539C', fontWeight: 600, marginBottom: 8 }}>İterasyon {result.iteration} (U = {result.U.toFixed(0)} W/m²K)</h3>
-          <p style={{ marginBottom: 6 }}><strong>Isı Transfer Alanı:</strong> {result.A.toFixed(2)} m²</p>
-          <p style={{ marginBottom: 6 }}><strong>Tüp Sayısı:</strong> {result.N_tubes.toFixed(0)}</p>
-          <p style={{ marginBottom: 6 }}><strong>Su Hızı:</strong> {result.v_water.toFixed(2)} m/s</p>
-          <p style={{ marginBottom: 6 }}><strong>Reynolds Sayısı:</strong> {result.Re.toFixed(0)}</p>
-          <p style={{ marginBottom: 6 }}><strong>Su Tarafı h (hᵢ):</strong> {result.h_i.toFixed(0)} W/m²K</p>
-          <p style={{ marginBottom: 6 }}><strong>Kabuk Tarafı h (hₙb):</strong> {result.h_nb.toFixed(0)} W/m²K</p>
-          <p><strong>Hesaplanan U:</strong> {result.U_calc.toFixed(0)} W/m²K</p>
-        </div>
-      ))}
-      {!results.converged && (
-        <p style={{ color: '#b22222', marginBottom: 6 }}>
-          <strong>UYARI:</strong> U yakınsamadı (son iterasyonda %{(results.relativeUChange * 100).toFixed(1)} değişim). İterasyon sayısını artırın.
-        </p>
-      )}
-      {results.reWarning && <p style={{ color: '#b22222', marginBottom: 6 }}><strong>UYARI:</strong> {results.reWarning}</p>}
-      <h3 style={{ fontSize: 16, color: '#00539C', fontWeight: 600, marginTop: 16, marginBottom: 8 }}>Tasarım Kontrolleri</h3>
-      <p style={{ marginBottom: 6 }}><strong>Bundle Çapı (Db):</strong> {results.Db.toFixed(3)} m</p>
-      <p style={{ marginBottom: 6 }}><strong>Shell Çapı (Ds):</strong> {results.Ds.toFixed(3)} m</p>
-      <p><strong>Freeboard Oranı (h/Ds):</strong> {results.freeboard_ratio.toFixed(3)}</p>
-    </div>
+            </Section>
+          </>
+        )}
+      </div>
+    </>
   );
 }

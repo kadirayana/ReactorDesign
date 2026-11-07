@@ -25,6 +25,17 @@ export function catalystRateConstantUnits(order) {
   return '';
 }
 
+/**
+ * Internal effectiveness factor of a spherical catalyst pellet, first-order reaction:
+ *   η = (3/φ²)(φ·coth φ − 1),  φ = Thiele modulus. η → 1 as φ → 0.
+ */
+export function effectivenessFromThiele(phi) {
+  const p = Number(phi);
+  if (!isFinite(p) || p < 0) throw new Error('Thiele modülü negatif olamaz.');
+  if (p < 1e-3) return 1 - (p * p) / 15; // series expansion avoids 0/0
+  return (3 / (p * p)) * (p / Math.tanh(p) - 1);
+}
+
 /** Space time (or batch time) needed to reach conversion X. */
 export function tauForConversion(kind, order, k, C0, X) {
   if (kind === 'plug') {

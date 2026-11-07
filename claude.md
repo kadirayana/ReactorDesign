@@ -2,7 +2,7 @@
 
 > Bu dosya, projede tespit edilen sorunların düzeltilme durumunu takip eder.
 
-## Durum: ✅ 24/26 tamamlandı
+## Durum: ✅ 25/26 tamamlandı (+ tasarım sistemi ve yeni modüller)
 
 ### 🔴 Kritik Sorunlar
 | # | Sorun | Durum | Detay |
@@ -31,7 +31,7 @@
 | 14 | Error Boundary | ✅ | `ErrorBoundary.js` oluşturuldu, `_app.js`'e eklendi |
 | 15 | downloadCSV tekrarı | ✅ | `src/lib/utils.js` paylaşımlı modül |
 | 16 | SEO Head eksikleri | ✅ | Layout'a meta desc + reactor.js'e Head eklendi |
-| 17 | Inline style'ları azalt | ⏳ | Büyük kapsam — gelecekte yapılacak |
+| 17 | Inline style'ları azalt | ✅ | Hesaplama sayfaları components/ui.js + tasarım değişkenleriyle yeniden yazıldı (CV ve legacy hariç) |
 | 18 | CI/CD Node versiyonu | ✅ | Node 18 → 20 güncellendi |
 
 ### 🧮 Hesaplama Düzeltmeleri (testler: `__tests__/calculations.test.js`, `npm test`)
@@ -46,5 +46,17 @@
 | 25 | `dynamics.js` | Euler yerine analitik çözüm / RK4; örnek yükleme eski state ile hesaplamıyor |
 | 26 | `convection.js` | Laminer/geçiş/türbülans aralıkları; doğal konveksiyona sıcaklıklar iletiliyor |
 
+### 🎨 Tasarım Sistemi ve Kapsam
+| # | Konu | Detay |
+|---|------|-------|
+| 27 | Tasarım değişkenleri | `styles/globals.css`: renk/boşluk/tipografi değişkenleri, açık/koyu tema (sistem + elle seçim), form/kart/tablo/sekme stilleri |
+| 28 | Ortak bileşenler | `components/ui.js`: PageHeader, Section, Field, SelectField, Stat, Alert, Tabs, DataTable, EmptyState |
+| 29 | Tema uyumlu grafikler | ChartClient ve PlotlyClient renkleri temadan okur, tema değişince yeniden çizer |
+| 30 | Modül kaydı | `components/modules.js` menü ve ana sayfayı tek listeden besler |
+| 31 | Yeni modüller | Distilasyon (McCabe–Thiele + FUG), Boru hattı ve pompa (Darcy–Weisbach, NPSH) |
+| 32 | Genişletilen modüller | Isı entegrasyonunda sınırsız akış + bileşik eğriler; ısı transferinde ε-NTU ve iletim profili; optimizasyonda paralel reaksiyon modeli + kısıtlar; reaktörde Thiele |
+| 33 | Hesaplama geçmişi | `src/lib/history.js`; tüm modüller kaydediyor, filtre/CSV/temizle |
+| 34 | Favicon/manifest | basePath ile doğru yoldan yükleniyor |
+
 ---
-**Son güncelleme:** Hesaplama düzeltmeleri — 40 birim testi geçiyor; `next build` bu değişikliklerden sonra henüz çalıştırılmadı.
+**Son güncelleme:** Tasarım sistemi + yeni modüller — 69 birim testi geçiyor; `next build` henüz bu değişikliklerle çalıştırılmadı.

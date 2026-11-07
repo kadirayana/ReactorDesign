@@ -1,522 +1,283 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Head from 'next/head';
-import ChartClient from '../components/ChartClient';
-import TabButton from '../components/TabButton';
+import dynamic from 'next/dynamic';
 import ReactorDiagram from '../components/ReactorDiagram';
-import { calculateBasicReactor, rateConstantUnits, catalystRateConstantUnits } from '../src/lib/reactor';
+import {
+  PageHeader, Section, FormGrid, Field, SelectField, Checkbox, ButtonRow,
+  Alert, StatGrid, Stat, EmptyState, Tabs, fmt,
+} from '../components/ui';
+import {
+  calculateBasicReactor, rateConstantUnits, catalystRateConstantUnits, effectivenessFromThiele,
+} from '../src/lib/reactor';
 import { downloadCSV } from '../src/lib/utils';
+import { saveHistory } from '../src/lib/history';
 
+const ChartClient = dynamic(() => import('../components/ChartClient'), { ssr: false });
 
+const REACTOR_OPTIONS = [
+  { value: 'pfr', label: 'Piston akışlı reaktör (PFR)' },
+  { value: 'cstr', label: 'Sürekli karıştırmalı tank (CSTR)' },
+  { value: 'pbr', label: 'Dolgulu yatak reaktörü (PBR)' },
+  { value: 'batch', label: 'Kesikli (batch) reaktör' },
+];
+
+const ORDER_OPTIONS = [
+  { value: 0, label: 'Sıfırıncı derece' },
+  { value: 1, label: 'Birinci derece' },
+  { value: 2, label: 'İkinci derece' },
+];
+
+const REACTOR_LABEL = { pfr: 'PFR', cstr: 'CSTR', pbr: 'PBR', batch: 'Kesikli' };
+
+function useForm(initial) {
+  const [values, setValues] = useState(initial);
+  const onChange = e => {
+    const { name, value, type, checked } = e.target;
+    let v = value;
+    if (type === 'checkbox') v = checked;
+    else if (type === 'number' || (e.target.tagName === 'SELECT' && value !== '' && !isNaN(value))) v = value === '' ? '' : Number(value);
+    setValues(prev => ({ ...prev, [name]: v }));
+  };
+  return [values, onChange, setValues];
+}
 
 export default function ReactorPage() {
-  const [tab, setTab] = useState('basic');
+  const [tab, setTab] = useState('design');
   return (
     <>
       <Head>
-        <title>Reaktör Tasarımı - Kimya Mühendisliği Hesaplama Platformu</title>
-        <meta name="description" content="PFR, CSTR, PBR ve Batch reaktör tasarımı, görselleştirme ve ekonomik analiz araçları." />
+        <title>Reaktör Tasarımı · Kimya Mühendisliği Hesaplama Platformu</title>
+        <meta name="description" content="PFR, CSTR, PBR ve kesikli reaktör tasarımı, dönüşüm profilleri ve ekonomik analiz." />
       </Head>
       <div className="page-container">
-        <h1 className="page-title">Reaktör Tasarım ve Görselleştirme</h1>
-        <div className="tabs">
-          <TabButton active={tab === 'basic'} onClick={() => setTab('basic')}>Temel Tasarım</TabButton>
-          <TabButton active={tab === 'advanced'} onClick={() => setTab('advanced')}>Gelişmiş Tasarım</TabButton>
-          <TabButton active={tab === 'economic'} onClick={() => setTab('economic')}>Ekonomik Analiz</TabButton>
-        </div>
-        <div className="content-card">
-          {tab === 'basic' && <BasicReactorCalculator />}
-          {tab === 'advanced' && <AdvancedReactorCalculator />}
-          {tab === 'economic' && <EconomicAnalysisStub />}
-        </div>
+        <PageHeader
+          eyebrow="Reaksiyon Mühendisliği"
+          title="Reaktör Tasarımı"
+          lead="A → ürünler tipinde tek, tersinmez, güç yasası kinetiğine (−rA = k·CAⁿ) sahip, sabit yoğunluklu reaksiyon için ideal reaktör boyutlandırma."
+        />
+        <Tabs
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { value: 'design', label: 'Tasarım' },
+            { value: 'economic', label: 'Ekonomik Analiz' },
+          ]}
+        />
+        {tab === 'design' ? <ReactorDesign /> : <EconomicAnalysis />}
       </div>
     </>
   );
 }
 
-function BasicReactorCalculator() {
-  const [inputs, setInputs] = useState({
+function ReactorDesign() {
+  const [inputs, onChange] = useForm({
     reactorType: 'pfr',
     reactionOrder: 1,
     flowRate: 10,
     initialConc: 100,
     rateConstant: 0.05,
-    targetConversion: 0.8,
-    selectivity: 1
-  });
-  const [result, setResult] = useState(null);
-  const [calcError, setCalcError] = useState('');
-
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setInputs(i => ({ ...i, [name]: isNaN(value) ? value : Number(value) }));
-  }
-
-  function runCalc() {
-    setCalcError('');
-    try {
-      setResult(calculateBasicReactor(inputs));
-    } catch (err) {
-      setResult(null);
-      setCalcError(err.message);
-    }
-  }
-
-  function handleDownloadBasic(res) {
-    if (!res) return;
-    const headers = [res.profileAxis, 'conversion', 'concA [mol/m3]'];
-    const conv = res.conversionProfile || [];
-    const conc = res.concentrationProfile || [];
-    const rows = conv.map((p, i) => [p.x, p.y, (conc[i] && conc[i].y) || '']);
-    downloadCSV('basic_reactor_profile.csv', headers, rows);
-  }
-
-  return (
-    <div>
-      <h3>Temel Reaktör Parametreleri</h3>
-      <label>Reaktör Tipi:
-        <select name="reactorType" value={inputs.reactorType} onChange={handleChange}>
-          <option value="pfr">Plug Flow Reactor (PFR)</option>
-          <option value="cstr">Continuous Stirred Tank Reactor (CSTR)</option>
-          <option value="pbr">Packed Bed Reactor (PBR)</option>
-          <option value="batch">Batch Reactor</option>
-        </select>
-      </label>
-      <label>Reaksiyon Derecesi:
-        <select name="reactionOrder" value={inputs.reactionOrder} onChange={handleChange}>
-          <option value={0}>Sıfırıncı Derece</option>
-          <option value={1}>Birinci Derece</option>
-          <option value={2}>İkinci Derece</option>
-        </select>
-      </label>
-      <label>Mol Akış Hızı, Fₐ₀ [mol/s]:
-        <input name="flowRate" value={inputs.flowRate} onChange={handleChange} />
-      </label>
-      <label>Başlangıç Konsantrasyonu, Cₐ₀ [mol/m³]:
-        <input name="initialConc" value={inputs.initialConc} onChange={handleChange} />
-      </label>
-      <label>Hız Sabiti, k [{rateConstantUnits(Number(inputs.reactionOrder))}]:
-        <input name="rateConstant" value={inputs.rateConstant} onChange={handleChange} />
-      </label>
-      <label>Hedef Dönüşüm, X (0 &lt; X &lt; 1):
-        <input name="targetConversion" value={inputs.targetConversion} onChange={handleChange} />
-      </label>
-      <label>Seçicilik, S (0–1, tek reaksiyon için 1):
-        <input name="selectivity" value={inputs.selectivity} onChange={handleChange} />
-      </label>
-      <div style={{ marginTop: 12 }}>
-        <button onClick={runCalc}>Hesapla ve Görselleştir</button>
-      </div>
-      {calcError && <p className="error" style={{ color: '#c0392b' }}>{calcError}</p>}
-      {result && (
-        <div style={{ marginTop: 20 }}>
-          <h3>Sonuçlar</h3>
-          {result.batchTime != null ? (
-            <p>Gerekli reaksiyon süresi: {result.batchTime.toFixed(3)} s</p>
-          ) : (
-            <>
-              <p>Reaktör hacmi: {result.reactorVolume.toFixed(4)} m³</p>
-              <p>Uzay zamanı (τ): {result.spaceTime.toFixed(3)} s</p>
-              {result.catalystWeight != null && <p>Katalizör kütlesi: {result.catalystWeight.toFixed(2)} kg</p>}
-            </>
-          )}
-          <p>Seçicilik: {result.selectivity}</p>
-          <p>Verim: {result.yield.toFixed(4)}</p>
-          <h4>Dönüşüm Profili ({result.profileAxis})</h4>
-          <ChartClient
-            type="line"
-            data={{
-              labels: result.conversionProfile.map(p => Number(p.x.toPrecision(4))),
-              datasets: [
-                {
-                  label: 'Dönüşüm',
-                  data: result.conversionProfile.map(p => p.y),
-                  borderColor: '#007bff',
-                  fill: false
-                },
-                {
-                  label: 'Konsantrasyon A',
-                  data: (result.concentrationProfile || result.concentrationA || []).map(p => p.y),
-                  borderColor: '#28a745',
-                  fill: false
-                }
-              ]
-            }}
-            options={{ responsive: true, maintainAspectRatio: false }}
-          />
-          <div style={{ marginTop: 8 }}>
-            <button onClick={() => handleDownloadBasic(result)}>CSV İndir</button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AdvancedReactorCalculator() {
-  const [inputs, setInputs] = useState({
-    reactorType: 'pfr',
-    reactionOrder: 1,
-    kineticEquation: '',
-    inhibitionConstant: 0,
-    flowRate: 10,
-    initialConc: 100,
-    rateConstant: 0.05,
-    catDensity: 1000,
-    effectiveRateConstant: 0.1,
-    effectivenessFactor: 0.8,
     targetConversion: 0.8,
     selectivity: 1,
-    reactionType: 'irreversible',
-    reactionTemp: 350,
-    reactionPressure: 2,
-    activationEnergy: 80,
-    heatOfReaction: -50,
-    externalDiffusion: false,
+    catDensity: 1000,
+    effectiveRateConstant: 1e-4,
+    effectivenessFactor: 0.8,
     internalDiffusion: false,
-    thieleMod: 1.0,
+    thieleMod: 1,
     operatingMode: 'isothermal',
-    coolingMethod: 'jacket',
-    heatTransferCoeff: 500,
+    reactionTemp: 350,
+    heatOfReaction: -50,
   });
-  // local component state for results, charts and UI toggles
   const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
   const [chartTab, setChartTab] = useState('conversion');
-  const [showCatParams, setShowCatParams] = useState(inputs.reactorType === 'pbr');
-  const [showCustomKinetics, setShowCustomKinetics] = useState(inputs.reactionOrder === 'custom');
-  const [coolingEnabled, setCoolingEnabled] = useState(inputs.operatingMode === 'nonisothermal');
-  const [thieleEnabled, setThieleEnabled] = useState(inputs.internalDiffusion === true);
-  const [calcError, setCalcError] = useState('');
-  const [showConversionSeries, setShowConversionSeries] = useState(true);
-  const [showConcSeries, setShowConcSeries] = useState(true);
-  const [showTempSeries, setShowTempSeries] = useState(true);
-  function handleChange(e) {
-    const { name, value, type, checked } = e.target;
-    if (type === 'checkbox') {
-      setInputs(i => ({ ...i, [name]: checked }));
-    } else {
-      setInputs(i => ({ ...i, [name]: isNaN(value) ? value : Number(value) }));
-    }
-  }
 
-  // Keep UI toggles in sync when inputs change
-  // useEffect not imported at top, but useState/useEffect available from React via same import
-  // We'll create local effects below
+  const order = Number(inputs.reactionOrder);
+  const isPbr = inputs.reactorType === 'pbr';
 
-  // show/hide catalyst params when reactor type changes
-  React.useEffect(() => {
-    setShowCatParams(inputs.reactorType === 'pbr');
-  }, [inputs.reactorType]);
-
-  // show custom kinetics when reactionOrder === 'custom'
-  React.useEffect(() => {
-    setShowCustomKinetics(inputs.reactionOrder === 'custom');
-  }, [inputs.reactionOrder]);
-
-  // enable cooling fields when nonisothermal
-  React.useEffect(() => {
-    setCoolingEnabled(inputs.operatingMode === 'nonisothermal');
-  }, [inputs.operatingMode]);
-
-  // enable thiele when internalDiffusion checked
-  React.useEffect(() => {
-    setThieleEnabled(Boolean(inputs.internalDiffusion));
-  }, [inputs.internalDiffusion]);
-
-  function runCalc() {
-    setCalcError('');
-    // Sizing and conversion profile come from the shared library (src/lib/reactor.js)
-    const order = inputs.reactionOrder === 'custom' ? 1 : Number(inputs.reactionOrder);
-    let base;
+  function calculate(e) {
+    e?.preventDefault();
+    setError('');
     try {
-      base = calculateBasicReactor({ ...inputs, reactionOrder: order });
+      let eta = Number(inputs.effectivenessFactor);
+      if (isPbr && inputs.internalDiffusion) eta = effectivenessFromThiele(inputs.thieleMod);
+      const base = calculateBasicReactor({ ...inputs, effectivenessFactor: eta });
+
+      // Energy balance along conversion (liquid-like: cp = 4.2 kJ/(kg·K), ρ = 1000 kg/m³)
+      const T0 = Number(inputs.reactionTemp);
+      const dTadPerX = (-Number(inputs.heatOfReaction) * Number(inputs.initialConc)) / (4.2 * 1000);
+      const coolingShare = 0.7; // simplified: cooling removes 70 % of the heat released
+      const temperature = base.conversionProfile.map(p => {
+        if (inputs.operatingMode === 'adiabatic') return T0 + dTadPerX * p.y;
+        if (inputs.operatingMode === 'cooled') return T0 + dTadPerX * p.y * (1 - coolingShare);
+        return T0;
+      });
+
+      const res = { ...base, eta: isPbr ? eta : null, temperature, dTad: dTadPerX * Number(inputs.targetConversion), inputs: { ...inputs } };
+      setResult(res);
+      saveHistory(
+        `Reaktör (${REACTOR_LABEL[inputs.reactorType]})`,
+        { 'Fₐ₀': `${inputs.flowRate} mol/s`, 'Cₐ₀': `${inputs.initialConc} mol/m³`, k: inputs.rateConstant, n: order, X: inputs.targetConversion },
+        res.batchTime != null ? `t = ${fmt(res.batchTime)} s` : `V = ${fmt(res.reactorVolume)} m³`,
+      );
     } catch (err) {
-      setCalcError(err.message);
       setResult(null);
-      return;
+      setError(err.message);
     }
-
-    const ca0 = Number(inputs.initialConc);
-    const initialTemp = Number(inputs.reactionTemp) || 350;
-    const heatOfRxn = Number(inputs.heatOfReaction) || -50; // kJ/mol
-    // Adiabatic temperature rise per unit conversion (liquid-like: cp = 4.2 kJ/(kg·K), rho = 1000 kg/m³)
-    const dTadPerX = -heatOfRxn * ca0 / (4.2 * 1000);
-    // Simplified non-isothermal case: cooling removes a fixed 70 % of the generated heat
-    const coolingEfficiency = 0.7;
-
-    const zProfile = base.conversionProfile.map(p => Number(p.x.toPrecision(4)));
-    const convProfile = base.conversionProfile.map(p => p.y);
-    const tempProfile = base.conversionProfile.map(p => {
-      let temperature = initialTemp;
-      if (inputs.operatingMode === 'adiabatic') temperature = initialTemp + dTadPerX * p.y;
-      else if (inputs.operatingMode === 'nonisothermal') temperature = initialTemp + dTadPerX * p.y * (1 - coolingEfficiency);
-      return { position: p.x, temperature };
-    });
-
-    setResult({
-      reactorVolume: base.reactorVolume,
-      batchTime: base.batchTime,
-      spaceTime: base.spaceTime,
-      catalystWeight: base.catalystWeight,
-      selectivity: base.selectivity,
-      yield: base.yield,
-      profileAxis: base.profileAxis,
-      reactionTemp: initialTemp,
-      initialConc: ca0,
-      flowRate: Number(inputs.flowRate),
-      rateConstant: base.k,
-      activationEnergy: inputs.activationEnergy,
-      heatOfReaction: inputs.heatOfReaction,
-      targetConversion: Number(inputs.targetConversion),
-      operatingMode: inputs.operatingMode,
-      finalT: tempProfile[tempProfile.length - 1].temperature,
-      finalX: convProfile[convProfile.length - 1],
-      zProfile,
-      tempProfile,
-      convProfile,
-    });
   }
 
+  const chart = useMemo(() => {
+    if (!result) return null;
+    const labels = result.conversionProfile.map(p => Number(p.x.toPrecision(4)));
+    if (chartTab === 'conversion') {
+      return { data: { labels, datasets: [{ label: 'Dönüşüm X', data: result.conversionProfile.map(p => p.y) }] }, y: 'Dönüşüm X [–]' };
+    }
+    if (chartTab === 'concentration') {
+      const C0 = Number(result.inputs.initialConc);
+      return {
+        data: {
+          labels,
+          datasets: [
+            { label: 'Cₐ', data: result.concentrationProfile.map(p => p.y) },
+            { label: 'Ürün (Cₐ₀·X)', data: result.conversionProfile.map(p => C0 * p.y) },
+          ],
+        },
+        y: 'Konsantrasyon [mol/m³]',
+      };
+    }
+    return { data: { labels, datasets: [{ label: 'Sıcaklık', data: result.temperature }] }, y: 'Sıcaklık [K]' };
+  }, [result, chartTab]);
 
-
-  function handleDownloadAdvanced(res) {
-    if (!res) return;
-    const headers = ['position', 'conversion', 'temperature'];
-    const z = res.zProfile || [];
-    const conv = res.convProfile || [];
-    const temp = res.tempProfile || [];
-    const rows = z.map((pos, i) => [pos, conv[i] || '', (temp[i] && temp[i].temperature) || '']);
-    downloadCSV('advanced_reactor_profile.csv', headers, rows);
+  function exportCSV() {
+    if (!result) return;
+    downloadCSV(
+      'reaktor_profili.csv',
+      [result.profileAxis, 'X', 'CA [mol/m3]', 'T [K]'],
+      result.conversionProfile.map((p, i) => [p.x, p.y, result.concentrationProfile[i].y, result.temperature[i]]),
+    );
   }
-
 
   return (
-    <div>
-      <form onSubmit={e => { e.preventDefault(); runCalc(); }}>
-        <h3>Gelişmiş Reaktör Parametreleri</h3>
-        <label>Reaktör Tipi:
-          <select name="reactorType" value={inputs.reactorType} onChange={handleChange}>
-            <option value="pfr">Plug Flow Reactor (PFR)</option>
-            <option value="cstr">Continuous Stirred Tank Reactor (CSTR)</option>
-            <option value="pbr">Packed Bed Reactor (PBR)</option>
-            <option value="batch">Batch Reactor</option>
-          </select>
-        </label>
-        <label>Reaksiyon Derecesi:
-          <select name="reactionOrder" value={inputs.reactionOrder} onChange={handleChange}>
-            <option value={0}>Sıfırıncı Derece</option>
-            <option value={1}>Birinci Derece</option>
-            <option value={2}>İkinci Derece</option>
-            <option value="custom">Özel Kinetik</option>
-          </select>
-        </label>
-        {inputs.reactionOrder === 'custom' && (
-          <>
-            <label>Kinetik Denklem:
-              <input name="kineticEquation" value={inputs.kineticEquation} onChange={handleChange} placeholder="k*CA*CB/(1+K*CA)" />
-            </label>
-            <label>İnhibisyon Sabiti (K):
-              <input name="inhibitionConstant" value={inputs.inhibitionConstant} onChange={handleChange} />
-            </label>
-          </>
+    <div className="split">
+      <form onSubmit={calculate} noValidate>
+        <Section title="Reaktör ve kinetik" icon="⚗️">
+          <FormGrid>
+            <SelectField className="span-all" label="Reaktör tipi" name="reactorType" value={inputs.reactorType} onChange={onChange} options={REACTOR_OPTIONS} />
+            <SelectField label="Reaksiyon derecesi" name="reactionOrder" value={inputs.reactionOrder} onChange={onChange} options={ORDER_OPTIONS} />
+            {!isPbr && (
+              <Field label="Hız sabiti k" unit={rateConstantUnits(order)} name="rateConstant" value={inputs.rateConstant} onChange={onChange} />
+            )}
+            <Field label="Molar besleme Fₐ₀" unit="mol/s" name="flowRate" value={inputs.flowRate} onChange={onChange}
+              hint={inputs.reactorType === 'batch' ? 'Kesikli reaktörde süre hesabını etkilemez' : undefined} />
+            <Field label="Besleme derişimi Cₐ₀" unit="mol/m³" name="initialConc" value={inputs.initialConc} onChange={onChange} />
+            <Field label="Hedef dönüşüm X" unit="0–1" name="targetConversion" value={inputs.targetConversion} onChange={onChange} min="0" max="1" step="0.01" />
+            <Field label="Seçicilik S" unit="0–1" name="selectivity" value={inputs.selectivity} onChange={onChange} min="0" max="1" step="0.01" hint="Tek reaksiyon için 1" />
+          </FormGrid>
+        </Section>
+
+        {isPbr && (
+          <Section title="Katalizör" icon="🧱" description="Hacim başına hız sabiti: k = k′ · η · ρb">
+            <FormGrid>
+              <Field label="Katalizöre özgü hız sabiti k′" unit={catalystRateConstantUnits(order)} name="effectiveRateConstant" value={inputs.effectiveRateConstant} onChange={onChange} />
+              <Field label="Yatak yoğunluğu ρb" unit="kg/m³" name="catDensity" value={inputs.catDensity} onChange={onChange} />
+              <Checkbox className="span-all" label="Etkinlik faktörünü Thiele modülünden hesapla (küresel tanecik)" name="internalDiffusion" checked={inputs.internalDiffusion} onChange={onChange} />
+              {inputs.internalDiffusion ? (
+                <Field label="Thiele modülü φ" unit="–" name="thieleMod" value={inputs.thieleMod} onChange={onChange}
+                  hint={`η = ${fmt(effectivenessSafe(inputs.thieleMod), 4)}`} />
+              ) : (
+                <Field label="Etkinlik faktörü η" unit="0–1" name="effectivenessFactor" value={inputs.effectivenessFactor} onChange={onChange} step="0.01" />
+              )}
+            </FormGrid>
+          </Section>
         )}
-        {inputs.reactorType === 'pbr' && (
-          <>
-            <label>Katalizör Yoğunluğu [kg/m³]:
-              <input name="catDensity" value={inputs.catDensity} onChange={handleChange} />
-            </label>
-            <label>Katalizöre Özgü Hız Sabiti, k′ [{catalystRateConstantUnits(Number(inputs.reactionOrder === 'custom' ? 1 : inputs.reactionOrder))}]:
-              <input name="effectiveRateConstant" value={inputs.effectiveRateConstant} onChange={handleChange} />
-            </label>
-            <label>Etkinlik Faktörü (η):
-              <input name="effectivenessFactor" value={inputs.effectivenessFactor} onChange={handleChange} />
-            </label>
-          </>
-        )}
-        <label>Mol Akış Hızı, Fₐ₀ [mol/s]:
-          <input name="flowRate" value={inputs.flowRate} onChange={handleChange} />
-        </label>
-        <label>Başlangıç Konsantrasyonu, Cₐ₀ [mol/m³]:
-          <input name="initialConc" value={inputs.initialConc} onChange={handleChange} />
-        </label>
-        <label>Hız Sabiti, k [{rateConstantUnits(Number(inputs.reactionOrder === 'custom' ? 1 : inputs.reactionOrder))}]:
-          <input name="rateConstant" value={inputs.rateConstant} onChange={handleChange} />
-        </label>
-        <label>Hedef Dönüşüm, X (0 &lt; X &lt; 1):
-          <input name="targetConversion" value={inputs.targetConversion} onChange={handleChange} />
-        </label>
-        <label>Seçicilik, S (0–1, tek reaksiyon için 1):
-          <input name="selectivity" value={inputs.selectivity} onChange={handleChange} />
-        </label>
-        <label>Reaksiyon Tipi:
-          <select name="reactionType" value={inputs.reactionType} onChange={handleChange}>
-            <option value="irreversible">Tersinmez (A → B)</option>
-            <option value="reversible">Tersinir (A ⇌ B)</option>
-            <option value="parallel">Paralel (A → B, A → C)</option>
-            <option value="series">Seri (A → B → C)</option>
-          </select>
-        </label>
-        <label>Reaksiyon Sıcaklığı [K]:
-          <input name="reactionTemp" value={inputs.reactionTemp} onChange={handleChange} />
-        </label>
-        <label>Reaksiyon Basıncı [bar]:
-          <input name="reactionPressure" value={inputs.reactionPressure} onChange={handleChange} />
-        </label>
-        <label>Aktivasyon Enerjisi [kJ/mol]:
-          <input name="activationEnergy" value={inputs.activationEnergy} onChange={handleChange} />
-        </label>
-        <label>Reaksiyon Isısı [kJ/mol]:
-          <input name="heatOfReaction" value={inputs.heatOfReaction} onChange={handleChange} />
-        </label>
-        <label>Dış Difüzyon Direnci Dahil:
-          <input type="checkbox" name="externalDiffusion" checked={inputs.externalDiffusion} onChange={handleChange} />
-        </label>
-        <label>İç Difüzyon Direnci Dahil:
-          <input type="checkbox" name="internalDiffusion" checked={inputs.internalDiffusion} onChange={handleChange} />
-        </label>
-        <label>Thiele Modülü:
-          <input name="thieleMod" value={inputs.thieleMod} onChange={handleChange} disabled={!inputs.internalDiffusion} />
-        </label>
-        <label>Çalışma Modu:
-          <select name="operatingMode" value={inputs.operatingMode} onChange={handleChange}>
-            <option value="isothermal">İzotermal</option>
-            <option value="adiabatic">Adyabatik</option>
-            <option value="nonisothermal">İzotermal Olmayan</option>
-          </select>
-        </label>
-        <label>Soğutma Metodu:
-          <select name="coolingMethod" value={inputs.coolingMethod} onChange={handleChange} disabled={inputs.operatingMode !== 'nonisothermal'}>
-            <option value="jacket">Ceket</option>
-            <option value="coil">Sarmal Boru</option>
-            <option value="exchanger">Isı Değiştirici</option>
-          </select>
-        </label>
-        <label>Isı Transfer Katsayısı [W/(m²·K)]:
-          <input name="heatTransferCoeff" value={inputs.heatTransferCoeff} onChange={handleChange} disabled={inputs.operatingMode !== 'nonisothermal'} />
-        </label>
-        <div style={{ marginTop: 12 }}>
-          <button type="submit">Gelişmiş Hesaplama</button>
-        </div>
+
+        <Section title="Enerji dengesi" icon="🌡️" description="Sıcaklık profili için; boyutlandırma k'nın sabit olduğunu varsayar.">
+          <FormGrid>
+            <SelectField className="span-all" label="Çalışma modu" name="operatingMode" value={inputs.operatingMode} onChange={onChange}
+              options={[
+                { value: 'isothermal', label: 'İzotermal' },
+                { value: 'adiabatic', label: 'Adyabatik' },
+                { value: 'cooled', label: 'Soğutmalı (ısının %70’i uzaklaştırılır)' },
+              ]} />
+            <Field label="Giriş sıcaklığı T₀" unit="K" name="reactionTemp" value={inputs.reactionTemp} onChange={onChange} />
+            <Field label="Reaksiyon ısısı ΔHr" unit="kJ/mol" name="heatOfReaction" value={inputs.heatOfReaction} onChange={onChange} />
+          </FormGrid>
+          <ButtonRow>
+            <button type="submit">Hesapla</button>
+          </ButtonRow>
+        </Section>
       </form>
 
-      {calcError && <p className="error" style={{ color: '#c0392b' }}>{calcError}</p>}
-      {result && (
-        <div style={{ marginTop: 20 }}>
-          <h3>Sonuçlar</h3>
-
-          <div id="reactorPerformance">
-            <h4>Performans Parametreleri</h4>
-            <table className="table-modern">
-              <thead>
-                <tr>
-                  <th>Parametre</th>
-                  <th>Değer</th>
-                  <th>Birim</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.batchTime != null ? (
-                  <tr>
-                    <td>Reaksiyon Süresi</td>
-                    <td>{result.batchTime.toFixed(3)}</td>
-                    <td>s</td>
-                  </tr>
-                ) : (
-                  <tr>
-                    <td>Reaktör Hacmi</td>
-                    <td>{result.reactorVolume.toFixed(4)}</td>
-                    <td>m³</td>
-                  </tr>
-                )}
-                {result.catalystWeight != null && (
-                  <tr>
-                    <td>Katalizör Kütlesi</td>
-                    <td>{result.catalystWeight.toFixed(2)}</td>
-                    <td>kg</td>
-                  </tr>
-                )}
-                <tr>
-                  <td>Uzay Zamanı</td>
-                  <td>{result.spaceTime ? result.spaceTime.toFixed(3) : '-'}</td>
-                  <td>s</td>
-                </tr>
-                <tr>
-                  <td>Uzay Hızı</td>
-                  <td>{result.spaceTime ? (1 / result.spaceTime).toFixed(4) : '-'}</td>
-                  <td>1/s</td>
-                </tr>
-                <tr>
-                  <td>Dönüşüm</td>
-                  <td>{(result.targetConversion * 1).toString()}</td>
-                  <td>-</td>
-                </tr>
-                <tr>
-                  <td>Seçicilik</td>
-                  <td>{result.selectivity}</td>
-                  <td>-</td>
-                </tr>
-                <tr>
-                  <td>Verim</td>
-                  <td>{result.yield.toFixed(4)}</td>
-                  <td>-</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div id="reactorDiagram" className="card" style={{ textAlign: 'center' }}>
-            <h4>Reaktör Şeması</h4>
+      <div>
+        {error && <Alert type="error">{error}</Alert>}
+        {!result ? (
+          <Section>
             <ReactorDiagram reactorType={inputs.reactorType} />
-          </div>
+            <EmptyState title="Parametreleri girip Hesapla'ya basın">
+              Sonuçlar, profil grafikleri ve CSV dışa aktarma burada görünecek.
+            </EmptyState>
+          </Section>
+        ) : (
+          <>
+            <Section
+              title="Sonuçlar"
+              icon="📊"
+              description={`${REACTOR_LABEL[result.inputs.reactorType]} · n = ${result.order} · X = ${result.inputs.targetConversion}`}
+              actions={<button type="button" className="btn-secondary btn-sm" onClick={exportCSV}>CSV indir</button>}
+            >
+              <StatGrid>
+                {result.batchTime != null ? (
+                  <Stat primary label="Reaksiyon süresi" value={result.batchTime} unit="s" />
+                ) : (
+                  <>
+                    <Stat primary label="Reaktör hacmi" value={result.reactorVolume} unit="m³" digits={4} />
+                    <Stat label="Uzay zamanı τ" value={result.spaceTime} unit="s" />
+                    <Stat label="Uzay hızı" value={result.spaceVelocity} unit="1/s" digits={5} />
+                    <Stat label="Hacimsel debi v₀" value={result.v0} unit="m³/s" digits={4} />
+                  </>
+                )}
+                {result.catalystWeight != null && <Stat label="Katalizör kütlesi" value={result.catalystWeight} unit="kg" digits={2} />}
+                {result.eta != null && <Stat label="Etkinlik faktörü η" value={result.eta} digits={4} />}
+                <Stat label="Verim X·S" value={result.yield} digits={4} />
+                {result.inputs.operatingMode !== 'isothermal' && (
+                  <Stat label="Çıkış sıcaklığı" value={result.temperature[result.temperature.length - 1]} unit="K" digits={1} />
+                )}
+              </StatGrid>
+              {result.inputs.operatingMode === 'adiabatic' && Math.abs(result.dTad) > 50 && (
+                <Alert type="warning">
+                  Adyabatik sıcaklık değişimi {fmt(result.dTad, 1)} K. Bu kadar büyük bir değişimde k sabit kabul edilemez; sonuçları dikkatle yorumlayın.
+                </Alert>
+              )}
+            </Section>
 
-          <h4 style={{ marginTop: 20 }}>Performans Grafikleri</h4>
-          <div className="tabs" style={{ borderBottom: 'none', marginBottom: 8 }}>
-            <button className={chartTab === 'conversion' ? 'active' : ''} onClick={() => setChartTab('conversion')}>Dönüşüm</button>
-            <button className={chartTab === 'concentration' ? 'active' : ''} onClick={() => setChartTab('concentration')}>Konsantrasyon</button>
-            <button className={chartTab === 'temperature' ? 'active' : ''} onClick={() => setChartTab('temperature')}>Sıcaklık</button>
-          </div>
-
-          <div style={{ height: 300 }}>
-            {chartTab === 'conversion' && (
-              <ChartClient
-                type="line"
-                data={{ labels: result.zProfile, datasets: [{ label: 'Dönüşüm (X)', data: result.convProfile, borderColor: 'rgb(75,192,192)', tension: 0.1, fill: false }] }}
-                options={{ responsive: true, maintainAspectRatio: false }}
+            <Section title="Profiller" icon="📈" description={`x ekseni: ${result.profileAxis}`}>
+              <Tabs
+                value={chartTab}
+                onChange={setChartTab}
+                tabs={[
+                  { value: 'conversion', label: 'Dönüşüm' },
+                  { value: 'concentration', label: 'Derişim' },
+                  { value: 'temperature', label: 'Sıcaklık' },
+                ]}
               />
-            )}
+              <ChartClient data={chart.data} xLabel={result.profileAxis} yLabel={chart.y} />
+            </Section>
 
-            {chartTab === 'concentration' && (
-              <ChartClient
-                type="line"
-                data={{
-                  labels: result.zProfile,
-                  datasets: [
-                    { label: 'A Konsantrasyonu', data: result.zProfile.map((_, i) => (result.initialConc * (1 - (result.convProfile[i] || 0)))), borderColor: 'rgb(255,99,132)', tension: 0.1, fill: false },
-                    { label: 'B Konsantrasyonu', data: result.zProfile.map((_, i) => (result.initialConc * ((result.convProfile[i] || 0)))), borderColor: 'rgb(54,162,235)', tension: 0.1, fill: false }
-                  ]
-                }}
-                options={{ responsive: true, maintainAspectRatio: false }}
-              />
-            )}
-
-            {chartTab === 'temperature' && (
-              <ChartClient
-                type="line"
-                data={{ labels: result.zProfile, datasets: [{ label: 'Sıcaklık [K]', data: result.tempProfile.map(p => p.temperature), borderColor: 'rgb(255,159,64)', tension: 0.1, fill: false }] }}
-                options={{ responsive: true, maintainAspectRatio: false }}
-              />
-            )}
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <button onClick={() => handleDownloadAdvanced(result)}>CSV İndir</button>
-          </div>
-        </div>
-      )}
+            <Section title="Reaktör şeması" icon="🧭">
+              <ReactorDiagram reactorType={result.inputs.reactorType} />
+            </Section>
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
-function EconomicAnalysisStub() {
-  const [inputs, setInputs] = useState({
+function effectivenessSafe(phi) {
+  try { return effectivenessFromThiele(phi); } catch (e) { return NaN; }
+}
+
+function EconomicAnalysis() {
+  const [inputs, onChange] = useForm({
     capitalCost: 500000,
     operatingCost: 50000,
     rawMaterialCost: 200,
@@ -525,151 +286,122 @@ function EconomicAnalysisStub() {
     discountRate: 10,
     flowRate: 10,
     targetConversion: 0.8,
-    molarMassProduct: 180, // g/mol (e.g. glucose) default
+    molarMassProduct: 180,
+    operatingDays: 330,
   });
   const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setInputs(i => ({ ...i, [name]: isNaN(value) ? value : Number(value) }));
-  }
-
-  function calculateEconomics() {
-    const capitalCost = Number(inputs.capitalCost);
-    const operatingCost = Number(inputs.operatingCost);
-    const rawMaterialCost = Number(inputs.rawMaterialCost);
-    const productValue = Number(inputs.productValue);
-    const projectLife = Number(inputs.projectLife);
-    const discountRate = Number(inputs.discountRate) / 100;
-    const molarMass = Number(inputs.molarMassProduct) / 1000; // kg/mol
-
-    const targetConversion = Number(inputs.targetConversion);
-    const flowRate = Number(inputs.flowRate);
-
-    // Convert molar flow (mol/s) -> mass flow (kg/s) of product assuming stoichiometry + conversion
-    // mass_flow_product (kg/s) = molar_flow * X * molarMass
-    const molar_flow = Number(flowRate); // mol/s
-    const X = Number(targetConversion) || 0;
-    const massFlowKgPerS = molar_flow * X * molarMass; // kg/s
-    const annualSeconds = 3600 * 24 * 330; // assume 330 operating days/year
-    const annualProductionKg = massFlowKgPerS * annualSeconds;
-    const annualProductionTon = annualProductionKg / 1000;
-
-    const annualRevenue = annualProductionTon * productValue; // USD/yr
-    // Raw material required: assume stoichiometric 1:1 molar basis per product mol -> raw material mass ~= product mass / X
-    const annualRawMaterialCost = (annualProductionTon / (X || 1)) * rawMaterialCost;
-
-    const annualCashFlow = annualRevenue - annualRawMaterialCost - operatingCost;
-
-    // NPV calculation
-    let npv = -capitalCost;
-    for (let year = 1; year <= projectLife; year++) {
-      npv += annualCashFlow / Math.pow(1 + discountRate, year);
+  function calculate(e) {
+    e?.preventDefault();
+    setError('');
+    const capital = Number(inputs.capitalCost);
+    const life = Number(inputs.projectLife);
+    const rate = Number(inputs.discountRate) / 100;
+    const X = Number(inputs.targetConversion);
+    if (!(capital > 0) || !(life >= 1) || !(X > 0 && X <= 1)) {
+      setResult(null);
+      setError('Yatırım > 0, proje ömrü ≥ 1 yıl ve 0 < X ≤ 1 olmalıdır.');
+      return;
     }
 
-    // IRR via simple bisection on NPV(rate) = 0
-    function npvForRate(rate) {
-      let v = -capitalCost;
-      for (let y = 1; y <= projectLife; y++) v += annualCashFlow / Math.pow(1 + rate, y);
+    // product mass flow: F_A0 [mol/s] · X · M [kg/mol]
+    const massFlow = Number(inputs.flowRate) * X * (Number(inputs.molarMassProduct) / 1000);
+    const annualTon = (massFlow * 3600 * 24 * Number(inputs.operatingDays)) / 1000;
+    const revenue = annualTon * Number(inputs.productValue);
+    // 1:1 molar stoichiometry, unconverted feed counted as consumed (no recycle)
+    const rawCost = (annualTon / X) * Number(inputs.rawMaterialCost);
+    const cashFlow = revenue - rawCost - Number(inputs.operatingCost);
+
+    const npvAt = r => {
+      let v = -capital;
+      for (let y = 1; y <= life; y++) v += cashFlow / Math.pow(1 + r, y);
       return v;
-    }
+    };
 
+    // IRR by bisection; only defined when the cash flows change sign
     let irr = null;
-    try {
-      let lo = 0; let hi = 1;
-      // expand hi until sign change or limit
-      for (let i = 0; i < 50 && npvForRate(hi) > 0; i++) hi *= 2;
-      // bisection
-      for (let i = 0; i < 60; i++) {
+    if (cashFlow > 0 && npvAt(0) > 0) {
+      let lo = 0;
+      let hi = 1;
+      while (npvAt(hi) > 0 && hi < 1e3) hi *= 2;
+      for (let i = 0; i < 100; i++) {
         const mid = (lo + hi) / 2;
-        const val = npvForRate(mid);
-        if (Math.abs(val) < 1e-6) { irr = mid; break; }
-        if (val > 0) lo = mid; else hi = mid;
+        if (npvAt(mid) > 0) lo = mid; else hi = mid;
       }
-      if (irr === null) irr = (lo + hi) / 2;
-    } catch (e) {
-      irr = null;
+      irr = (lo + hi) / 2;
     }
 
-    const payback = annualCashFlow > 0 ? capitalCost / annualCashFlow : null;
-    const roi = (annualCashFlow / capitalCost) * 100;
+    const npv = npvAt(rate);
+    // year-by-year cumulative discounted cash flow for the chart
+    const cumulative = [];
+    let acc = -capital;
+    cumulative.push(acc);
+    for (let y = 1; y <= life; y++) {
+      acc += cashFlow / Math.pow(1 + rate, y);
+      cumulative.push(acc);
+    }
 
-    setResult({ npv, irr, payback, roi, annualProductionTon, annualRevenue, annualRawMaterialCost, annualCashFlow });
+    setResult({
+      npv, irr, annualTon, revenue, rawCost, cashFlow, cumulative,
+      payback: cashFlow > 0 ? capital / cashFlow : null,
+      roi: (cashFlow / capital) * 100,
+    });
+    saveHistory('Ekonomik analiz', { Yatırım: `${capital} USD`, Ömür: `${life} yıl`, 'İskonto': `%${inputs.discountRate}` }, `NBD = ${fmt(npv, 0)} USD`);
   }
 
   return (
-    <div style={{ padding: 20, maxWidth: 900, margin: '0 auto' }}>
-      <h3>Ekonomik Analiz Parametreleri</h3>
-      <label>Yatırım Maliyeti [USD]:
-        <input name="capitalCost" value={inputs.capitalCost} onChange={handleChange} />
-      </label>
-      <label>İşletme Maliyeti [USD/yıl]:
-        <input name="operatingCost" value={inputs.operatingCost} onChange={handleChange} />
-      </label>
-      <label>Hammadde Maliyeti [USD/ton]:
-        <input name="rawMaterialCost" value={inputs.rawMaterialCost} onChange={handleChange} />
-      </label>
-      <label>Ürün Değeri [USD/ton]:
-        <input name="productValue" value={inputs.productValue} onChange={handleChange} />
-      </label>
-      <label>Ürünün Mol Kütlesi [g/mol]:
-        <input name="molarMassProduct" value={inputs.molarMassProduct} onChange={handleChange} />
-      </label>
-      <label>Proje Ömrü [yıl]:
-        <input name="projectLife" value={inputs.projectLife} onChange={handleChange} />
-      </label>
-      <label>İskonto Oranı [%]:
-        <input name="discountRate" value={inputs.discountRate} onChange={handleChange} />
-      </label>
-      <label>Mol Akış Hızı, Fₐ₀ [mol/s]:
-        <input name="flowRate" value={inputs.flowRate} onChange={handleChange} />
-      </label>
-      <label>Hedef Dönüşüm, X (0 &lt; X &lt; 1):
-        <input name="targetConversion" value={inputs.targetConversion} onChange={handleChange} />
-      </label>
-      <div style={{ marginTop: 12 }}>
-        <button onClick={calculateEconomics}>Ekonomik Analiz Yap</button>
-      </div>
+    <div className="split">
+      <form onSubmit={calculate} noValidate>
+        <Section title="Maliyet ve fiyatlar" icon="💰">
+          <FormGrid>
+            <Field label="Yatırım maliyeti" unit="USD" name="capitalCost" value={inputs.capitalCost} onChange={onChange} />
+            <Field label="İşletme maliyeti" unit="USD/yıl" name="operatingCost" value={inputs.operatingCost} onChange={onChange} />
+            <Field label="Hammadde fiyatı" unit="USD/ton" name="rawMaterialCost" value={inputs.rawMaterialCost} onChange={onChange} />
+            <Field label="Ürün fiyatı" unit="USD/ton" name="productValue" value={inputs.productValue} onChange={onChange} />
+            <Field label="Proje ömrü" unit="yıl" name="projectLife" value={inputs.projectLife} onChange={onChange} step="1" />
+            <Field label="İskonto oranı" unit="%" name="discountRate" value={inputs.discountRate} onChange={onChange} />
+          </FormGrid>
+        </Section>
+        <Section title="Üretim" icon="🏭">
+          <FormGrid>
+            <Field label="Molar besleme Fₐ₀" unit="mol/s" name="flowRate" value={inputs.flowRate} onChange={onChange} />
+            <Field label="Dönüşüm X" unit="0–1" name="targetConversion" value={inputs.targetConversion} onChange={onChange} step="0.01" />
+            <Field label="Ürün mol kütlesi" unit="g/mol" name="molarMassProduct" value={inputs.molarMassProduct} onChange={onChange} />
+            <Field label="Yıllık çalışma" unit="gün" name="operatingDays" value={inputs.operatingDays} onChange={onChange} step="1" />
+          </FormGrid>
+          <ButtonRow><button type="submit">Analiz et</button></ButtonRow>
+        </Section>
+      </form>
 
-      {result && (
-        <div style={{ marginTop: 20 }}>
-          <h4>Ekonomik Analiz Sonuçları</h4>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={{ border: '1px solid #dee2e6', padding: 8 }}>Gösterge</th>
-                <th style={{ border: '1px solid #dee2e6', padding: 8 }}>Değer</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style={{ border: '1px solid #dee2e6', padding: 8 }}>Net Bugünkü Değer (NPV)</td>
-                <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{Number(result.npv).toFixed(0)} USD</td>
-              </tr>
-              <tr>
-                <td style={{ border: '1px solid #dee2e6', padding: 8 }}>İç Karlılık Oranı (IRR)</td>
-                <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{result.irr ? (result.irr * 100).toFixed(1) + '%' : '-'}</td>
-              </tr>
-              <tr>
-                <td style={{ border: '1px solid #dee2e6', padding: 8 }}>Geri Ödeme Süresi</td>
-                <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{result.payback ? result.payback.toFixed(1) + ' yıl' : '-'}</td>
-              </tr>
-              <tr>
-                <td style={{ border: '1px solid #dee2e6', padding: 8 }}>ROI</td>
-                <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{Number(result.roi).toFixed(1)}%</td>
-              </tr>
-              <tr>
-                <td style={{ border: '1px solid #dee2e6', padding: 8 }}>Yıllık Üretim</td>
-                <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{result.annualProductionTon ? result.annualProductionTon.toFixed(2) + ' ton/yr' : '-'}</td>
-              </tr>
-              <tr>
-                <td style={{ border: '1px solid #dee2e6', padding: 8 }}>Yıllık Nakit Akışı</td>
-                <td style={{ border: '1px solid #dee2e6', padding: 8 }}>{result.annualCashFlow ? result.annualCashFlow.toFixed(0) + ' USD/yr' : '-'}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      )}
+      <div>
+        {error && <Alert type="error">{error}</Alert>}
+        {!result ? (
+          <EmptyState icon="💹" title="Ekonomik göstergeler burada görünecek">NBD, İKO, geri ödeme süresi ve kümülatif nakit akışı.</EmptyState>
+        ) : (
+          <>
+            <Section title="Göstergeler" icon="📊">
+              <StatGrid>
+                <Stat primary label="Net bugünkü değer" value={result.npv} unit="USD" digits={0} />
+                <Stat label="İç karlılık oranı" value={result.irr != null ? `%${fmt(result.irr * 100, 1)}` : '—'} raw />
+                <Stat label="Basit geri ödeme" value={result.payback} unit="yıl" digits={1} />
+                <Stat label="Yıllık getiri (ROI)" value={`%${fmt(result.roi, 1)}`} raw />
+                <Stat label="Yıllık üretim" value={result.annualTon} unit="ton" digits={1} />
+                <Stat label="Yıllık nakit akışı" value={result.cashFlow} unit="USD" digits={0} />
+              </StatGrid>
+              {result.cashFlow <= 0 && <Alert type="warning">Yıllık nakit akışı negatif: gelir, hammadde ve işletme giderlerini karşılamıyor.</Alert>}
+              <p className="small muted">Varsayımlar: 1:1 molar stokiyometri, geri döngü yok (dönüşmeyen besleme kayıp sayılır), sabit yıllık nakit akışı.</p>
+            </Section>
+            <Section title="Kümülatif indirgenmiş nakit akışı" icon="📈">
+              <ChartClient
+                type="bar"
+                data={{ labels: result.cumulative.map((_, i) => `${i}. yıl`), datasets: [{ label: 'Kümülatif NBD [USD]', data: result.cumulative }] }}
+                yLabel="USD"
+              />
+            </Section>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -49,3 +49,59 @@ export function calculateHeatTransfer({ U = 500, A = 10, Th_in = 150, Th_out = 1
 }
 
 export default calculateHeatTransfer;
+
+/**
+ * Steady 1-D conduction without generation.
+ * geometry: 'wall' { L, k, A } | 'cylinder' { r1, r2, L, k } | 'sphere' { r1, r2, k }
+ * T1 at x = 0 / r = r1, T2 at x = L / r = r2 (°C or K, same unit).
+ * Returns heat rate Q [W], thermal resistance R [K/W] and the temperature profile.
+ */
+export function conduction({ geometry = 'wall', T1, T2, k, A, L, r1, r2, points = 40 }) {
+  const pos = v => Number.isFinite(Number(v)) && Number(v) > 0;
+  if (!pos(k)) throw new Error('Isıl iletkenlik k pozitif olmalıdır.');
+  let R;
+  let profile;
+  if (geometry === 'wall') {
+    if (!pos(L) || !pos(A)) throw new Error('Kalınlık ve alan pozitif olmalıdır.');
+    R = L / (k * A);
+    profile = Array.from({ length: points + 1 }, (_, i) => {
+      const x = (i / points) * L;
+      return { x, T: T1 + (T2 - T1) * (x / L) };
+    });
+  } else if (geometry === 'cylinder') {
+    if (!pos(r1) || !pos(r2) || !pos(L) || !(r2 > r1)) throw new Error('0 < r₁ < r₂ ve L > 0 olmalıdır.');
+    R = Math.log(r2 / r1) / (2 * Math.PI * k * L);
+    profile = Array.from({ length: points + 1 }, (_, i) => {
+      const r = r1 + (i / points) * (r2 - r1);
+      return { x: r, T: T1 + (T2 - T1) * (Math.log(r / r1) / Math.log(r2 / r1)) };
+    });
+  } else if (geometry === 'sphere') {
+    if (!pos(r1) || !pos(r2) || !(r2 > r1)) throw new Error('0 < r₁ < r₂ olmalıdır.');
+    R = (1 / r1 - 1 / r2) / (4 * Math.PI * k);
+    profile = Array.from({ length: points + 1 }, (_, i) => {
+      const r = r1 + (i / points) * (r2 - r1);
+      return { x: r, T: T1 + (T2 - T1) * ((1 / r1 - 1 / r) / (1 / r1 - 1 / r2)) };
+    });
+  } else {
+    throw new Error(`Bilinmeyen geometri: ${geometry}`);
+  }
+  return { Q: (T1 - T2) / R, R, profile };
+}
+
+/**
+ * Effectiveness–NTU for a counter-current exchanger.
+ * Ch, Cc: heat capacity rates [W/K]; returns duty and outlet temperatures.
+ */
+export function effectivenessNTU({ U, A, Ch, Cc, Th_in, Tc_in }) {
+  if (!(U > 0) || !(A > 0) || !(Ch > 0) || !(Cc > 0)) throw new Error('U, A ve ısıl kapasite debileri pozitif olmalıdır.');
+  if (!(Th_in > Tc_in)) throw new Error('Sıcak akışkan girişi soğuk akışkan girişinden sıcak olmalıdır.');
+  const Cmin = Math.min(Ch, Cc);
+  const Cmax = Math.max(Ch, Cc);
+  const Cr = Cmin / Cmax;
+  const NTU = (U * A) / Cmin;
+  const eps = Math.abs(1 - Cr) < 1e-9
+    ? NTU / (1 + NTU)
+    : (1 - Math.exp(-NTU * (1 - Cr))) / (1 - Cr * Math.exp(-NTU * (1 - Cr)));
+  const Q = eps * Cmin * (Th_in - Tc_in);
+  return { NTU, Cr, eps, Q, Th_out: Th_in - Q / Ch, Tc_out: Tc_in + Q / Cc };
+}

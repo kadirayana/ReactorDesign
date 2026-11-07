@@ -1,258 +1,211 @@
-
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import Head from 'next/head';
 import dynamic from 'next/dynamic';
-import calculateHeatTransfer from '../src/lib/heattransfer';
-import TabButton from '../components/TabButton';
-
-const ChartClient = dynamic(() => import('../components/ChartClient'), { ssr: false });
+import {
+  PageHeader, Section, FormGrid, Field, SelectField, ButtonRow, Alert,
+  StatGrid, Stat, EmptyState, Tabs, fmt,
+} from '../components/ui';
+import { calculateHeatTransfer, conduction, effectivenessNTU } from '../src/lib/heattransfer';
+import { saveHistory } from '../src/lib/history';
 import ConvectionCalculator from '../components/ConvectionCalculator';
 import RadiationCalculator from '../components/RadiationCalculator';
 
+const ChartClient = dynamic(() => import('../components/ChartClient'), { ssr: false });
 
-function ConductionCalculator() {
-  const [geometry, setGeometry] = useState('wall');
-  const [inputs, setInputs] = useState({
-    wallThickness: 0.1,
-    wallThermalConductivity: 0.6,
-    wallArea: 1.0,
-    firstSurfaceTemp: 100,
-    secondSurfaceTemp: 25,
-    // cylinder
-    innerRadius: 0.05,
-    outerRadius: 0.1,
-    cylinderLength: 1.0,
-    cylinderThermalConductivity: 15,
-    // sphere
-    sphereInnerRadius: 0.05,
-    sphereOuterRadius: 0.1,
-    sphereThermalConductivity: 15,
-  });
-  const [result, setResult] = useState(null);
-
-  function handleChange(e) {
+function numberHandler(setter) {
+  return e => {
     const { name, value } = e.target;
-    setInputs(inputs => ({ ...inputs, [name]: parseFloat(value) }));
-  }
-
-  function calculate() {
-    const T1 = inputs.firstSurfaceTemp;
-    const T2 = inputs.secondSurfaceTemp;
-    let Q = 0;
-    if (geometry === 'wall') {
-      const { wallThickness: L, wallThermalConductivity: k, wallArea: A } = inputs;
-      Q = k * A * (T1 - T2) / L;
-    } else if (geometry === 'cylinder') {
-      const { innerRadius: r1, outerRadius: r2, cylinderLength: L, cylinderThermalConductivity: k } = inputs;
-      Q = (2 * Math.PI * k * L * (T1 - T2)) / Math.log(r2 / r1);
-    } else if (geometry === 'sphere') {
-      const { sphereInnerRadius: r1, sphereOuterRadius: r2, sphereThermalConductivity: k } = inputs;
-      Q = (4 * Math.PI * k * (T1 - T2)) / ((1 / r1) - (1 / r2));
-    }
-    setResult({ Q, T1, T2 });
-  }
-
-  // Chart data for temperature profile
-  const chartData = result
-    ? {
-      labels: ['Başlangıç', 'Bitiş'],
-      datasets: [
-        {
-          label: 'Sıcaklık (°C)',
-          data: [result.T1, result.T2],
-          borderColor: 'red',
-          fill: false,
-        },
-      ],
-    }
-    : null;
-
-  return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      <h3 style={{ margin: '0 0 8px 0', fontFamily: "'Poppins', sans-serif", fontSize: 18, fontWeight: 600 }}>Isı İletimi Hesaplaması</h3>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <span style={{ fontWeight: 600 }}>Geometri Tipi:</span>
-        <select value={geometry} onChange={e => setGeometry(e.target.value)} style={{ padding: '8px 12px', border: '1px solid #e9ecef', borderRadius: 4, fontSize: 14, cursor: 'pointer' }}>
-          <option value="wall">Düz Duvar</option>
-          <option value="cylinder">Silindirik</option>
-          <option value="sphere">Küresel</option>
-        </select>
-      </label>
-      {geometry === 'wall' && (
-        <>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Duvar Kalınlığı L [m]:</span>
-            <input type="number" name="wallThickness" value={inputs.wallThickness} step="0.001" min="0.001" onChange={handleChange} style={{ padding: '8px 12px', border: '1px solid #e9ecef', borderRadius: 4, fontSize: 14 }} />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Termal İletkenlik k [W/(m·K)]:</span>
-            <input type="number" name="wallThermalConductivity" value={inputs.wallThermalConductivity} step="0.1" min="0.1" onChange={handleChange} style={{ padding: '8px 12px', border: '1px solid #e9ecef', borderRadius: 4, fontSize: 14 }} />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Alan A [m²]:</span>
-            <input type="number" name="wallArea" value={inputs.wallArea} step="0.1" min="0.1" onChange={handleChange} style={{ padding: '8px 12px', border: '1px solid #e9ecef', borderRadius: 4, fontSize: 14 }} />
-          </label>
-        </>
-      )}
-      {geometry === 'cylinder' && (
-        <>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>İç Yarıçap r₁ [m]:</span>
-            <input type="number" name="innerRadius" value={inputs.innerRadius} step="0.001" min="0.001" onChange={handleChange} style={{ padding: '8px 12px', border: '1px solid #e9ecef', borderRadius: 4, fontSize: 14 }} />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Dış Yarıçap r₂ [m]:</span>
-            <input type="number" name="outerRadius" value={inputs.outerRadius} step="0.001" min="0.001" onChange={handleChange} style={{ padding: '8px 12px', border: '1px solid #e9ecef', borderRadius: 4, fontSize: 14 }} />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Silindir Uzunluğu L [m]:</span>
-            <input type="number" name="cylinderLength" value={inputs.cylinderLength} step="0.1" min="0.1" onChange={handleChange} style={{ padding: '8px 12px', border: '1px solid #e9ecef', borderRadius: 4, fontSize: 14 }} />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Termal İletkenlik k [W/(m·K)]:</span>
-            <input type="number" name="cylinderThermalConductivity" value={inputs.cylinderThermalConductivity} step="0.1" min="0.1" onChange={handleChange} style={{ padding: '8px 12px', border: '1px solid #e9ecef', borderRadius: 4, fontSize: 14 }} />
-          </label>
-        </>
-      )}
-      {geometry === 'sphere' && (
-        <>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>İç Yarıçap r₁ [m]:</span>
-            <input type="number" name="sphereInnerRadius" value={inputs.sphereInnerRadius} step="0.001" min="0.001" onChange={handleChange} style={{ padding: '8px 12px', border: '1px solid #e9ecef', borderRadius: 4, fontSize: 14 }} />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Dış Yarıçap r₂ [m]:</span>
-            <input type="number" name="sphereOuterRadius" value={inputs.sphereOuterRadius} step="0.001" min="0.001" onChange={handleChange} style={{ padding: '8px 12px', border: '1px solid #e9ecef', borderRadius: 4, fontSize: 14 }} />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Termal İletkenlik k [W/(m·K)]:</span>
-            <input type="number" name="sphereThermalConductivity" value={inputs.sphereThermalConductivity} step="0.1" min="0.1" onChange={handleChange} style={{ padding: '8px 12px', border: '1px solid #e9ecef', borderRadius: 4, fontSize: 14 }} />
-          </label>
-        </>
-      )}
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <span style={{ fontWeight: 600 }}>Birinci Yüzey Sıcaklığı T₁ [°C]:</span>
-        <input type="number" name="firstSurfaceTemp" value={inputs.firstSurfaceTemp} step="1" onChange={handleChange} style={{ padding: '8px 12px', border: '1px solid #e9ecef', borderRadius: 4, fontSize: 14 }} />
-      </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <span style={{ fontWeight: 600 }}>İkinci Yüzey Sıcaklığı T₂ [°C]:</span>
-        <input type="number" name="secondSurfaceTemp" value={inputs.secondSurfaceTemp} step="1" onChange={handleChange} style={{ padding: '8px 12px', border: '1px solid #e9ecef', borderRadius: 4, fontSize: 14 }} />
-      </label>
-      <button onClick={calculate} style={{ marginTop: 10, padding: '10px 20px', background: '#00539C', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600, fontSize: 14, minHeight: 40, transition: '0.2s', transform: 'translateY(0px)' }} onMouseEnter={e => e.target.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.target.style.transform = 'translateY(0px)'}>Hesapla ve Görselleştir</button>
-      {result && (
-        <div style={{ marginTop: 16, background: '#e9ecef', padding: 10, borderRadius: 4 }}>
-          <strong>İletim yoluyla ısı transferi: {result.Q.toFixed(2)} W</strong>
-        </div>
-      )}
-      {chartData && (
-        <div style={{ marginTop: 16 }}>
-          <ChartClient data={chartData} options={{ responsive: true, maintainAspectRatio: false }} type="line" />
-        </div>
-      )}
-    </div>
-  );
+    setter(prev => ({ ...prev, [name]: value === '' ? '' : Number(value) }));
+  };
 }
 
 export default function HeatTransferPage() {
   const [tab, setTab] = useState('conduction');
-
   return (
-    <div className="page-container">
-      <h1 className="page-title">Isı Transferi Hesaplaması</h1>
-      <div className="tabs">
-        <TabButton active={tab === 'conduction'} onClick={() => setTab('conduction')}>İletim</TabButton>
-        <TabButton active={tab === 'convection'} onClick={() => setTab('convection')}>Taşınım</TabButton>
-        <TabButton active={tab === 'radiation'} onClick={() => setTab('radiation')}>Işınım</TabButton>
-        <TabButton active={tab === 'exchanger'} onClick={() => setTab('exchanger')}>Isı Değiştiricisi</TabButton>
-      </div>
-      <div className="content-card">
+    <>
+      <Head><title>Isı Transferi · Kimya Mühendisliği Hesaplama Platformu</title></Head>
+      <div className="page-container">
+        <PageHeader
+          eyebrow="Isı ve Kütle Transferi"
+          title="Isı Transferi"
+          lead="Kararlı hâl iletim, taşınım korelasyonları, gri cisim ışınımı ve ters akışlı ısı değiştirici (LMTD ve ε-NTU) hesapları."
+        />
+        <Tabs
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { value: 'conduction', label: 'İletim' },
+            { value: 'convection', label: 'Taşınım' },
+            { value: 'radiation', label: 'Işınım' },
+            { value: 'exchanger', label: 'Isı değiştirici' },
+          ]}
+        />
         {tab === 'conduction' && <ConductionCalculator />}
-        {tab === 'exchanger' && (
-          <div>
-            <h3>Heat Transfer (LMTD)</h3>
-            <LMTDCalculator />
-          </div>
-        )}
-
         {tab === 'convection' && <ConvectionCalculator />}
         {tab === 'radiation' && <RadiationCalculator />}
+        {tab === 'exchanger' && <ExchangerCalculator />}
+      </div>
+    </>
+  );
+}
+
+const GEOMETRY_LABEL = { wall: 'Düz duvar', cylinder: 'Silindirik kabuk', sphere: 'Küresel kabuk' };
+
+function ConductionCalculator() {
+  const [geometry, setGeometry] = useState('wall');
+  const [inputs, setInputs] = useState({ L: 0.1, A: 1, r1: 0.05, r2: 0.1, k: 0.6, T1: 100, T2: 25 });
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+  const onChange = numberHandler(setInputs);
+
+  function calculate(e) {
+    e?.preventDefault();
+    setError('');
+    try {
+      const res = conduction({ geometry, ...inputs });
+      setResult({ ...res, geometry });
+      saveHistory('Isı iletimi', { Geometri: GEOMETRY_LABEL[geometry], k: `${inputs.k} W/(m·K)`, 'T₁': inputs.T1, 'T₂': inputs.T2 }, `Q = ${fmt(res.Q, 2)} W`);
+    } catch (err) {
+      setResult(null);
+      setError(err.message);
+    }
+  }
+
+  return (
+    <div className="split">
+      <form onSubmit={calculate} noValidate>
+        <Section title="Geometri ve malzeme" icon="🧱">
+          <FormGrid>
+            <SelectField className="span-all" label="Geometri" value={geometry} onChange={e => { setGeometry(e.target.value); setResult(null); }}
+              options={Object.entries(GEOMETRY_LABEL).map(([value, label]) => ({ value, label }))} />
+            {geometry === 'wall' && (
+              <>
+                <Field label="Kalınlık L" unit="m" name="L" value={inputs.L} onChange={onChange} />
+                <Field label="Alan A" unit="m²" name="A" value={inputs.A} onChange={onChange} />
+              </>
+            )}
+            {geometry !== 'wall' && (
+              <>
+                <Field label="İç yarıçap r₁" unit="m" name="r1" value={inputs.r1} onChange={onChange} />
+                <Field label="Dış yarıçap r₂" unit="m" name="r2" value={inputs.r2} onChange={onChange} />
+              </>
+            )}
+            {geometry === 'cylinder' && <Field label="Uzunluk L" unit="m" name="L" value={inputs.L} onChange={onChange} />}
+            <Field label="Isıl iletkenlik k" unit="W/(m·K)" name="k" value={inputs.k} onChange={onChange} />
+            <Field label={geometry === 'wall' ? 'Sıcak yüz T₁' : 'İç yüzey T₁'} unit="°C" name="T1" value={inputs.T1} onChange={onChange} />
+            <Field label={geometry === 'wall' ? 'Soğuk yüz T₂' : 'Dış yüzey T₂'} unit="°C" name="T2" value={inputs.T2} onChange={onChange} />
+          </FormGrid>
+          <ButtonRow><button type="submit">Hesapla</button></ButtonRow>
+        </Section>
+      </form>
+      <div>
+        {error && <Alert type="error">{error}</Alert>}
+        {!result ? <EmptyState icon="🔥" title="Isı akısı ve sıcaklık profili burada görünecek" /> : (
+          <>
+            <Section title="Sonuçlar" icon="📊" description={GEOMETRY_LABEL[result.geometry]}>
+              <StatGrid>
+                <Stat primary label="Isı akış hızı Q" value={result.Q} unit="W" digits={2} />
+                <Stat label="Isıl direnç R" value={result.R} unit="K/W" digits={5} />
+              </StatGrid>
+              <div className="formula">
+                {result.geometry === 'wall' && 'R = L / (k·A)'}
+                {result.geometry === 'cylinder' && 'R = ln(r₂/r₁) / (2π·k·L)'}
+                {result.geometry === 'sphere' && 'R = (1/r₁ − 1/r₂) / (4π·k)'}
+                {'   ·   Q = (T₁ − T₂) / R'}
+              </div>
+            </Section>
+            <Section title="Sıcaklık profili" icon="📈">
+              <ChartClient
+                data={{ labels: result.profile.map(p => Number(p.x.toFixed(4))), datasets: [{ label: 'T', data: result.profile.map(p => p.T) }] }}
+                xLabel={result.geometry === 'wall' ? 'x [m]' : 'r [m]'}
+                yLabel="Sıcaklık [°C]"
+              />
+            </Section>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-function LMTDCalculator() {
-  const [inputs, setInputs] = useState({ U: 500, A: 10, Th_in: 150, Th_out: 100, Tc_in: 30, Tc_out: 80 });
-  const result = calculateHeatTransfer({ ...inputs, points: 80 });
-  const data = {
-    labels: result.profiles.x.map(x => (x * 100).toFixed(0) + '%'),
-    datasets: [
-      {
-        label: 'Hot fluid T (°C)',
-        data: result.profiles.Th,
-        borderColor: 'rgba(220,20,60,0.9)',
-        backgroundColor: 'rgba(220,20,60,0.2)',
-        tension: 0.2,
-        fill: false
-      },
-      {
-        label: 'Cold fluid T (°C)',
-        data: result.profiles.Tc,
-        borderColor: 'rgba(30,144,255,0.9)',
-        backgroundColor: 'rgba(30,144,255,0.2)',
-        tension: 0.2,
-        fill: false
-      },
-      {
-        label: 'ΔT (°C)',
-        data: result.profiles.dT,
-        borderColor: 'rgba(34,139,34,0.9)',
-        backgroundColor: 'rgba(34,139,34,0.15)',
-        tension: 0.2,
-        fill: false
-      }
-    ]
-  };
+function ExchangerCalculator() {
+  const [method, setMethod] = useState('lmtd');
+  const [inputs, setInputs] = useState({ U: 500, A: 10, Th_in: 150, Th_out: 100, Tc_in: 30, Tc_out: 80, Ch: 2000, Cc: 2500 });
+  const onChange = numberHandler(setInputs);
+
+  // Both methods are cheap: recompute live while typing
+  const lmtd = useMemo(() => calculateHeatTransfer({ ...inputs, points: 60 }), [inputs]);
+  const ntu = useMemo(() => {
+    try { return { ok: true, ...effectivenessNTU(inputs) }; } catch (e) { return { ok: false, error: e.message }; }
+  }, [inputs]);
+
+  const profileChart = useMemo(() => {
+    if (method !== 'lmtd' || lmtd.error) return null;
+    return {
+      labels: lmtd.profiles.x.map(x => `${Math.round(x * 100)}%`),
+      datasets: [
+        { label: 'Sıcak akışkan', data: lmtd.profiles.Th },
+        { label: 'Soğuk akışkan', data: lmtd.profiles.Tc },
+        { label: 'ΔT', data: lmtd.profiles.dT, borderDash: [6, 4] },
+      ],
+    };
+  }, [lmtd, method]);
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1fr) 1.5fr', gap: 20, '@media (max-width: 768px)': { gridTemplateColumns: '1fr', gap: 16 } }}>
-      <div style={{ minWidth: 280 }}>
-        <label>Overall heat transfer coeff U (W/m²K)
-          <input type="number" value={inputs.U} onChange={e => setInputs({ ...inputs, U: Number(e.target.value) })} />
-        </label>
-        <br />
-        <label>Area A (m²)
-          <input type="number" value={inputs.A} onChange={e => setInputs({ ...inputs, A: Number(e.target.value) })} />
-        </label>
-        <br />
-        <label>Th inlet (°C)
-          <input type="number" value={inputs.Th_in} onChange={e => setInputs({ ...inputs, Th_in: Number(e.target.value) })} />
-        </label>
-        <br />
-        <label>Th outlet (°C)
-          <input type="number" value={inputs.Th_out} onChange={e => setInputs({ ...inputs, Th_out: Number(e.target.value) })} />
-        </label>
-        <br />
-        <label>Tc inlet (°C)
-          <input type="number" value={inputs.Tc_in} onChange={e => setInputs({ ...inputs, Tc_in: Number(e.target.value) })} />
-        </label>
-        <br />
-        <label>Tc outlet (°C)
-          <input type="number" value={inputs.Tc_out} onChange={e => setInputs({ ...inputs, Tc_out: Number(e.target.value) })} />
-        </label>
-        <br />
-        <div style={{ marginTop: 10 }}>
-          {result.error ? (
-            <span style={{ color: '#c0392b' }}>{result.error}</span>
-          ) : (
+    <div className="split">
+      <Section title="Ters akışlı ısı değiştirici" icon="🔁">
+        <FormGrid>
+          <SelectField className="span-all" label="Yöntem" value={method} onChange={e => setMethod(e.target.value)}
+            options={[
+              { value: 'lmtd', label: 'LMTD — dört uç sıcaklığı biliniyor' },
+              { value: 'ntu', label: 'ε-NTU — çıkış sıcaklıkları bilinmiyor' },
+            ]} />
+          <Field label="Toplam ısı transfer katsayısı U" unit="W/(m²·K)" name="U" value={inputs.U} onChange={onChange} />
+          <Field label="Alan A" unit="m²" name="A" value={inputs.A} onChange={onChange} />
+          <Field label="Sıcak giriş" unit="°C" name="Th_in" value={inputs.Th_in} onChange={onChange} />
+          {method === 'lmtd' && <Field label="Sıcak çıkış" unit="°C" name="Th_out" value={inputs.Th_out} onChange={onChange} />}
+          <Field label="Soğuk giriş" unit="°C" name="Tc_in" value={inputs.Tc_in} onChange={onChange} />
+          {method === 'lmtd' && <Field label="Soğuk çıkış" unit="°C" name="Tc_out" value={inputs.Tc_out} onChange={onChange} />}
+          {method === 'ntu' && (
             <>
-              <strong>Q (W):</strong> {result.Q.toFixed(2)} <br />
-              <strong>LMTD:</strong> {result.LMTD.toFixed(2)} °C
-              <br /><small>Ters akış varsayılmıştır; profil x = 0 sıcak akışkan girişidir.</small>
+              <Field label="Sıcak ısıl kapasite debisi ṁcₚ" unit="W/K" name="Ch" value={inputs.Ch} onChange={onChange} />
+              <Field label="Soğuk ısıl kapasite debisi ṁcₚ" unit="W/K" name="Cc" value={inputs.Cc} onChange={onChange} />
             </>
           )}
-        </div>
-      </div>
-      <div style={{ flex: 1 }}>
-        <ChartClient data={data} options={{ responsive: true, maintainAspectRatio: false }} type="line" />
+        </FormGrid>
+        <p className="small muted" style={{ marginTop: 12 }}>Sonuçlar yazdıkça güncellenir.</p>
+      </Section>
+
+      <div>
+        {method === 'lmtd' && (lmtd.error ? <Alert type="error">{lmtd.error}</Alert> : (
+          <>
+            <Section title="Sonuçlar" icon="📊">
+              <StatGrid>
+                <Stat primary label="Isı yükü Q" value={lmtd.Q / 1000} unit="kW" digits={2} />
+                <Stat label="LMTD" value={lmtd.LMTD} unit="°C" digits={2} />
+                <Stat label="ΔT₁ (sıcak giriş ucu)" value={lmtd.deltaT1} unit="°C" digits={2} />
+                <Stat label="ΔT₂ (sıcak çıkış ucu)" value={lmtd.deltaT2} unit="°C" digits={2} />
+              </StatGrid>
+              <p className="small muted">Q = U·A·LMTD. Girilen dört sıcaklık akışların enerji dengesiyle tutarlı olmalıdır.</p>
+            </Section>
+            <Section title="Değiştirici boyunca sıcaklıklar" icon="📈" description="x = 0: sıcak akışkan girişi">
+              <ChartClient data={profileChart} xLabel="Isı transfer alanı" yLabel="Sıcaklık [°C]" />
+            </Section>
+          </>
+        ))}
+        {method === 'ntu' && (!ntu.ok ? <Alert type="error">{ntu.error}</Alert> : (
+          <Section title="Sonuçlar" icon="📊">
+            <StatGrid>
+              <Stat primary label="Isı yükü Q" value={ntu.Q / 1000} unit="kW" digits={2} />
+              <Stat label="Etkinlik ε" value={ntu.eps} digits={4} />
+              <Stat label="NTU" value={ntu.NTU} digits={3} />
+              <Stat label="Cr = Cmin/Cmax" value={ntu.Cr} digits={3} />
+              <Stat label="Sıcak çıkış" value={ntu.Th_out} unit="°C" digits={2} />
+              <Stat label="Soğuk çıkış" value={ntu.Tc_out} unit="°C" digits={2} />
+            </StatGrid>
+            <div className="formula">ε = [1 − e^(−NTU(1−Cr))] / [1 − Cr·e^(−NTU(1−Cr))]   ·   Q = ε·Cmin·(Th,in − Tc,in)</div>
+          </Section>
+        ))}
       </div>
     </div>
   );

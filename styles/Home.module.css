@@ -1,162 +1,193 @@
-/* ===================================================================
-   HOME PAGE — Premium Card Grid
-   =================================================================== */
+/* Home page */
 
 .container {
-  max-width: 960px;
-  width: 100%;
+  max-width: 1100px;
   margin: 0 auto;
-  font-family: 'Inter', sans-serif;
 }
 
-/* ===  HERO SECTION  === */
+/* Hero */
 .hero {
-  text-align: center;
-  padding: 48px 24px 40px;
-  margin-bottom: 8px;
-}
-
-.heroTitle {
-  font-family: 'Poppins', sans-serif;
-  font-size: 36px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
-  margin-bottom: 16px;
-  background: linear-gradient(135deg, #0F172A, #2563EB, #7C3AED);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  display: inline-block;
-}
-
-.heroDesc {
-  font-size: 17px;
-  color: var(--text-muted);
-  max-width: 540px;
-  margin: 0 auto;
-  line-height: 1.6;
-}
-
-/* ===  MODULE GRID  === */
-.moduleGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 32px;
-}
-
-.moduleCard {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 20px;
-  background: var(--bg-surface-solid);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  text-decoration: none;
-  color: var(--text-main);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: var(--shadow-xs);
   position: relative;
+  padding: 48px 40px;
+  margin-bottom: 40px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-color);
+  background:
+    radial-gradient(circle at 85% 20%, var(--primary-light), transparent 45%),
+    radial-gradient(circle at 10% 90%, rgba(124, 58, 237, 0.10), transparent 40%),
+    var(--bg-surface);
   overflow: hidden;
 }
 
-.moduleCard:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-lg);
-  border-color: transparent;
+.heroBadge {
+  display: inline-block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-light);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  margin-bottom: 18px;
+}
+
+.heroTitle {
+  font-family: var(--font-heading);
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0 0 16px;
+  color: var(--text-heading);
+}
+
+.heroDesc {
+  font-size: 16.5px;
+  color: var(--text-muted);
+  max-width: 640px;
+  margin: 0 0 28px;
+  line-height: 1.65;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Categories */
+.category {
+  margin-bottom: 36px;
+}
+
+.categoryHeader {
+  margin-bottom: 14px;
+}
+
+.categoryTitle {
+  font-size: 19px;
+  margin: 0 0 2px;
+}
+
+.categoryDesc {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin: 0;
+}
+
+.moduleGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.moduleCard {
+  --module-color: var(--primary);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
   text-decoration: none;
-  color: var(--text-main);
+  color: inherit;
+  transition: var(--transition-smooth);
+  position: relative;
 }
 
-.moduleCard:hover .cardArrow {
-  opacity: 1;
-  transform: translateX(0);
+.moduleCard:hover {
+  text-decoration: none;
+  border-color: color-mix(in srgb, var(--module-color) 45%, var(--border-color));
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
-/* === CARD ICON === */
 .cardIcon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  color: var(--module-color);
+  background: color-mix(in srgb, var(--module-color) 12%, transparent);
 }
 
 .cardIcon svg {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
 }
 
-/* === CARD BODY === */
 .cardBody {
   flex: 1;
   min-width: 0;
 }
 
 .cardTitle {
-  font-family: 'Poppins', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-heading);
-  margin: 0 0 4px 0;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15.5px;
+  margin: 0 0 4px;
 }
 
 .cardDesc {
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--text-muted);
   margin: 0;
   line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
-/* === ARROW CTA === */
 .cardArrow {
+  color: var(--text-subtle);
   font-size: 18px;
-  color: var(--primary);
-  opacity: 0;
-  transform: translateX(-8px);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0;
-  align-self: center;
-  font-weight: 600;
+  transition: var(--transition-fast);
 }
 
-/* === FOOTER TEXT === */
-.selectModule {
+.moduleCard:hover .cardArrow {
+  color: var(--module-color);
+  transform: translateX(3px);
+}
+
+/* Features */
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin-top: 8px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border-color);
+}
+
+.feature {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.feature p {
+  margin: 2px 0 0;
   color: var(--text-muted);
-  text-align: center;
-  font-weight: 500;
-  font-size: 14px;
-  padding-bottom: 20px;
+  font-size: 13.5px;
 }
 
-/* ===================================================================
-   RESPONSIVE
-   =================================================================== */
-@media (max-width: 1024px) {
-  .moduleGrid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
-  }
+.featureIcon {
+  font-size: 20px;
+  line-height: 1.4;
 }
 
 @media (max-width: 768px) {
   .hero {
-    padding: 32px 16px 28px;
+    padding: 28px 20px;
+    margin-bottom: 28px;
   }
 
   .heroTitle {
     font-size: 28px;
+  }
+
+  .heroTitle br {
+    display: none;
   }
 
   .heroDesc {
@@ -164,64 +195,6 @@
   }
 
   .moduleGrid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
-  .moduleCard {
-    padding: 16px;
-    gap: 12px;
-  }
-
-  .cardIcon {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-  }
-
-  .cardIcon svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .cardTitle {
-    font-size: 14px;
-  }
-
-  .cardDesc {
-    font-size: 12px;
-    -webkit-line-clamp: 2;
-  }
-}
-
-@media (max-width: 480px) {
-  .hero {
-    padding: 24px 12px 20px;
-  }
-
-  .heroTitle {
-    font-size: 24px;
-  }
-
-  .heroDesc {
-    font-size: 14px;
-  }
-
-  .moduleGrid {
     grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .moduleCard {
-    padding: 16px;
-  }
-
-  .cardArrow {
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  .selectModule {
-    font-size: 13px;
   }
 }

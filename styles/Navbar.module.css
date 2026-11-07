@@ -218,13 +218,75 @@
   display: none;
 }
 
+/* Category headings */
+.groupLabel {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 14px 12px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.navbar.collapsed .groupLabel {
+  font-size: 0;
+  padding: 0;
+  margin: 10px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.newBadge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.2);
+  color: #6EE7B7;
+}
+
+.navbar.collapsed .newBadge {
+  display: none;
+}
+
 /* ===================================================================
    NAV FOOTER
    =================================================================== */
 .navFooter {
-  padding: 12px 4px;
+  padding: 12px 0 4px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  margin-top: auto;
+  margin-top: 12px;
+}
+
+.themeBtn {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 12px;
+  border-radius: 10px;
+}
+
+.themeBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.navbar.collapsed .themeBtn {
+  justify-content: center;
+  padding: 9px;
+}
+
+.navbar.collapsed .themeBtn span + span {
+  display: none;
 }
 
 /* ===================================================================
@@ -322,7 +384,7 @@
     left: 0;
     right: 0;
     z-index: 998;
-    background: rgba(255, 255, 255, 0.92);
+    background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border-color);
@@ -350,9 +412,43 @@
     display: inline;
   }
 
+  .navbar.collapsed .groupLabel {
+    font-size: 10.5px;
+    padding: 14px 12px 6px;
+    margin: 0;
+    border-top: none;
+  }
+
+  .navbar.collapsed .newBadge {
+    display: inline;
+  }
+
+  .navbar.collapsed .themeBtn {
+    justify-content: flex-start;
+    padding: 9px 12px;
+  }
+
+  .navbar.collapsed .themeBtn span + span {
+    display: inline;
+  }
+
   .navbar.collapsed .links a,
   .navbar.open .links a {
     justify-content: flex-start;
     padding: 10px 12px;
+  }
+}
+/* Before the client has measured the viewport: no animations, and on phones keep the drawer closed */
+:global(body:not([data-nav-ready])) .navbar {
+  transition: none;
+}
+
+@media (max-width: 768px) {
+  :global(body:not([data-nav-ready])) .navbar {
+    transform: translateX(-100%);
+  }
+
+  :global(body:not([data-nav-ready])) .overlay {
+    display: none;
   }
 }

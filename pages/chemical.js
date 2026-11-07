@@ -1,298 +1,237 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
+import Head from 'next/head';
 import dynamic from 'next/dynamic';
+import {
+  PageHeader, Section, FormGrid, Field, SelectField, ButtonRow, Alert,
+  StatGrid, Stat, EmptyState, Tabs, DataTable, fmt,
+} from '../components/ui';
 import { equilibriumSolve, solveTemperature } from '../src/lib/chemicalSolver';
+import { saveHistory } from '../src/lib/history';
 
-const ChartClient = dynamic(() => import('../components/ChartClient'), {
-  ssr: false,
-});
+const ChartClient = dynamic(() => import('../components/ChartClient'), { ssr: false });
 
+const R = 8.314462618; // J/(mol·K)
+
+// Which species take part in each reaction template
 const reactionTypes = [
-  { value: 'aA+bB=cC+dD', label: 'aA + bB ⇌ cC + dD' },
-  { value: 'aA+bB=cC', label: 'aA + bB ⇌ cC' },
-  { value: 'aA=bB+cC', label: 'aA ⇌ bB + cC' },
-  { value: 'aA=bB', label: 'aA ⇌ bB' },
+  { value: 'aA+bB=cC+dD', label: 'aA + bB ⇌ cC + dD', species: ['A', 'B', 'C', 'D'] },
+  { value: 'aA+bB=cC', label: 'aA + bB ⇌ cC', species: ['A', 'B', 'C'] },
+  { value: 'aA=bB+cC', label: 'aA ⇌ cC + dD', species: ['A', 'C', 'D'] },
+  { value: 'aA=bB', label: 'aA ⇌ cC', species: ['A', 'C'] },
 ];
-const calculationTypes = [
-  { value: 'equilibrium', label: 'Denge Konsantrasyonlarını Hesapla' },
-  { value: 'temperature', label: 'Denge Sıcaklığını Hesapla' },
-  { value: 'thermodynamics', label: 'Termodinamik Parametreleri Hesapla' },
-];
+
+const SPECIES_INFO = {
+  A: { coef: 'coefA', conc: 'concA', role: 'reaktan' },
+  B: { coef: 'coefB', conc: 'concB', role: 'reaktan' },
+  C: { coef: 'coefC', conc: 'concC', role: 'ürün' },
+  D: { coef: 'coefD', conc: 'concD', role: 'ürün' },
+};
+
 const defaultInputs = {
   reactionType: 'aA+bB=cC+dD',
   coefA: 1, coefB: 1, coefC: 1, coefD: 1,
   concA: 1.0, concB: 1.0, concC: 0.0, concD: 0.0,
   equilibriumConstant: 10,
-  temperature: 298,
-  deltaH0: 0.0,
-  deltaS0: 0.0,
-  deltaG0: 0.0,
-  pressure: 1.0,
-  calculationType: 'equilibrium',
+  temperature: 298.15,
+  deltaH0: -40,
+  deltaS0: -50,
 };
 
 export default function ChemicalPage() {
   const [inputs, setInputs] = useState(defaultInputs);
+  const [mode, setMode] = useState('equilibrium');
   const [results, setResults] = useState(null);
-  const [error, setError] = useState(null);
-  const [isClient, setIsClient] = useState(false);
+  const [error, setError] = useState('');
 
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  const species = reactionTypes.find(r => r.value === inputs.reactionType).species;
 
   function handleChange(e) {
     const { name, value, type } = e.target;
-    setInputs(i => ({ ...i, [name]: type === 'number' ? Number(value) : value }));
+    setInputs(i => ({ ...i, [name]: type === 'number' ? (value === '' ? '' : Number(value)) : value }));
   }
 
-  function calculateEquilibrium() {
-    setError(null);
-    if (!isFinite(inputs.equilibriumConstant) || inputs.equilibriumConstant <= 0) {
-      setError('Lütfen geçerli ve pozitif bir denge sabiti (K) girin.');
-      setResults(null);
-      return;
-    }
-    if (!isFinite(inputs.temperature) || inputs.temperature <= 0) {
-      setError('Geçerli bir sıcaklık (K) giriniz.');
-      setResults(null);
-      return;
-    }
+  // Species not in the chosen template get a zero coefficient
+  function activeInputs() {
+    const out = { ...inputs };
+    Object.entries(SPECIES_INFO).forEach(([s, info]) => {
+      if (!species.includes(s)) { out[info.coef] = 0; out[info.conc] = 0; }
+    });
+    return out;
+  }
+
+  function calculate(e) {
+    e?.preventDefault();
+    setError('');
     try {
-      const res = equilibriumSolve(inputs);
-      setResults(res);
-    } catch (err) {
-      setResults(null);
-      setError(String(err));
-    }
-  }
-
-  function calculateTemperature() {
-    const { deltaH0, deltaS0, equilibriumConstant: K } = inputs;
-    if (!K || K <= 0) { setError('Geçerli bir K değeri girin.'); setResults(null); return; }
-    setError(null);
-    try {
-      const T = solveTemperature(inputs);
-      setResults({ temperatureSolved: T, used: 'vanthoff_newton', K, deltaH0, deltaS0 });
-    } catch (err) {
-      setResults(null);
-      setError(String(err));
-    }
-  }
-
-  function calculateThermodynamics() {
-    const R = 8.314462618; // J/mol/K
-    const { equilibriumConstant: K, temperature, deltaH0, deltaS0, deltaG0 } = inputs;
-    const T = Number(temperature) || 298;
-    const out = {};
-    if (K && K > 0) {
-      const dG = -R * T * Math.log(Number(K)); // J/mol
-      out.deltaG_calc_Jpermol = dG;
-      out.deltaG_calc_kJpermol = dG / 1000;
-    }
-    if (deltaH0 && deltaS0) {
-      const dH = Number(deltaH0) * 1000;
-      const dS = Number(deltaS0);
-      const dG_fromHS = dH - T * dS; // J/mol
-      out.deltaG_from_HS_Jpermol = dG_fromHS;
-      out.deltaG_from_HS_kJpermol = dG_fromHS / 1000;
-    }
-    if (deltaG0) {
-      out.deltaG_user_kJpermol = Number(deltaG0);
-    }
-    setError(null);
-    setResults({ thermodynamics: out, temperature: T });
-  }
-
-
-  if (!isClient) {
-    return null;
-  }
-
-  return (
-    <div className="page-container">
-      <h1 className="page-title">Kimyasal Denge Hesaplaması</h1>
-      <form onSubmit={e => {
-        e.preventDefault();
-        setError(null);
-        if (inputs.calculationType === 'equilibrium') calculateEquilibrium();
-        else if (inputs.calculationType === 'temperature') calculateTemperature();
-        else if (inputs.calculationType === 'thermodynamics') calculateThermodynamics();
-      }}>
-        <Section title="Reaksiyon Tipi Seçin">
-          <select name="reactionType" value={inputs.reactionType} onChange={handleChange} style={{ width: '100%', padding: 10, borderRadius: 4, border: '1px solid #ced4da' }}>
-            {reactionTypes.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-          </select>
-        </Section>
-        <Section title="Stokiyometrik Katsayılar">
-          <InputRow label="A Katsayısı (a):" name="coefA" value={inputs.coefA} onChange={handleChange} />
-          <InputRow label="B Katsayısı (b):" name="coefB" value={inputs.coefB} onChange={handleChange} />
-          <InputRow label="C Katsayısı (c):" name="coefC" value={inputs.coefC} onChange={handleChange} />
-          <InputRow label="D Katsayısı (d):" name="coefD" value={inputs.coefD} onChange={handleChange} />
-        </Section>
-        <Section title="Giriş Parametreleri">
-          <InputRow label="Başlangıç Konsantrasyonu A₀ [mol/L]:" name="concA" value={inputs.concA} onChange={handleChange} />
-          <InputRow label="Başlangıç Konsantrasyonu B₀ [mol/L]:" name="concB" value={inputs.concB} onChange={handleChange} />
-          <InputRow label="Başlangıç Konsantrasyonu C₀ [mol/L]:" name="concC" value={inputs.concC} onChange={handleChange} />
-          <InputRow label="Başlangıç Konsantrasyonu D₀ [mol/L]:" name="concD" value={inputs.concD} onChange={handleChange} />
-        </Section>
-        <Section title="Denge Sabiti ve Koşullar">
-          <InputRow label="Denge Sabiti (K):" name="equilibriumConstant" value={inputs.equilibriumConstant} onChange={handleChange} />
-          <InputRow label="Sıcaklık [K]:" name="temperature" value={inputs.temperature} onChange={handleChange} />
-          <InputRow label="Basınç [bar]:" name="pressure" value={inputs.pressure} onChange={handleChange} />
-          <InputRow label="Standart ΔH° [kJ/mol] (giriş için):" name="deltaH0" value={inputs.deltaH0} onChange={handleChange} />
-          <InputRow label="Standart ΔS° [J/mol/K] (giriş için):" name="deltaS0" value={inputs.deltaS0} onChange={handleChange} />
-          <InputRow label="Standart ΔG° [kJ/mol] (opsiyonel):" name="deltaG0" value={inputs.deltaG0} onChange={handleChange} />
-        </Section>
-        <Section title="Hesaplama Tipi">
-          <select name="calculationType" value={inputs.calculationType} onChange={handleChange} style={{ width: '100%', padding: 10, borderRadius: 4, border: '1px solid #ced4da' }}>
-            {calculationTypes.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-          </select>
-        </Section>
-        <button type="submit" style={{ width: 200, margin: '20px auto', display: 'block' }}>Hesapla</button>
-      </form>
-      {error && <div style={{ marginTop: 12, color: 'crimson', fontWeight: 600 }}>{error}</div>}
-      {results && <ChemicalResults results={results} inputs={inputs} />}
-    </div>
-  );
-}
-
-function Section({ title, children }) {
-  return (
-    <div className="card">
-      <h2 style={{ fontSize: 20, color: '#00539C', borderBottom: '2px solid #00539C', paddingBottom: 8, marginBottom: 12, fontFamily: "'Poppins', sans-serif", fontWeight: 600 }}>{title}</h2>
-      {children}
-    </div>
-  );
-}
-
-function InputRow({ label, name, value, onChange }) {
-  return (
-    <div style={{ marginTop: 10 }}>
-      <label htmlFor={name} style={{ display: 'block', marginTop: 10, fontWeight: 500, color: '#2D3748' }}>{label}</label>
-      <input
-        type="number"
-        id={name}
-        name={name}
-        value={value}
-        onChange={onChange}
-        style={{ width: '100%', padding: 12, marginTop: 5, border: '1px solid #ddd', borderRadius: 6, boxSizing: 'border-box' }}
-      />
-    </div>
-  );
-}
-
-function ChemicalResults({ results, inputs }) {
-  const hasEquilibrium = typeof results.eqA !== 'undefined' && results.eqA !== null;
-  return (
-    <div style={{ background: '#e9ecef', borderRadius: 4, padding: 15, marginTop: 20 }}>
-      <h3>Sonuçlar</h3>
-      {results.error && <div style={{ color: 'red', marginBottom: 10 }}>{results.error}</div>}
-      {results.temperatureSolved && (
-        <div style={{ marginBottom: 12 }}>
-          <p><strong>Hesaplanan Denge Sıcaklığı (T):</strong> {Number(results.temperatureSolved).toFixed(2)} K</p>
-          <p style={{ fontSize: 12, color: '#555' }}>Van't Hoff yaklaşımı kullanıldı. (ΔH°/ΔS° girişleri gereklidir.)</p>
-        </div>
-      )}
-      {results.thermodynamics && (
-        <div style={{ marginBottom: 12 }}>
-          <h4>Termodinamik Hesaplamalar</h4>
-          <pre style={{ background: '#fff', padding: 10, borderRadius: 6 }}>{JSON.stringify(results.thermodynamics, null, 2)}</pre>
-        </div>
-      )}
-
-      {hasEquilibrium ? (
-        <>
-          <table className="table-modern">
-            <thead>
-              <tr>
-                <th style={{ padding: 8, border: '1px solid #ccc' }}>A</th>
-                <th style={{ padding: 8, border: '1px solid #ccc' }}>B</th>
-                <th style={{ padding: 8, border: '1px solid #ccc' }}>C</th>
-                <th style={{ padding: 8, border: '1px solid #ccc' }}>D</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style={{ padding: 8, border: '1px solid #ccc' }}>{Number(results.eqA).toFixed(4)}</td>
-                <td style={{ padding: 8, border: '1px solid #ccc' }}>{Number(results.eqB).toFixed(4)}</td>
-                <td style={{ padding: 8, border: '1px solid #ccc' }}>{Number(results.eqC).toFixed(4)}</td>
-                <td style={{ padding: 8, border: '1px solid #ccc' }}>{Number(results.eqD).toFixed(4)}</td>
-              </tr>
-            </tbody>
-          </table>
-          <p><strong>Reaksiyon ilerlemesi (x):</strong> {Number(results.x).toExponential(4)}</p>
-          {typeof results.Kcalc !== 'undefined' && <p><strong>Hesaplanan K (Kcalc):</strong> {Number(results.Kcalc).toExponential(4)}</p>}
-          {typeof results.maxExtent !== 'undefined' && <p style={{ fontSize: 12, color: '#555' }}>Fiziksel ilerleme aralığı: {Number(results.minExtent ?? 0).toFixed(4)} … {Number(results.maxExtent).toFixed(4)} (negatif ξ: reaksiyon geri yönde ilerler)</p>}
-          <ConcentrationChart results={results} inputs={inputs} />
-        </>
-      ) : (
-        <div style={{ marginTop: 12, color: '#333' }}>
-          <em>Denge konsantrasyonları yalnızca "Denge Konsantrasyonlarını Hesapla" modunda gösterilir.</em>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ConcentrationChart({ results, inputs }) {
-  const maxE = results.maxExtent || Math.max(1, results.x * 2);
-  const minE = Math.min(0, results.minExtent || 0); // reverse reaction => negative extent
-  const points = 80;
-  const labels = [];
-  const Adata = [], Bdata = [], Cdata = [], Ddata = [];
-  for (let i = 0; i <= points; i++) {
-    const xi = minE + (i / points) * (maxE - minE);
-    labels.push(xi.toFixed(4));
-    const A = Math.max((inputs?.concA ?? 0) - (inputs?.coefA ?? 0) * xi, 0);
-    const B = Math.max((inputs?.concB ?? 0) - (inputs?.coefB ?? 0) * xi, 0);
-    const C = Math.max((inputs?.concC ?? 0) + (inputs?.coefC ?? 0) * xi, 0);
-    const D = Math.max((inputs?.concD ?? 0) + (inputs?.coefD ?? 0) * xi, 0);
-    Adata.push(Number(A.toFixed(6)));
-    Bdata.push(Number(B.toFixed(6)));
-    Cdata.push(Number(C.toFixed(6)));
-    Ddata.push(Number(D.toFixed(6)));
-  }
-
-  const data = {
-    labels,
-    datasets: [
-      { label: 'A', data: Adata, borderColor: 'rgba(255,99,132,0.9)', fill: false, tension: 0.1 },
-      { label: 'B', data: Bdata, borderColor: 'rgba(54,162,235,0.9)', fill: false, tension: 0.1 },
-      { label: 'C', data: Cdata, borderColor: 'rgba(75,192,192,0.9)', fill: false, tension: 0.1 },
-      { label: 'D', data: Ddata, borderColor: 'rgba(153,102,255,0.9)', fill: false, tension: 0.1 },
-    ]
-  };
-
-  const options = {
-    responsive: true,
-    scales: { x: { display: true, title: { display: true, text: 'Reaksiyon İlerlemesi (x)' } }, y: { display: true, title: { display: true, text: 'Konsantrasyon [mol/L]' } } },
-    plugins: {
-      legend: { position: 'bottom' },
-      annotation: {
-        annotations: {
-          line1: {
-            type: 'line',
-            xMin: results.x,
-            xMax: results.x,
-            borderColor: 'rgb(255, 99, 132)',
-            borderWidth: 2,
-            label: {
-              content: `Denge x=${results.x.toExponential(2)}`,
-              enabled: true,
-              position: 'start'
-            }
-          }
-        }
+      if (mode === 'equilibrium') {
+        const a = activeInputs();
+        const res = equilibriumSolve(a);
+        setResults({ mode, ...res, inputs: a });
+        saveHistory('Kimyasal denge', { K: a.equilibriumConstant, 'A₀': a.concA, 'B₀': a.concB }, `ξ = ${fmt(res.x, 4)} mol/L`);
+      } else if (mode === 'temperature') {
+        const T = solveTemperature(inputs);
+        setResults({ mode, T, inputs: { ...inputs } });
+        saveHistory('Denge sıcaklığı', { K: inputs.equilibriumConstant, 'ΔH°': `${inputs.deltaH0} kJ/mol`, 'ΔS°': `${inputs.deltaS0} J/(mol·K)` }, `T = ${fmt(T, 2)} K`);
+      } else {
+        const T = Number(inputs.temperature);
+        if (!(T > 0)) throw new Error('Sıcaklık pozitif olmalıdır.');
+        const dG = Number(inputs.deltaH0) * 1000 - T * Number(inputs.deltaS0); // J/mol
+        const K_HS = Math.exp(-dG / (R * T));
+        const K = Number(inputs.equilibriumConstant);
+        const dG_K = K > 0 ? -R * T * Math.log(K) : NaN;
+        // K(T) curve from the van 't Hoff relation with constant ΔH°, ΔS°
+        const Ts = Array.from({ length: 41 }, (_, i) => Math.max(1, T * (0.5 + i / 40)));
+        const curve = Ts.map(t => Math.log(Math.exp(-(Number(inputs.deltaH0) * 1000 - t * Number(inputs.deltaS0)) / (R * t))));
+        setResults({ mode, T, dG, K_HS, dG_K, Ts, curve, inputs: { ...inputs } });
       }
+    } catch (err) {
+      setResults(null);
+      setError(err.message);
     }
-  };
+  }
+
+  const eqChart = useMemo(() => {
+    if (!results || results.mode !== 'equilibrium') return null;
+    const a = results.inputs;
+    const lo = Math.min(0, results.minExtent);
+    const hi = results.maxExtent;
+    const n = 80;
+    const xs = Array.from({ length: n + 1 }, (_, i) => lo + (i / n) * (hi - lo));
+    const nearest = xs.reduce((best, x, i) => (Math.abs(x - results.x) < Math.abs(xs[best] - results.x) ? i : best), 0);
+    const conc = { A: x => a.concA - a.coefA * x, B: x => a.concB - a.coefB * x, C: x => a.concC + a.coefC * x, D: x => a.concD + a.coefD * x };
+    return {
+      data: {
+        labels: xs.map(x => Number(x.toFixed(4))),
+        datasets: species.map(s => ({ label: s, data: xs.map(x => Math.max(0, conc[s](x))) })),
+      },
+      options: { plugins: { verticalLine: { index: nearest } } },
+    };
+  }, [results, species]);
 
   return (
-    <div style={{ marginTop: 20 }}>
-      <h4>Konsantrasyonlar vs Reaksiyon İlerlemesi</h4>
-      <ChartClient data={data} options={options} />
-    </div>
+    <>
+      <Head><title>Kimyasal Denge · Kimya Mühendisliği Hesaplama Platformu</title></Head>
+      <div className="page-container">
+        <PageHeader
+          eyebrow="Reaksiyon Mühendisliği"
+          title="Kimyasal Denge"
+          lead="Derişim tabanlı denge sabiti K = Π[ürün]^ν / Π[reaktan]^ν ile denge bileşimi; ΔH° ve ΔS°’den denge sıcaklığı ve Gibbs enerjisi."
+        />
+
+        <Tabs
+          value={mode}
+          onChange={m => { setMode(m); setResults(null); setError(''); }}
+          tabs={[
+            { value: 'equilibrium', label: 'Denge bileşimi' },
+            { value: 'temperature', label: 'Denge sıcaklığı' },
+            { value: 'thermodynamics', label: 'Termodinamik' },
+          ]}
+        />
+
+        <div className="split">
+          <form onSubmit={calculate} noValidate>
+            {mode === 'equilibrium' && (
+              <Section title="Reaksiyon" icon="⚖️">
+                <FormGrid>
+                  <SelectField className="span-all" label="Reaksiyon şablonu" name="reactionType" value={inputs.reactionType} onChange={handleChange} options={reactionTypes} />
+                  {species.map(s => (
+                    <Field key={`c-${s}`} label={`${s} katsayısı`} hint={SPECIES_INFO[s].role} name={SPECIES_INFO[s].coef} value={inputs[SPECIES_INFO[s].coef]} onChange={handleChange} />
+                  ))}
+                  {species.map(s => (
+                    <Field key={`n-${s}`} label={`${s}₀ başlangıç`} unit="mol/L" name={SPECIES_INFO[s].conc} value={inputs[SPECIES_INFO[s].conc]} onChange={handleChange} />
+                  ))}
+                  <Field className="span-all" label="Denge sabiti K" name="equilibriumConstant" value={inputs.equilibriumConstant} onChange={handleChange} />
+                </FormGrid>
+                <ButtonRow><button type="submit">Dengeyi hesapla</button></ButtonRow>
+              </Section>
+            )}
+
+            {mode !== 'equilibrium' && (
+              <Section title="Termodinamik veriler" icon="🔥" description="ΔH° ve ΔS° sıcaklıktan bağımsız kabul edilir.">
+                <FormGrid>
+                  <Field label="ΔH°" unit="kJ/mol" name="deltaH0" value={inputs.deltaH0} onChange={handleChange} />
+                  <Field label="ΔS°" unit="J/(mol·K)" name="deltaS0" value={inputs.deltaS0} onChange={handleChange} />
+                  {mode === 'temperature'
+                    ? <Field label="Hedef K" name="equilibriumConstant" value={inputs.equilibriumConstant} onChange={handleChange} />
+                    : (
+                      <>
+                        <Field label="Sıcaklık T" unit="K" name="temperature" value={inputs.temperature} onChange={handleChange} />
+                        <Field label="Karşılaştırma için K" name="equilibriumConstant" value={inputs.equilibriumConstant} onChange={handleChange} hint="İsteğe bağlı" />
+                      </>
+                    )}
+                </FormGrid>
+                <ButtonRow><button type="submit">Hesapla</button></ButtonRow>
+              </Section>
+            )}
+          </form>
+
+          <div>
+            {error && <Alert type="error">{error}</Alert>}
+            {!results && !error && <EmptyState icon="⚖️" title="Sonuçlar burada görünecek" />}
+
+            {results?.mode === 'equilibrium' && (
+              <>
+                <Section title="Denge bileşimi" icon="📊">
+                  <StatGrid>
+                    <Stat primary label="İlerleme derecesi ξ" value={results.x} unit="mol/L" digits={5} />
+                    <Stat label="Hesaplanan K" value={results.Kcalc} digits={5} />
+                    <Stat label="Yön" value={results.x >= 0 ? 'İleri →' : '← Geri'} raw />
+                  </StatGrid>
+                  <DataTable
+                    columns={[
+                      { key: 's', label: 'Tür', text: true },
+                      { key: 'c0', label: 'Başlangıç [mol/L]' },
+                      { key: 'ceq', label: 'Denge [mol/L]' },
+                      { key: 'd', label: 'Değişim [mol/L]' },
+                    ]}
+                    rows={species.map(s => {
+                      const c0 = results.inputs[SPECIES_INFO[s].conc];
+                      const ceq = results[`eq${s}`];
+                      return { s, c0, ceq, d: ceq - c0 };
+                    })}
+                  />
+                  {results.x < 0 && <Alert type="info">Başlangıç karışımında ürünler dengeye göre fazla olduğu için reaksiyon geri yönde ilerler.</Alert>}
+                </Section>
+                <Section title="Derişim – ilerleme derecesi" icon="📈" description="Kesikli çizgi denge noktasını gösterir.">
+                  <ChartClient data={eqChart.data} options={eqChart.options} xLabel="ξ [mol/L]" yLabel="Derişim [mol/L]" />
+                </Section>
+              </>
+            )}
+
+            {results?.mode === 'temperature' && (
+              <Section title="Denge sıcaklığı" icon="🌡️">
+                <StatGrid>
+                  <Stat primary label="T" value={results.T} unit="K" digits={2} />
+                  <Stat label="T" value={results.T - 273.15} unit="°C" digits={2} />
+                </StatGrid>
+                <div className="formula">T = ΔH° / (ΔS° − R·ln K)</div>
+              </Section>
+            )}
+
+            {results?.mode === 'thermodynamics' && (
+              <>
+                <Section title={`T = ${fmt(results.T, 2)} K’de`} icon="🔥">
+                  <StatGrid>
+                    <Stat primary label="ΔG° = ΔH° − TΔS°" value={results.dG / 1000} unit="kJ/mol" digits={3} />
+                    <Stat label="K = exp(−ΔG°/RT)" value={results.K_HS} digits={4} />
+                    {Number.isFinite(results.dG_K) && <Stat label="ΔG° (girilen K’den)" value={results.dG_K / 1000} unit="kJ/mol" digits={3} />}
+                  </StatGrid>
+                  <p className="small muted">
+                    {results.dG < 0 ? 'ΔG° < 0: standart koşullarda ürünler lehine (K > 1).' : 'ΔG° > 0: standart koşullarda reaktanlar lehine (K < 1).'}
+                  </p>
+                </Section>
+                <Section title="ln K – sıcaklık (van ’t Hoff)" icon="📈">
+                  <ChartClient
+                    data={{ labels: results.Ts.map(t => Number(t.toFixed(1))), datasets: [{ label: 'ln K', data: results.curve }] }}
+                    xLabel="T [K]"
+                    yLabel="ln K"
+                  />
+                </Section>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
-

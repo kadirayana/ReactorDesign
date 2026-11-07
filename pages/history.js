@@ -1,69 +1,111 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Head from 'next/head';
+import { PageHeader, Section, EmptyState, Alert } from '../components/ui';
+import { loadHistory, clearHistory } from '../src/lib/history';
+import { downloadCSV } from '../src/lib/utils';
 
-function formatDate(isoString) {
-  const date = new Date(isoString);
-  return date.toLocaleString();
+// Older records (before v2) stored raw fields; turn them into the common shape.
+function normalize(item) {
+  if (item.v === 2) return item;
+  const params = {};
+  ['C0', 'kDyn', 'simTime', 'F_A0', 'C_A0', 'k', 'X', 'A0', 'K'].forEach(k => { if (item[k] !== undefined) params[k] = item[k]; });
+  return {
+    module: item.tip || 'Bilinmeyen',
+    params,
+    summary: item.sonuc !== undefined ? String(item.sonuc) : '—',
+    tarih: item.tarih,
+  };
 }
 
-function getParams(item) {
-  if (item.tip === 'PFR' || item.tip === 'CSTR' || item.tip === 'Batch' || item.tip === 'PBR') {
-    let params = `F_A0: ${item.F_A0}, C_A0: ${item.C_A0}, k: ${item.k}, X: ${item.X}`;
-    if (item.tip === 'PBR') params += `, k_eff: ${item.k_eff}`;
-    return params;
-  } else if (item.tip === 'Kimyasal Denge') {
-    return `A0: ${item.A0}, K: ${item.K}`;
-  } else if (item.tip === 'Isı Transferi') {
-    return `L: ${item.L}, k: ${item.kVal}, T₁: ${item.T1}, T₂: ${item.T2}`;
-  } else if (item.tip === 'Dinamik Simülasyon') {
-    return `C0: ${item.C0}, k: ${item.kDyn}, Süre: ${item.simTime}`;
-  } else if (item.tip === 'Vaporizer Tasarım') {
-    return `feedFlow: ${item.feedFlow}, vaporFraction: ${item.vaporFraction}, T_in: ${item.T_in}, T_out: ${item.T_out}, P: ${item.P}`;
-  }
-  return '';
+function formatDate(iso) {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 export default function HistoryPage() {
-  const [history, setHistory] = useState([]);
+  const [items, setItems] = useState([]);
+  const [filter, setFilter] = useState('');
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const hesaplamalar = JSON.parse(localStorage.getItem('hesaplamalar')) || [];
-      setHistory(hesaplamalar.reverse());
-    }
+    setItems(loadHistory().map(normalize).reverse());
+    setLoaded(true);
   }, []);
 
+  const modules = useMemo(() => Array.from(new Set(items.map(i => i.module))).sort(), [items]);
+  const visible = filter ? items.filter(i => i.module === filter) : items;
+
+  function onClear() {
+    if (typeof window !== 'undefined' && !window.confirm('Tüm hesaplama geçmişi bu tarayıcıdan silinecek. Emin misiniz?')) return;
+    clearHistory();
+    setItems([]);
+  }
+
+  function onExport() {
+    downloadCSV(
+      'hesaplama_gecmisi.csv',
+      ['Tarih', 'Modul', 'Parametreler', 'Sonuc'],
+      visible.map(i => [i.tarih, `"${i.module}"`, `"${Object.entries(i.params || {}).map(([k, v]) => `${k}=${v}`).join('; ')}"`, `"${i.summary}"`]),
+    );
+  }
+
   return (
-    <div className="page-container">
-      <div className="content-card">
-        <h1 className="page-title" style={{ textAlign: 'center' }}>Hesaplama Geçmişi</h1>
-        <table className="table-modern">
-          <thead>
-            <tr>
-              <th style={thStyle}>Tarih</th>
-              <th style={thStyle}>Modül</th>
-              <th style={thStyle}>Parametreler</th>
-              <th style={thStyle}>Sonuç</th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.length === 0 ? (
-              <tr><td colSpan={4} style={{ textAlign: 'center' }}>Henüz kayıt bulunmamaktadır.</td></tr>
-            ) : (
-              history.map((item, i) => (
-                <tr key={i} style={{ background: i % 2 === 0 ? '#f8f9fa' : '#fff' }}>
-                  <td style={tdStyle}>{formatDate(item.tarih)}</td>
-                  <td style={tdStyle}>{item.tip}</td>
-                  <td style={tdStyle}>{getParams(item)}</td>
-                  <td style={tdStyle}>{item.sonuc !== undefined ? Number(item.sonuc).toFixed(3) : '-'}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+    <>
+      <Head><title>Hesaplama Geçmişi · Kimya Mühendisliği Hesaplama Platformu</title></Head>
+      <div className="page-container">
+        <PageHeader
+          eyebrow="Diğer"
+          title="Hesaplama Geçmişi"
+          lead="Yaptığınız hesaplamalar yalnızca bu tarayıcıda saklanır; hiçbir sunucuya gönderilmez. En fazla 200 kayıt tutulur."
+        />
+        <Section
+          title={`${visible.length} kayıt`}
+          icon="🕘"
+          actions={items.length > 0 && (
+            <>
+              <select aria-label="Modüle göre filtrele" value={filter} onChange={e => setFilter(e.target.value)} style={{ width: 'auto', minHeight: 32, padding: '4px 32px 4px 10px', fontSize: 13 }}>
+                <option value="">Tüm modüller</option>
+                {modules.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <button type="button" className="btn-secondary btn-sm" onClick={onExport}>CSV indir</button>
+              <button type="button" className="btn-ghost btn-sm" onClick={onClear}>Temizle</button>
+            </>
+          )}
+        >
+          {loaded && items.length === 0 && (
+            <EmptyState icon="🗂️" title="Henüz kayıt yok">Herhangi bir modülde hesap yaptığınızda burada listelenir.</EmptyState>
+          )}
+          {visible.length > 0 && (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tarih</th>
+                    <th>Modül</th>
+                    <th>Parametreler</th>
+                    <th>Sonuç</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visible.map((item, i) => (
+                    <tr key={`${item.tarih}-${i}`}>
+                      <td style={{ whiteSpace: 'nowrap' }}>{formatDate(item.tarih)}</td>
+                      <td><span className="badge">{item.module}</span></td>
+                      <td className="small">
+                        {Object.entries(item.params || {}).map(([k, v]) => (
+                          <span key={k} style={{ marginRight: 12, whiteSpace: 'nowrap' }}><span className="muted">{k}:</span> {String(v)}</span>
+                        ))}
+                      </td>
+                      <td style={{ whiteSpace: 'nowrap' }}><strong>{item.summary}</strong></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Section>
+        {items.length > 0 && <Alert type="info">Tarayıcı verilerini temizlemek veya gizli pencere kullanmak geçmişi siler.</Alert>}
       </div>
-    </div>
+    </>
   );
 }
-
-const thStyle = {};
-const tdStyle = {};

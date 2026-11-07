@@ -1,240 +1,197 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import Head from 'next/head';
 import dynamic from 'next/dynamic';
-import { computePinch } from '../src/lib/heatintegration';
+import {
+  PageHeader, Section, Field, ButtonRow, Alert, StatGrid, Stat, EmptyState, Tabs, DataTable, fmt,
+} from '../components/ui';
+import { compositeCurves } from '../src/lib/heatintegration';
+import { saveHistory } from '../src/lib/history';
+
 const ChartClient = dynamic(() => import('../components/ChartClient'), { ssr: false });
 
-const defaultInputs = {
-  deltaTmin: 20,
-  C1_CP: 40, C1_in: 20, C1_out: 160,
-  C2_CP: 60, C2_in: 120, C2_out: 260,
-  H1_CP: 50, H1_in: 280, H1_out: 60,
-  H2_CP: 30, H2_in: 180, H2_out: 20,
-};
+const DEFAULT_STREAMS = [
+  { id: 1, name: 'H1', type: 'hot', CP: 50, in: 280, out: 60 },
+  { id: 2, name: 'H2', type: 'hot', CP: 30, in: 180, out: 20 },
+  { id: 3, name: 'C1', type: 'cold', CP: 40, in: 20, out: 160 },
+  { id: 4, name: 'C2', type: 'cold', CP: 60, in: 120, out: 260 },
+];
+
+let nextId = 100;
 
 export default function HeatIntegrationPage() {
-  const [inputs, setInputs] = useState(defaultInputs);
+  const [streams, setStreams] = useState(DEFAULT_STREAMS);
+  const [deltaTmin, setDeltaTmin] = useState(20);
   const [results, setResults] = useState(null);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
+  const [chartTab, setChartTab] = useState('composite');
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setInputs(i => ({ ...i, [name]: Number(value) }));
+  function update(id, key, value) {
+    setStreams(list => list.map(s => (s.id === id ? { ...s, [key]: key === 'name' || key === 'type' ? value : (value === '' ? '' : Number(value)) } : s)));
   }
 
-  function calculateHeatIntegration() {
-    setError(null);
+  function addStream(type) {
+    const count = streams.filter(s => s.type === type).length + 1;
+    setStreams(list => [...list, { id: nextId++, name: `${type === 'hot' ? 'H' : 'C'}${count}`, type, CP: 10, in: type === 'hot' ? 150 : 30, out: type === 'hot' ? 50 : 120 }]);
+  }
+
+  function calculate(e) {
+    e?.preventDefault();
+    setError('');
     try {
-      const { deltaTmin, C1_CP, C1_in, C1_out, C2_CP, C2_in, C2_out, H1_CP, H1_in, H1_out, H2_CP, H2_in, H2_out } = inputs;
-
-      // Basic validation
-      if (!deltaTmin || deltaTmin <= 0) throw new Error('ΔTmin pozitif bir sayı olmalı');
-      const streams = {
-        coldStreams: [
-          { CP: C1_CP, in: C1_in, out: C1_out },
-          { CP: C2_CP, in: C2_in, out: C2_out }
-        ],
-        hotStreams: [
-          { CP: H1_CP, in: H1_in, out: H1_out },
-          { CP: H2_CP, in: H2_in, out: H2_out }
-        ]
-      };
-
-      // Ensure CP are numbers >= 0
-      [...streams.coldStreams, ...streams.hotStreams].forEach(s => {
-        if (typeof s.CP !== 'number' || Number.isNaN(s.CP) || s.CP < 0) throw new Error('CP değerleri negatif olamaz ve sayı olmalı');
+      const dT = Number(deltaTmin);
+      if (!(dT > 0)) throw new Error('ΔTmin pozitif olmalıdır.');
+      streams.forEach(s => {
+        if (!(s.CP > 0)) throw new Error(`${s.name}: CP pozitif olmalıdır.`);
+        if (s.type === 'hot' && !(s.in > s.out)) throw new Error(`${s.name}: sıcak akışta giriş sıcaklığı çıkıştan yüksek olmalıdır.`);
+        if (s.type === 'cold' && !(s.out > s.in)) throw new Error(`${s.name}: soğuk akışta çıkış sıcaklığı girişten yüksek olmalıdır.`);
       });
-
-      const res = computePinch({ ...streams, deltaTmin });
-      setResults(res);
+      const hotStreams = streams.filter(s => s.type === 'hot');
+      const coldStreams = streams.filter(s => s.type === 'cold');
+      if (!hotStreams.length || !coldStreams.length) throw new Error('En az bir sıcak ve bir soğuk akış gereklidir.');
+      const res = compositeCurves({ hotStreams, coldStreams, deltaTmin: dT });
+      setResults({ ...res, deltaTmin: dT, shift: dT / 2 });
+      saveHistory('Isı entegrasyonu', { Akış: streams.length, ΔTmin: `${dT} °C` }, `Qh,min = ${fmt(res.hotUtility, 1)} kW`);
     } catch (err) {
       setResults(null);
-      setError(err.message || String(err));
+      setError(err.message);
     }
   }
 
+  const chart = useMemo(() => {
+    if (!results) return null;
+    if (chartTab === 'composite') {
+      return {
+        data: {
+          datasets: [
+            { label: 'Sıcak bileşik eğri', data: results.hot.map(p => ({ x: p.H, y: p.T })), showLine: true },
+            { label: 'Soğuk bileşik eğri', data: results.cold.map(p => ({ x: p.H, y: p.T })), showLine: true },
+          ],
+        },
+        x: 'Entalpi H [kW]',
+        y: 'Sıcaklık T [°C]',
+      };
+    }
+    return {
+      data: { datasets: [{ label: 'Büyük bileşik eğri', data: results.grand.map(p => ({ x: p.H, y: p.T })), showLine: true, tension: 0 }] },
+      x: 'Net ısı akışı [kW]',
+      y: 'Kaydırılmış sıcaklık T* [°C]',
+    };
+  }, [results, chartTab]);
+
   return (
-    <div className="page-container">
-      <h1 className="page-title">Isı Entegrasyonu Hesaplaması</h1>
-      <p style={{ color: '#666', marginBottom: 24 }}>İki soğuk ve iki sıcak akış için ΔTmin ve akış verilerini girin. Pinç noktası ve minimum utility yükleri hesaplanır.</p>
-      <form onSubmit={e => { e.preventDefault(); calculateHeatIntegration(); }}>
-        <Section title="ΔTmin Değeri">
-          <InputRow label="ΔTmin (°C):" name="deltaTmin" value={inputs.deltaTmin} onChange={handleChange} />
-        </Section>
-        <Section title="Soğuk Akışlar">
-          <h3>Akış C1</h3>
-          <InputRow label="Isı Kapasite Akışı (HCFR, kJ/s°C):" name="C1_CP" value={inputs.C1_CP} onChange={handleChange} />
-          <InputRow label="Giriş Sıcaklığı (°C):" name="C1_in" value={inputs.C1_in} onChange={handleChange} />
-          <InputRow label="Çıkış Sıcaklığı (°C):" name="C1_out" value={inputs.C1_out} onChange={handleChange} />
-          <h3>Akış C2</h3>
-          <InputRow label="Isı Kapasite Akışı (kJ/s°C):" name="C2_CP" value={inputs.C2_CP} onChange={handleChange} />
-          <InputRow label="Giriş Sıcaklığı (°C):" name="C2_in" value={inputs.C2_in} onChange={handleChange} />
-          <InputRow label="Çıkış Sıcaklığı (°C):" name="C2_out" value={inputs.C2_out} onChange={handleChange} />
-        </Section>
-        <Section title="Sıcak Akışlar">
-          <h3>Akış H1</h3>
-          <InputRow label="Isı Kapasite Akışı (kJ/s°C):" name="H1_CP" value={inputs.H1_CP} onChange={handleChange} />
-          <InputRow label="Giriş Sıcaklığı (°C):" name="H1_in" value={inputs.H1_in} onChange={handleChange} />
-          <InputRow label="Çıkış Sıcaklığı (°C):" name="H1_out" value={inputs.H1_out} onChange={handleChange} />
-          <h3>Akış H2</h3>
-          <InputRow label="Isı Kapasite Akışı (kJ/s°C):" name="H2_CP" value={inputs.H2_CP} onChange={handleChange} />
-          <InputRow label="Giriş Sıcaklığı (°C):" name="H2_in" value={inputs.H2_in} onChange={handleChange} />
-          <InputRow label="Çıkış Sıcaklığı (°C):" name="H2_out" value={inputs.H2_out} onChange={handleChange} />
-        </Section>
-        {error && <div style={{ color: 'crimson', marginTop: 12 }}><strong>Hata:</strong> {error}</div>}
-        <button type="submit" style={{ width: 200, margin: '20px auto', display: 'block' }}>Hesaplamayı Yap</button>
-      </form>
-      {results && <HeatIntegrationResults results={results} />}
-      <div style={{ marginTop: 32, background: '#f8f9fa', borderRadius: 8, minHeight: 200, textAlign: 'center', padding: 24 }}>
-        {results ? (
-          <>
-            <h3>Isı Profili ve Cascade</h3>
-            <div style={{ marginTop: 8 }}>
-              <ChartClient
-                data={buildChartData(results)}
-                options={buildChartOptions(results)}
-                type="line"
-                height={350}
-              />
+    <>
+      <Head><title>Isı Entegrasyonu · Kimya Mühendisliği Hesaplama Platformu</title></Head>
+      <div className="page-container">
+        <PageHeader
+          eyebrow="Isı ve Kütle Transferi"
+          title="Isı Entegrasyonu (Pinç Analizi)"
+          lead="Problem tablosu algoritmasıyla minimum sıcak/soğuk utility ihtiyacı, pinç sıcaklığı, bileşik eğriler ve büyük bileşik eğri."
+        />
+
+        <form onSubmit={calculate} noValidate>
+          <Section
+            title="Akış tablosu"
+            icon="🔥"
+            description="CP = ṁ·cₚ [kW/K]. İstediğiniz kadar akış ekleyebilirsiniz."
+            actions={(
+              <>
+                <button type="button" className="btn-secondary btn-sm" onClick={() => addStream('hot')}>+ Sıcak akış</button>
+                <button type="button" className="btn-secondary btn-sm" onClick={() => addStream('cold')}>+ Soğuk akış</button>
+              </>
+            )}
+          >
+            <div className="table-wrap">
+              <table className="stream-table">
+                <thead>
+                  <tr>
+                    <th>Akış</th>
+                    <th>Tip</th>
+                    <th className="num">CP [kW/K]</th>
+                    <th className="num">T giriş [°C]</th>
+                    <th className="num">T çıkış [°C]</th>
+                    <th className="num">Yük [kW]</th>
+                    <th aria-label="Sil" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {streams.map(s => (
+                    <tr key={s.id}>
+                      <td><input aria-label="Akış adı" value={s.name} onChange={e => update(s.id, 'name', e.target.value)} /></td>
+                      <td>
+                        <select aria-label="Akış tipi" value={s.type} onChange={e => update(s.id, 'type', e.target.value)}>
+                          <option value="hot">Sıcak</option>
+                          <option value="cold">Soğuk</option>
+                        </select>
+                      </td>
+                      <td><input type="number" step="any" aria-label="CP" value={s.CP} onChange={e => update(s.id, 'CP', e.target.value)} /></td>
+                      <td><input type="number" step="any" aria-label="Giriş sıcaklığı" value={s.in} onChange={e => update(s.id, 'in', e.target.value)} /></td>
+                      <td><input type="number" step="any" aria-label="Çıkış sıcaklığı" value={s.out} onChange={e => update(s.id, 'out', e.target.value)} /></td>
+                      <td className="num">
+                        <span className={`badge ${s.type === 'hot' ? 'badge-error' : ''}`}>{fmt(Math.abs((s.in - s.out) * s.CP), 1)}</span>
+                      </td>
+                      <td>
+                        <button type="button" className="btn-ghost btn-sm" aria-label={`${s.name} akışını sil`} onClick={() => setStreams(list => list.filter(x => x.id !== s.id))}>✕</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </>
+            <div className="flex-row" style={{ alignItems: 'flex-end', marginTop: 16 }}>
+              <div style={{ width: 220 }}>
+                <Field label="ΔTmin" unit="°C" name="deltaTmin" value={deltaTmin} onChange={e => setDeltaTmin(e.target.value === '' ? '' : Number(e.target.value))} />
+              </div>
+              <ButtonRow>
+                <button type="submit">Pinç analizini yap</button>
+                <button type="button" className="btn-secondary" onClick={() => { setStreams(DEFAULT_STREAMS); setResults(null); }}>Örnek veriye dön</button>
+              </ButtonRow>
+            </div>
+          </Section>
+        </form>
+
+        {error && <Alert type="error">{error}</Alert>}
+
+        {!results ? (
+          <EmptyState icon="📉" title="Pinç analizi sonuçları burada görünecek">Bileşik eğriler ve problem tablosu kaskadı.</EmptyState>
         ) : (
-          <strong>Isı profili grafiği hesaplandıktan sonra burada gösterilecektir.</strong>
+          <>
+            <Section title="Hedefler" icon="🎯">
+              <StatGrid>
+                <Stat primary label="Minimum sıcak utility" value={results.hotUtility} unit="kW" digits={1} />
+                <Stat primary label="Minimum soğuk utility" value={results.coldUtility} unit="kW" digits={1} />
+                <Stat label="Maks. ısı geri kazanımı" value={results.maxRecovery} unit="kW" digits={1} />
+                <Stat label="Pinç (sıcak taraf)" value={results.pinch != null ? results.pinch + results.deltaTmin : null} unit="°C" digits={1} />
+                <Stat label="Pinç (soğuk taraf)" value={results.pinch} unit="°C" digits={1} />
+              </StatGrid>
+              <p className="small muted">Pinçin üstünde yalnızca sıcak utility, altında yalnızca soğuk utility kullanılmalı; pinçten ısı aktarılmamalıdır.</p>
+            </Section>
+
+            <Section title="Eğriler" icon="📈">
+              <Tabs value={chartTab} onChange={setChartTab} tabs={[{ value: 'composite', label: 'Bileşik eğriler' }, { value: 'grand', label: 'Büyük bileşik eğri' }]} />
+              <ChartClient type="scatter" data={chart.data} xLabel={chart.x} yLabel={chart.y} height={380} options={{ interaction: { mode: 'nearest', intersect: false } }} />
+            </Section>
+
+            <Section title="Problem tablosu" icon="🧮" description={`Kaydırılmış sıcaklıklar: sıcak − ${results.shift}, soğuk + ${results.shift} °C`}>
+              <DataTable
+                columns={[
+                  { key: 'range', label: 'Aralık T* [°C]', text: true },
+                  { key: 'dT', label: 'ΔT [°C]', digits: 2 },
+                  { key: 'netCP', label: 'ΣCPh − ΣCPc [kW/K]', digits: 2 },
+                  { key: 'Q', label: 'ΔH [kW]', digits: 1 },
+                  { key: 'cascade', label: 'Kaskad [kW]', digits: 1 },
+                ]}
+                rows={results.intervals.map((it, i) => ({
+                  range: `${fmt(it.T_high, 1)} → ${fmt(it.T_low, 1)}`,
+                  dT: it.dT,
+                  netCP: it.netCP,
+                  Q: it.Q,
+                  cascade: results.cascade[i + 1],
+                }))}
+              />
+            </Section>
+          </>
         )}
       </div>
-      <div className="note" style={{ fontSize: '0.9em', color: '#555', marginTop: 20 }}>
-        <strong>Hesaplama Adımları (Özet):</strong><br />
-        1. ΔTmin/2 değeri (shift) hesaplanır.<br />
-        2. Soğuk akışlar için giriş ve çıkış sıcaklıklarına shift eklenir, sıcak akışlar için çıkarılır.<br />
-        3. Tüm kaydırılmış sıcaklıklar tekrarsız alınır ve büyükten küçüğe sıralanır.<br />
-        4. Her sıcaklık aralığında, o aralıkta aktif olan akışların ısı kapasite akışları toplanır (sıcak: pozitif, soğuk: negatif).<br />
-        5. Cascade yöntemiyle kademeli ısı akışı hesaplanır, minimum değer bulunur (pinç noktasını gösterir).<br />
-        6. Eğer minimum değer negatifse, mutlak değeri hot utility olarak, son değeri ise cold utility olarak raporlanır.<br />
-        7. Pinç noktasının orijinal sıcaklık değeri, kaydırılmış değerden shift çıkarılarak bulunur.<br />
-      </div>
-    </div>
+    </>
   );
-}
-
-function Section({ title, children }) {
-  return (
-    <fieldset className="card">
-      <legend style={{ color: '#00539C', padding: '0 10px', fontWeight: 600, fontSize: 16, fontFamily: "'Poppins', sans-serif" }}>{title}</legend>
-      {children}
-    </fieldset>
-  );
-}
-
-function InputRow({ label, name, value, onChange }) {
-  return (
-    <div style={{ marginTop: 10 }}>
-      <label htmlFor={name} style={{ display: 'block', marginTop: 10, fontWeight: 500, color: '#2D3748' }}>{label}</label>
-      <input
-        type="number"
-        id={name}
-        name={name}
-        value={value}
-        onChange={onChange}
-        style={{ width: '100%', padding: 12, marginTop: 5, border: '1px solid #ddd', borderRadius: 6 }}
-      />
-    </div>
-  );
-}
-
-function HeatIntegrationResults({ results }) {
-  return (
-    <div className="card-highlight">
-      <h2 style={{ fontSize: 20, color: '#00539C', fontFamily: "'Poppins', sans-serif", fontWeight: 600, marginBottom: 16 }}>Sonuçlar</h2>
-      <p style={{ marginBottom: 12 }}><strong>Minimum Hot Utility:</strong> {results.hotUtility.toFixed(2)} kJ/s</p>
-      <p style={{ marginBottom: 12 }}><strong>Minimum Cold Utility:</strong> {results.coldUtility.toFixed(2)} kJ/s</p>
-      <p><strong>Pinç Noktası Sıcaklığı:</strong> {results.pinch !== null ? results.pinch.toFixed(2) + ' °C' : 'Hesaplanamadı'}</p>
-    </div>
-  );
-}
-
-// buildChartData: create Chart.js data object from computePinch results
-function buildChartData(results) {
-  // Use tempsAscending for x-axis (unshifted, ascending temps)
-  const labels = results.tempsAscending.map(t => t.toFixed(2));
-
-  // Build stepwise composite hot and cold CP arrays matching labels intervals
-  // For N labels, there are N-1 intervals. We'll map each interval to a point at the midpoint label.
-  const intervalMidTemps = results.intervals.map(it => ((it.T_high + it.T_low) / 2) - (results.pinch !== null ? 0 : 0));
-  const hotCP = results.intervals.map(it => it.hotCP);
-  const coldCP = results.intervals.map(it => it.coldCP);
-
-  // For cascade plot, use cascade values aligned with temps (cascade length = intervals+1)
-  const cascade = results.cascade;
-
-  // Prepare datasets: cascade mapped to temps (descending order in results.temps, so map accordingly)
-  const tempsDescending = results.temps; // shifted descending
-  const cascadeLabels = tempsDescending.map(t => (t - (results.pinch != null ? 0 : 0)).toFixed(2));
-
-  // prepare step arrays aligned with cascade labels length
-  const hotSeries = results.intervals.map(it => Number(it.hotCP.toFixed(4))).concat([0]);
-  const coldSeries = results.intervals.map(it => Number(it.coldCP.toFixed(4))).concat([0]);
-  const cascadeSeries = cascade.map(v => Number(v.toFixed(4)));
-
-  // pinch index on shifted descending temps
-  const pinchIndex = results.temps.indexOf(results.pinchShifted);
-
-  const datasets = [
-    {
-      label: 'Cascade Q (kJ/s)',
-      data: cascadeSeries,
-      borderColor: 'rgb(220,53,69)',
-      backgroundColor: 'rgba(220,53,69,0.08)',
-      tension: 0.2,
-      yAxisID: 'y'
-    },
-    {
-      label: 'Hot CP (kJ/s°C)',
-      data: hotSeries,
-      borderColor: 'rgb(255,159,64)',
-      backgroundColor: 'rgba(255,159,64,0.08)',
-      stepped: true,
-      fill: false,
-      yAxisID: 'y2'
-    },
-    {
-      label: 'Cold CP (kJ/s°C)',
-      data: coldSeries,
-      borderColor: 'rgb(0,123,255)',
-      backgroundColor: 'rgba(0,123,255,0.08)',
-      stepped: true,
-      fill: false,
-      yAxisID: 'y2'
-    }
-  ];
-
-  // Add pinch marker dataset if pinch is known
-  if (pinchIndex >= 0) {
-    const pinchData = new Array(cascadeSeries.length).fill(null);
-    pinchData[pinchIndex] = cascadeSeries[pinchIndex];
-    datasets.push({
-      label: 'Pinç Noktası',
-      data: pinchData,
-      pointRadius: 6,
-      pointBackgroundColor: 'black',
-      showLine: false,
-      yAxisID: 'y'
-    });
-  }
-
-  return { labels: cascadeLabels, datasets };
-}
-
-function buildChartOptions(results) {
-  const pinchIndex = results.temps.indexOf(results.pinchShifted);
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: { type: 'linear', position: 'left', title: { display: true, text: 'Q (kJ/s)' } },
-      y2: { type: 'linear', position: 'right', title: { display: true, text: 'CP (kJ/s°C)' }, grid: { drawOnChartArea: false } }
-    },
-    plugins: {
-      legend: { position: 'top' },
-      verticalLine: { index: pinchIndex, color: 'rgba(0,0,0,0.6)', lineWidth: 1, dash: [4, 4] }
-    }
-  };
 }

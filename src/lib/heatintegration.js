@@ -72,3 +72,39 @@ function computePinch({ coldStreams = [], hotStreams = [], deltaTmin = 20, eps =
 }
 
 module.exports = { computePinch };
+
+/**
+ * Hot and cold composite curves (T vs cumulative H) and the grand composite curve.
+ * The cold composite is shifted right by the minimum cold utility so the curves
+ * touch at the pinch with a vertical gap of ΔTmin.
+ * Streams: { CP [kW/K], in, out } in actual temperatures.
+ */
+function compositeCurve(streams) {
+  const temps = Array.from(new Set(streams.flatMap(s => [Number(s.in), Number(s.out)]))).sort((a, b) => a - b);
+  const points = [];
+  let H = 0;
+  if (temps.length) points.push({ T: temps[0], H: 0 });
+  for (let i = 0; i < temps.length - 1; i++) {
+    const lo = temps[i];
+    const hi = temps[i + 1];
+    const cp = streams
+      .filter(s => Math.min(s.in, s.out) <= lo + 1e-9 && Math.max(s.in, s.out) >= hi - 1e-9)
+      .reduce((sum, s) => sum + Number(s.CP), 0);
+    H += cp * (hi - lo);
+    points.push({ T: hi, H });
+  }
+  return points;
+}
+
+function compositeCurves({ coldStreams = [], hotStreams = [], deltaTmin = 20 } = {}) {
+  const pinch = computePinch({ coldStreams, hotStreams, deltaTmin });
+  const hot = compositeCurve(hotStreams);
+  const cold = compositeCurve(coldStreams).map(p => ({ T: p.T, H: p.H + pinch.coldUtility }));
+  // grand composite: shifted temperature vs net heat flow in the cascade
+  const grand = pinch.temps.map((T, i) => ({ T, H: pinch.cascade[i] }));
+  const hotDuty = hot.length ? hot[hot.length - 1].H : 0;
+  const coldDuty = cold.length ? cold[cold.length - 1].H - pinch.coldUtility : 0;
+  return { ...pinch, hot, cold, grand, hotDuty, coldDuty, maxRecovery: hotDuty - pinch.coldUtility };
+}
+
+module.exports.compositeCurves = compositeCurves;
