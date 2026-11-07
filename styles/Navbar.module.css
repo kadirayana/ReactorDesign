@@ -74,6 +74,11 @@
   letter-spacing: -0.01em;
 }
 
+.navbar.collapsed .brand {
+  flex-direction: column;
+  gap: 10px;
+}
+
 .navbar.collapsed .logoText {
   opacity: 0;
   transform: translateX(-8px);

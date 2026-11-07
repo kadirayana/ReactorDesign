@@ -19,7 +19,8 @@ export default function Navbar() {
 	// Expanded on desktop, collapsed on mobile. Transitions are enabled only after this
 	// first measurement so the layout does not animate on page load.
 	useEffect(() => {
-		setCollapsed(isMobile());
+		// below 1200px the full sidebar squeezes the content; start as an icon rail there
+		setCollapsed(isMobile() || window.innerWidth < 1200);
 		// two frames: let React commit the collapsed state before transitions are switched on
 		let inner;
 		const outer = requestAnimationFrame(() => {

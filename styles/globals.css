@@ -926,13 +926,28 @@ canvas {
 .reactor-diagram {
 	color: var(--primary);
 	text-align: center;
-	padding: 8px 0;
+	padding: 4px 0;
 }
 
-.reactor-diagram svg { height: auto; }
+.reactor-diagram svg { width: 100%; max-width: 520px; height: auto; overflow: visible; }
 .reactor-diagram text { fill: var(--text-main); font-family: var(--font-body); font-size: 13px; }
-.reactor-diagram .ink { stroke: var(--text-muted); }
-.reactor-diagram .ink-fill { fill: var(--text-muted); }
+.reactor-diagram .rd-text { font-weight: 600; fill: var(--text-heading); }
+.reactor-diagram .rd-muted { fill: var(--text-muted); font-size: 12px; }
+.reactor-diagram .rd-label { font-family: var(--font-heading); font-weight: 600; fill: var(--primary); font-size: 14px; }
+.reactor-diagram .rd-wall { fill: none; stroke: var(--primary); stroke-width: 2.5; }
+.reactor-diagram .rd-fluid,
+.reactor-diagram .rd-fluid-shape { fill: var(--primary-light); stroke: none; }
+.reactor-diagram .rd-pipe { stroke: var(--text-muted); stroke-width: 2.5; stroke-linecap: round; }
+.reactor-diagram .rd-flow { stroke: var(--primary); stroke-width: 1.75; opacity: 0.7; stroke-linecap: round; }
+.reactor-diagram .rd-arrowhead { fill: var(--text-muted); }
+.reactor-diagram .rd-bead { fill: var(--surface-bead, var(--bg-surface)); stroke: var(--primary); stroke-width: 1.25; opacity: 0.85; }
+.reactor-diagram .rd-dim { stroke: var(--text-subtle); stroke-width: 1; }
+.reactor-diagram .rd-dimhead { fill: none; stroke: var(--text-subtle); stroke-width: 1.5; }
+.reactor-diagram .rd-motor { fill: var(--text-muted); }
+.reactor-diagram .rd-shaft { stroke: var(--text-muted); stroke-width: 3; }
+.reactor-diagram .rd-impeller { fill: var(--text-muted); }
+.reactor-diagram .rd-level { stroke: var(--primary); stroke-width: 1.25; stroke-dasharray: 6 4; opacity: 0.6; }
+.reactor-diagram .rd-jacket { stroke: var(--chart-4); stroke-width: 2; stroke-dasharray: 3 3; }
 
 /* Editable tables (heat integration stream list) */
 .stream-table td { padding: 6px 8px; vertical-align: middle; }
@@ -954,3 +969,24 @@ canvas {
 @media (max-width: 768px) {
 	.three-box { height: 320px; }
 }
+
+/* 3D legend overlay (components/vaporizerScene.js) */
+.three-legend {
+	position: absolute;
+	top: 12px;
+	left: 12px;
+	max-width: calc(100% - 24px);
+	padding: 10px 12px;
+	border-radius: var(--radius-sm);
+	background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+	border: 1px solid var(--border-color);
+	box-shadow: var(--shadow-sm);
+	font-size: 12.5px;
+	line-height: 1.6;
+	color: var(--text-main);
+	pointer-events: none;
+}
+
+.three-legend-warn { color: var(--error); font-weight: 600; }
+.three-legend-keys { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 4px; color: var(--text-muted); }
+.three-legend-keys i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }

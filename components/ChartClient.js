@@ -17,6 +17,15 @@ function withAlpha(color, alpha) {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
+// Axis/tooltip numbers: ≤ `sig` significant digits, Turkish decimal comma, scientific for extremes
+function formatTick(v, sig = 3) {
+  if (!Number.isFinite(v)) return '';
+  const a = Math.abs(v);
+  if (a === 0) return '0';
+  if (a >= 1e5 || a < 1e-3) return v.toExponential(Math.max(0, sig - 2)).replace('.', ',');
+  return Number(v.toPrecision(sig)).toLocaleString('tr-TR', { maximumFractionDigits: 6 });
+}
+
 function isPlainObject(v) {
   return v && typeof v === 'object' && !Array.isArray(v);
 }
@@ -99,41 +108,89 @@ export default function ChartClient({ data, options, type = 'line', width = '100
       Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
       Chart.defaults.color = text;
 
+      // Numeric category labels (0, 0.0322, 0.0644, …) become a real linear x axis,
+      // so ticks are round numbers instead of every raw sample value.
+      const labels = data?.labels;
+      const numericX = type === 'line' && Array.isArray(labels) && labels.length > 1
+        && labels.every(l => l !== '' && l !== null && Number.isFinite(Number(l)));
+
       const isLineLike = type === 'line' || type === 'scatter';
-      const datasets = (data?.datasets || []).map((ds, i) => {
-        if (!themed || ds.keepColor) return ds;
+      const srcSets = data?.datasets || [];
+      const single = srcSets.length === 1;
+      const datasets = srcSets.map((ds, i) => {
+        let points = ds.data;
+        if (numericX && Array.isArray(points) && points.length && typeof points[0] !== 'object') {
+          points = points.map((y, k) => ({ x: Number(labels[k]), y }));
+        }
+        if (!themed || ds.keepColor) return { ...ds, data: points };
         const c = palette[i % palette.length];
-        const many = (ds.data?.length || 0) > 40;
+        const many = (points?.length || 0) > 25;
+        const lineOnly = isLineLike && (ds.showLine !== false) && (type === 'line' || ds.showLine);
         return {
           ...ds,
+          data: points,
           borderColor: c,
-          backgroundColor: isLineLike ? withAlpha(c, 0.12) : withAlpha(c, 0.75),
+          backgroundColor: isLineLike ? withAlpha(c, single && type === 'line' ? 0.08 : 0.15) : withAlpha(c, 0.8),
+          fill: ds.fill ?? (single && type === 'line' ? 'origin' : false),
           pointBackgroundColor: c,
-          borderWidth: ds.borderWidth ?? (isLineLike ? 2 : 1),
-          pointRadius: ds.pointRadius ?? (isLineLike && many ? 0 : 3),
-          pointHoverRadius: ds.pointHoverRadius ?? 4,
-          tension: ds.tension ?? 0.15,
+          pointBorderColor: c,
+          borderWidth: ds.borderWidth ?? (isLineLike ? 2.25 : 0),
+          borderRadius: type === 'bar' ? 6 : undefined,
+          pointRadius: ds.pointRadius ?? (lineOnly && many ? 0 : 3.5),
+          pointHoverRadius: ds.pointHoverRadius ?? 5,
+          tension: ds.tension ?? 0.2,
         };
       });
 
-      const axis = title => ({
-        grid: { color: grid },
-        border: { color: grid },
-        ticks: { color: text, maxRotation: 0, autoSkipPadding: 12 },
-        ...(title ? { title: { display: true, text: title, color: text, font: { weight: 600 } } } : {}),
+      const axis = (title, isX) => ({
+        grid: { color: grid, drawTicks: false },
+        border: { display: false },
+        ticks: {
+          color: text,
+          padding: 8,
+          maxRotation: 0,
+          autoSkipPadding: 16,
+          maxTicksLimit: isX ? 8 : 6,
+          font: { size: 11.5 },
+          callback(value) {
+            // category axes pass an index; show the label text for those
+            const v = this.type === 'category' ? this.getLabelForValue(value) : value;
+            return typeof v === 'number' ? formatTick(v) : v;
+          },
+        },
+        ...(title ? { title: { display: true, text: title, color: text, font: { size: 12, weight: 600 }, padding: { top: 8, bottom: 4 } } } : {}),
       });
 
       const hasXY = !['pie', 'doughnut', 'polarArea', 'radar'].includes(type);
       const baseOptions = {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 300 },
+        animation: { duration: 350 },
+        layout: { padding: { top: 4, right: 8 } },
         interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { labels: { color: text, usePointStyle: true, boxWidth: 8, padding: 16 } },
-          tooltip: { padding: 10, cornerRadius: 8 },
+          legend: {
+            display: !single,
+            position: 'top',
+            align: 'end',
+            labels: { color: text, boxWidth: 14, boxHeight: 3, padding: 14, font: { size: 12 } },
+          },
+          tooltip: {
+            padding: 10,
+            cornerRadius: 8,
+            boxPadding: 4,
+            callbacks: {
+              title: items => (items.length && numericX ? `${xLabel ? `${xLabel.split(' [')[0]}: ` : ''}${formatTick(items[0].parsed.x, 4)}` : undefined),
+              label: c => `${c.dataset.label ? `${c.dataset.label}: ` : ''}${formatTick(c.parsed.y, 4)}`,
+            },
+          },
         },
-        ...(hasXY ? { scales: { x: axis(xLabel), y: axis(yLabel) } } : {}),
+        ...(hasXY ? {
+          scales: {
+            x: { ...axis(xLabel, true), ...(numericX ? { type: 'linear', min: Number(labels[0]), max: Number(labels[labels.length - 1]), ticks: { ...axis(xLabel, true).ticks, includeBounds: false } } : {}) },
+            y: axis(yLabel, false),
+          },
+        } : {}),
       };
 
       chartRef.current = new Chart(canvasRef.current.getContext('2d'), {
