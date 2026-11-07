@@ -1,6 +1,10 @@
-// Simple heat transfer calculation utilities
-// Exports calculateHeatTransfer which returns total heat duty (Q) using LMTD
-// and simple temperature profiles for plotting and verification.
+// Counter-current heat exchanger: duty from LMTD and axial temperature profiles.
+// Temperatures in °C, U in W/(m²·K), A in m²  =>  Q in W.
+//
+// x = 0 is the hot-fluid inlet end (where the cold fluid leaves), x = 1 the hot outlet end.
+// With constant U and heat capacities the local ΔT varies exponentially along the area:
+//   ΔT(x) = ΔT1 · r^x,  r = ΔT2 / ΔT1,
+// and the fraction of the duty transferred up to x is f(x) = (1 - r^x) / (1 - r).
 
 function linspace(n) {
   const arr = [];
@@ -9,40 +13,38 @@ function linspace(n) {
 }
 
 export function calculateHeatTransfer({ U = 500, A = 10, Th_in = 150, Th_out = 100, Tc_in = 30, Tc_out = 80, points = 50 } = {}) {
-  // Temperatures are assumed in degrees Celsius; U in W/m^2K; A in m^2 => Q in Watts
-  const deltaT1 = Th_in - Tc_out;
-  const deltaT2 = Th_out - Tc_in;
+  const deltaT1 = Th_in - Tc_out; // hot inlet end
+  const deltaT2 = Th_out - Tc_in; // hot outlet end
 
-  // Handle potential division by zero or negative/zero deltaTs
-  let LMTD = 0;
-  if (Math.abs(deltaT1 - deltaT2) < 1e-12) {
-    LMTD = deltaT1; // limits to deltaT when nearly equal
-  } else if (deltaT1 <= 0 || deltaT2 <= 0) {
-    // physically invalid counter-current conditions; still compute using absolute values
-    LMTD = Math.abs((deltaT1 - deltaT2) / Math.log((Math.max(Math.abs(deltaT1), 1e-6)) / (Math.max(Math.abs(deltaT2), 1e-6))));
-  } else {
-    LMTD = (deltaT1 - deltaT2) / Math.log(deltaT1 / deltaT2);
+  if (!(deltaT1 > 0) || !(deltaT2 > 0)) {
+    return {
+      error: `Sıcaklık kesişimi: ΔT1 = ${deltaT1.toFixed(2)} °C, ΔT2 = ${deltaT2.toFixed(2)} °C. Ters akışlı değiştiricide her iki uç farkı da pozitif olmalıdır.`,
+      Q: NaN,
+      LMTD: NaN,
+      deltaT1,
+      deltaT2,
+      profiles: { x: [], Th: [], Tc: [], dT: [] },
+    };
   }
 
-  const Q = U * A * LMTD; // Watts
+  const r = deltaT2 / deltaT1;
+  const equalEnds = Math.abs(r - 1) < 1e-9;
+  const LMTD = equalEnds ? deltaT1 : (deltaT1 - deltaT2) / Math.log(deltaT1 / deltaT2);
+  const Q = U * A * LMTD;
 
-  // Build simple axial profiles assuming linear temperature change along area
   const xs = linspace(points);
-  const Th = xs.map(x => Th_in + (Th_out - Th_in) * x);
-  const Tc = xs.map(x => Tc_in + (Tc_out - Tc_in) * x);
+  const frac = x => (equalEnds ? x : (1 - Math.pow(r, x)) / (1 - r));
+  const Th = xs.map(x => Th_in - (Th_in - Th_out) * frac(x));
+  const Tc = xs.map(x => Tc_out - (Tc_out - Tc_in) * frac(x));
   const dT = Th.map((t, i) => t - Tc[i]);
 
   return {
+    error: null,
     Q,
     LMTD,
     deltaT1,
     deltaT2,
-    profiles: {
-      x: xs,
-      Th,
-      Tc,
-      dT
-    }
+    profiles: { x: xs, Th, Tc, dT },
   };
 }
 

@@ -43,18 +43,27 @@ function multicomponentSeries({ C0 = 1, kA = 0.1, kB = 0.05, simTime = 50, point
   return data;
 }
 
-// Enhanced: CSTR transient series using first-order kinetics and residence time
+// Classic 4th-order Runge-Kutta step for dy/dt = f(y) (autonomous scalar ODE)
+function rk4Step(f, y, h) {
+  const k1 = f(y);
+  const k2 = f(y + 0.5 * h * k1);
+  const k3 = f(y + 0.5 * h * k2);
+  const k4 = f(y + h * k3);
+  return y + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4);
+}
+
+// CSTR start-up, first-order kinetics, reactor initially full of feed (C(0) = C0):
+//   dC/dt = (C0 - C)/tau - k*C
+// Exact solution: C(t) = Css + (C0 - Css) * exp(-(1/tau + k) t),  Css = C0 / (1 + k*tau)
 function cstrSeries({ C0 = 1, k = 0.1, tau = 10, simTime = 50, points = 101 } = {}) {
   const data = [];
   const dt = simTime / (points - 1);
-  let C = C0;
   const safeTau = Math.max(1e-12, tau);
+  const Css = C0 / (1 + k * safeTau);
+  const lambda = 1 / safeTau + k;
   for (let i = 0; i < points; i++) {
     const t = i * dt;
-    data.push({ t, C });
-    // dC/dt = (C0 - C)/tau - k*C
-    const dC = ((C0 - C) / safeTau - k * C) * dt;
-    C += dC;
+    data.push({ t, C: Css + (C0 - Css) * Math.exp(-lambda * t) });
   }
   return data;
 }
@@ -94,34 +103,38 @@ function heatTransferTransient({ T0 = 300, T_inf = 293, mCp = 1000, U = 100, A =
 }
 
 // Michaelis-Menten time series (substrate consumption): dS/dt = - (Vmax*S)/(Km+S)
+// Integrated with RK4 using internal sub-steps so accuracy does not depend on the plotted point count.
 function michaelisSeries({ Vmax = 1, Km = 0.5, S0 = 1, simTime = 50, points = 101 } = {}) {
   const data = [];
   const dt = simTime / (points - 1);
+  const rate = S => -(Vmax * S) / Math.max(1e-12, Km + S);
+  // keep h * Vmax/Km well below the RK4 stability limit
+  const subSteps = Math.max(1, Math.ceil((dt * Vmax) / (0.1 * Math.max(1e-12, Km))));
+  const h = dt / subSteps;
   let S = S0;
   for (let i = 0; i < points; i++) {
-    const t = i * dt;
-    data.push({ t, S });
-    const dS = - (Vmax * S) / Math.max(1e-12, Km + S) * dt;
-    S += dS;
-    if (S < 0) S = 0;
+    data.push({ t: i * dt, S });
+    for (let j = 0; j < subSteps; j++) S = Math.max(0, rk4Step(rate, S, h));
   }
   return data;
 }
 
 // Improved multicomponent A -> B with optional B decay: dA/dt = -kA*A; dB/dt = kA*A - kB*B
+// Exact (Bateman) solution with A(0) = C0, B(0) = 0:
+//   A = C0 e^{-kA t}
+//   B = C0 kA/(kB - kA) (e^{-kA t} - e^{-kB t})   (kA != kB)
+//   B = C0 kA t e^{-kA t}                         (kA == kB)
 function multicomponentSeriesAdvanced({ C0 = 1, kA = 0.1, kB = 0.0, simTime = 50, points = 101 } = {}) {
   const data = [];
   const dt = simTime / (points - 1);
-  let A = C0, B = 0;
+  const sameRate = Math.abs(kB - kA) < 1e-12 * Math.max(1, Math.abs(kA));
   for (let i = 0; i < points; i++) {
     const t = i * dt;
+    const A = C0 * Math.exp(-kA * t);
+    const B = sameRate
+      ? C0 * kA * t * Math.exp(-kA * t)
+      : (C0 * kA / (kB - kA)) * (Math.exp(-kA * t) - Math.exp(-kB * t));
     data.push({ t, A, B });
-    const dA = -kA * A * dt;
-    const dB = (kA * A - kB * B) * dt;
-    A += dA;
-    B += dB;
-    if (A < 0) A = 0;
-    if (B < 0) B = 0;
   }
   return data;
 }

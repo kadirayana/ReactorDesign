@@ -240,8 +240,15 @@ function LMTDCalculator() {
         </label>
         <br />
         <div style={{ marginTop: 10 }}>
-          <strong>Q (W):</strong> {result.Q.toFixed(2)} <br />
-          <strong>LMTD:</strong> {result.LMTD.toFixed(2)} °C
+          {result.error ? (
+            <span style={{ color: '#c0392b' }}>{result.error}</span>
+          ) : (
+            <>
+              <strong>Q (W):</strong> {result.Q.toFixed(2)} <br />
+              <strong>LMTD:</strong> {result.LMTD.toFixed(2)} °C
+              <br /><small>Ters akış varsayılmıştır; profil x = 0 sıcak akışkan girişidir.</small>
+            </>
+          )}
         </div>
       </div>
       <div style={{ flex: 1 }}>

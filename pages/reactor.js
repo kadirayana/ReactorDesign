@@ -3,7 +3,7 @@ import Head from 'next/head';
 import ChartClient from '../components/ChartClient';
 import TabButton from '../components/TabButton';
 import ReactorDiagram from '../components/ReactorDiagram';
-import { calculateBasicReactor } from '../src/lib/reactor';
+import { calculateBasicReactor, rateConstantUnits, catalystRateConstantUnits } from '../src/lib/reactor';
 import { downloadCSV } from '../src/lib/utils';
 
 
@@ -40,15 +40,11 @@ function BasicReactorCalculator() {
     flowRate: 10,
     initialConc: 100,
     rateConstant: 0.05,
-    targetConversion: 0.8
+    targetConversion: 0.8,
+    selectivity: 1
   });
   const [result, setResult] = useState(null);
-  const [chartTab, setChartTab] = useState('conversion');
-  // local UI toggles mirrored from inputs for easier render
-  const [showCatParams, setShowCatParams] = useState(inputs.reactorType === 'pbr');
-  const [showCustomKinetics, setShowCustomKinetics] = useState(inputs.reactionOrder === 'custom');
-  const [coolingEnabled, setCoolingEnabled] = useState(inputs.operatingMode === 'nonisothermal');
-  const [thieleEnabled, setThieleEnabled] = useState(inputs.internalDiffusion === true);
+  const [calcError, setCalcError] = useState('');
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -56,21 +52,18 @@ function BasicReactorCalculator() {
   }
 
   function runCalc() {
-    // Add basic validation error handling identical to advanced form
-    if (!isFinite(inputs.initialConc) || inputs.initialConc <= 0) return;
-    if (!isFinite(inputs.flowRate) || inputs.flowRate <= 0) return;
-    if (!isFinite(inputs.rateConstant) || inputs.rateConstant <= 0) return;
-    if (!isFinite(inputs.targetConversion) || inputs.targetConversion <= 0 || inputs.targetConversion >= 1) return;
-
-    const res = calculateBasicReactor(inputs);
-    setResult(res);
+    setCalcError('');
+    try {
+      setResult(calculateBasicReactor(inputs));
+    } catch (err) {
+      setResult(null);
+      setCalcError(err.message);
+    }
   }
-
-
 
   function handleDownloadBasic(res) {
     if (!res) return;
-    const headers = ['x', 'conversion', 'concA'];
+    const headers = [res.profileAxis, 'conversion', 'concA [mol/m3]'];
     const conv = res.conversionProfile || [];
     const conc = res.concentrationProfile || [];
     const rows = conv.map((p, i) => [p.x, p.y, (conc[i] && conc[i].y) || '']);
@@ -101,27 +94,38 @@ function BasicReactorCalculator() {
       <label>Başlangıç Konsantrasyonu, Cₐ₀ [mol/m³]:
         <input name="initialConc" value={inputs.initialConc} onChange={handleChange} />
       </label>
-      <label>Hız Sabiti, k [1/s]:
+      <label>Hız Sabiti, k [{rateConstantUnits(Number(inputs.reactionOrder))}]:
         <input name="rateConstant" value={inputs.rateConstant} onChange={handleChange} />
       </label>
       <label>Hedef Dönüşüm, X (0 &lt; X &lt; 1):
         <input name="targetConversion" value={inputs.targetConversion} onChange={handleChange} />
       </label>
+      <label>Seçicilik, S (0–1, tek reaksiyon için 1):
+        <input name="selectivity" value={inputs.selectivity} onChange={handleChange} />
+      </label>
       <div style={{ marginTop: 12 }}>
         <button onClick={runCalc}>Hesapla ve Görselleştir</button>
       </div>
+      {calcError && <p className="error" style={{ color: '#c0392b' }}>{calcError}</p>}
       {result && (
         <div style={{ marginTop: 20 }}>
           <h3>Sonuçlar</h3>
-          <p>Reaktör hacmi: {result.reactorVolume.toFixed(3)}</p>
-          <p>Boşluk zamanı: {result.spaceTime.toFixed(3)}</p>
+          {result.batchTime != null ? (
+            <p>Gerekli reaksiyon süresi: {result.batchTime.toFixed(3)} s</p>
+          ) : (
+            <>
+              <p>Reaktör hacmi: {result.reactorVolume.toFixed(4)} m³</p>
+              <p>Uzay zamanı (τ): {result.spaceTime.toFixed(3)} s</p>
+              {result.catalystWeight != null && <p>Katalizör kütlesi: {result.catalystWeight.toFixed(2)} kg</p>}
+            </>
+          )}
           <p>Seçicilik: {result.selectivity}</p>
-          <p>Verim: {result.yield}</p>
-          <h4>Dönüşüm Profili</h4>
+          <p>Verim: {result.yield.toFixed(4)}</p>
+          <h4>Dönüşüm Profili ({result.profileAxis})</h4>
           <ChartClient
             type="line"
             data={{
-              labels: result.conversionProfile.map(p => p.x),
+              labels: result.conversionProfile.map(p => Number(p.x.toPrecision(4))),
               datasets: [
                 {
                   label: 'Dönüşüm',
@@ -161,6 +165,7 @@ function AdvancedReactorCalculator() {
     effectiveRateConstant: 0.1,
     effectivenessFactor: 0.8,
     targetConversion: 0.8,
+    selectivity: 1,
     reactionType: 'irreversible',
     reactionTemp: 350,
     reactionPressure: 2,
@@ -219,179 +224,52 @@ function AdvancedReactorCalculator() {
 
   function runCalc() {
     setCalcError('');
-    // Ported calculation logic from reactor.html
-    const {
-      reactorType, reactionOrder, flowRate, initialConc, rateConstant, targetConversion,
-      effectiveRateConstant, catDensity, effectivenessFactor, reactionTemp, heatOfReaction,
-      activationEnergy, operatingMode
-    } = inputs;
-
-    const reactorTypeCode = reactorType;
-    const order = reactionOrder === 'custom' ? 1 : Number(reactionOrder);
-
-    const flow = Math.max(1e-12, Number(flowRate));
-    const ca0 = Math.max(1e-12, Number(initialConc));
-    const k_val = Math.max(1e-12, Number(rateConstant));
-    const targetX = Math.min(Math.max(0.0001, Number(targetConversion)), 0.9999);
-
-    // basic input validation to avoid NaN/Div0
-    if (!isFinite(ca0) || ca0 <= 0) { setCalcError('Başlangıç konsantrasyonu (>0) girin.'); return; }
-    if (!isFinite(flow) || flow <= 0) { setCalcError('Mol akış hızı (>0) girin.'); return; }
-    if (!isFinite(k_val) || k_val <= 0) { setCalcError('Hız sabiti (>0) girin.'); return; }
-    if (!isFinite(targetX) || targetX <= 0 || targetX >= 1) { setCalcError('Hedef dönüşüm 0 < X < 1 aralığında olmalıdır.'); return; }
-
-    let reactorVolume = 0;
-    switch (reactorTypeCode) {
-      case 'pfr':
-        if (order === 1) reactorVolume = (flow / ca0) * Math.log(1 / (1 - targetX)) / k_val;
-        else if (order === 2) reactorVolume = (flow / ca0) * (1 / (1 - targetX) - 1) / (k_val * ca0);
-        else reactorVolume = (flow * targetX) / (k_val * ca0);
-        break;
-      case 'cstr':
-        if (order === 1) reactorVolume = (flow * targetX) / (k_val * ca0 * (1 - targetX));
-        else if (order === 2) reactorVolume = (flow * targetX) / (k_val * Math.pow(ca0 * (1 - targetX), 2));
-        else reactorVolume = (flow * targetX) / k_val;
-        break;
-      case 'pbr':
-        const effK = Math.max(1e-12, Number(effectiveRateConstant || 1) * Number(effectivenessFactor || 1) * Number(catDensity || 1));
-        if (order === 1) reactorVolume = (flow / ca0) * Math.log(1 / (1 - targetX)) / effK;
-        else if (order === 2) reactorVolume = (flow / ca0) * (1 / (1 - targetX) - 1) / (effK * ca0);
-        else reactorVolume = (flow * targetX) / effK;
-        break;
-      case 'batch':
-        if (order === 1) reactorVolume = Math.log(1 / (1 - targetX)) / k_val;
-        else if (order === 2) reactorVolume = (1 / (1 - targetX) - 1) / (k_val * ca0);
-        else reactorVolume = targetX / k_val; // For batch 0-order, t = x/k
-        break;
-      default:
-        reactorVolume = 0;
+    // Sizing and conversion profile come from the shared library (src/lib/reactor.js)
+    const order = inputs.reactionOrder === 'custom' ? 1 : Number(inputs.reactionOrder);
+    let base;
+    try {
+      base = calculateBasicReactor({ ...inputs, reactionOrder: order });
+    } catch (err) {
+      setCalcError(err.message);
+      setResult(null);
+      return;
     }
 
-    let spaceTime = 0;
-    let spaceVelocity = 0;
-    if (reactorTypeCode === 'batch') {
-      spaceTime = reactorVolume;
-      spaceVelocity = spaceTime && isFinite(spaceTime) ? 1 / spaceTime : 0;
-    } else {
-      spaceTime = reactorVolume * ca0 / flow || 0;
-      spaceVelocity = spaceTime && isFinite(spaceTime) ? 1 / spaceTime : 0;
-    }
+    const ca0 = Number(inputs.initialConc);
+    const initialTemp = Number(inputs.reactionTemp) || 350;
+    const heatOfRxn = Number(inputs.heatOfReaction) || -50; // kJ/mol
+    // Adiabatic temperature rise per unit conversion (liquid-like: cp = 4.2 kJ/(kg·K), rho = 1000 kg/m³)
+    const dTadPerX = -heatOfRxn * ca0 / (4.2 * 1000);
+    // Simplified non-isothermal case: cooling removes a fixed 70 % of the generated heat
+    const coolingEfficiency = 0.7;
 
-    const selectivity = 0.95; // TODO: Add user input for selectivity
-    const yld = targetX * selectivity;
-
-    // profiles
-    const dataPoints = 100;
-    const zProfile = [];
-    const convProfile = [];
-    const tempProfile = [];
-    const initialTemp = Number(reactionTemp) || 350;
-    const heatOfRxn = Number(heatOfReaction) || -50; // kJ/mol
-
-    if (reactorTypeCode === 'pfr' || reactorTypeCode === 'pbr') {
-      for (let i = 0; i <= dataPoints; i++) {
-        const z = i / dataPoints;
-        let conversion = 0;
-        if (order === 1) conversion = 1 - Math.exp(-k_val * z * 5);
-        else if (order === 2) conversion = (k_val * ca0 * z * 5) / (1 + k_val * ca0 * z * 5);
-        else conversion = Math.min(1, k_val * z * 5 / ca0);
-
-        const position = z * 5;
-        zProfile.push(position);
-        convProfile.push(conversion);
-
-        let temp = initialTemp;
-        if (operatingMode === 'isothermal') temp = initialTemp;
-        else if (operatingMode === 'adiabatic') {
-          const cp = 4.2; const density = 1000;
-          const maxTempRise = -heatOfRxn * ca0 * targetX / (cp * density);
-          temp = initialTemp + maxTempRise * z;
-        } else {
-          const cp = 4.2; const density = 1000;
-          const maxAdiabaticTempRise = -heatOfRxn * ca0 * targetX / (cp * density);
-          const coolingEfficiency = 0.7;
-          temp = initialTemp + maxAdiabaticTempRise * z * (1 - coolingEfficiency);
-        }
-
-        tempProfile.push({ position, temperature: temp });
-      }
-    } else if (reactorTypeCode === 'cstr') {
-      const numCSTR = 10;
-      for (let i = 0; i <= numCSTR; i++) {
-        let conversion = 0;
-        if (order === 1) {
-          const tauTotal = 5; const tau = tauTotal / numCSTR;
-          if (i > 0) conversion = 1 - 1 / Math.pow(1 + k_val * tau, i);
-        } else if (order === 2) {
-          const tauTotal = 5; const tau = tauTotal / numCSTR;
-          if (i > 0) conversion = i * k_val * ca0 * tau / (1 + i * k_val * ca0 * tau);
-        } else {
-          const tauTotal = 5; const tau = tauTotal / numCSTR;
-          conversion = Math.min(1, i * k_val * tau / ca0);
-        }
-        zProfile.push(i);
-        convProfile.push(conversion);
-
-        let temp = initialTemp;
-        if (operatingMode === 'isothermal') temp = initialTemp;
-        else if (operatingMode === 'adiabatic') {
-          const maxTempRise = -heatOfRxn * ca0 * targetX / (4.2 * 1000);
-          temp = initialTemp + (maxTempRise / numCSTR) * i;
-        } else {
-          const coolingEfficiency = 0.7;
-          const maxAdiabaticTempRise = -heatOfRxn * ca0 * targetX / (4.2 * 1000);
-          temp = initialTemp + (maxAdiabaticTempRise / numCSTR) * i * (1 - coolingEfficiency);
-        }
-        tempProfile.push({ position: i, temperature: temp });
-      }
-    } else if (reactorTypeCode === 'batch') {
-      for (let i = 0; i <= dataPoints; i++) {
-        const t = i / dataPoints * 5;
-        let conversion = 0;
-        if (order === 1) conversion = 1 - Math.exp(-k_val * t);
-        else if (order === 2) conversion = (k_val * ca0 * t) / (1 + k_val * ca0 * t);
-        else conversion = Math.min(1, k_val * t / ca0);
-
-        zProfile.push(t);
-        convProfile.push(conversion);
-
-        let temp = initialTemp;
-        if (operatingMode === 'isothermal') temp = initialTemp;
-        else if (operatingMode === 'adiabatic') {
-          const maxTempRise = -heatOfRxn * ca0 * targetX / (4.2 * 1000);
-          temp = initialTemp + maxTempRise * (i / dataPoints);
-        } else {
-          const maxAdiabaticTempRise = -heatOfRxn * ca0 * targetX / (4.2 * 1000);
-          const maxTemp = initialTemp + maxAdiabaticTempRise * 0.5;
-          const tt = i / dataPoints;
-          let tval;
-          if (tt < 0.5) tval = maxTemp - (maxTemp - initialTemp) * Math.exp(-3 * tt);
-          else tval = Math.max(initialTemp, maxTemp - (maxTemp - initialTemp) * (tt - 0.5) / 0.5);
-          temp = tval;
-        }
-        tempProfile.push({ position: t, temperature: temp });
-      }
-    }
-
-    const finalX = convProfile.length ? convProfile[convProfile.length - 1] : null;
-    const finalT = tempProfile.length ? tempProfile[tempProfile.length - 1].temperature : null;
+    const zProfile = base.conversionProfile.map(p => Number(p.x.toPrecision(4)));
+    const convProfile = base.conversionProfile.map(p => p.y);
+    const tempProfile = base.conversionProfile.map(p => {
+      let temperature = initialTemp;
+      if (inputs.operatingMode === 'adiabatic') temperature = initialTemp + dTadPerX * p.y;
+      else if (inputs.operatingMode === 'nonisothermal') temperature = initialTemp + dTadPerX * p.y * (1 - coolingEfficiency);
+      return { position: p.x, temperature };
+    });
 
     setResult({
-      reactorVolume,
-      spaceTime,
-      selectivity,
-      yield: yld,
+      reactorVolume: base.reactorVolume,
+      batchTime: base.batchTime,
+      spaceTime: base.spaceTime,
+      catalystWeight: base.catalystWeight,
+      selectivity: base.selectivity,
+      yield: base.yield,
+      profileAxis: base.profileAxis,
       reactionTemp: initialTemp,
       initialConc: ca0,
-      flowRate: flow,
-      rateConstant: k_val,
+      flowRate: Number(inputs.flowRate),
+      rateConstant: base.k,
       activationEnergy: inputs.activationEnergy,
       heatOfReaction: inputs.heatOfReaction,
-      targetConversion: targetX,
+      targetConversion: Number(inputs.targetConversion),
       operatingMode: inputs.operatingMode,
-      finalT,
-      finalX,
-      length: 5,
+      finalT: tempProfile[tempProfile.length - 1].temperature,
+      finalX: convProfile[convProfile.length - 1],
       zProfile,
       tempProfile,
       convProfile,
@@ -446,7 +324,7 @@ function AdvancedReactorCalculator() {
             <label>Katalizör Yoğunluğu [kg/m³]:
               <input name="catDensity" value={inputs.catDensity} onChange={handleChange} />
             </label>
-            <label>Katalizöre Özgü Hız Sabiti, kₑff [1/s.kg]:
+            <label>Katalizöre Özgü Hız Sabiti, k′ [{catalystRateConstantUnits(Number(inputs.reactionOrder === 'custom' ? 1 : inputs.reactionOrder))}]:
               <input name="effectiveRateConstant" value={inputs.effectiveRateConstant} onChange={handleChange} />
             </label>
             <label>Etkinlik Faktörü (η):
@@ -460,11 +338,14 @@ function AdvancedReactorCalculator() {
         <label>Başlangıç Konsantrasyonu, Cₐ₀ [mol/m³]:
           <input name="initialConc" value={inputs.initialConc} onChange={handleChange} />
         </label>
-        <label>Hız Sabiti, k₀ [1/s]:
+        <label>Hız Sabiti, k [{rateConstantUnits(Number(inputs.reactionOrder === 'custom' ? 1 : inputs.reactionOrder))}]:
           <input name="rateConstant" value={inputs.rateConstant} onChange={handleChange} />
         </label>
         <label>Hedef Dönüşüm, X (0 &lt; X &lt; 1):
           <input name="targetConversion" value={inputs.targetConversion} onChange={handleChange} />
+        </label>
+        <label>Seçicilik, S (0–1, tek reaksiyon için 1):
+          <input name="selectivity" value={inputs.selectivity} onChange={handleChange} />
         </label>
         <label>Reaksiyon Tipi:
           <select name="reactionType" value={inputs.reactionType} onChange={handleChange}>
@@ -517,6 +398,7 @@ function AdvancedReactorCalculator() {
         </div>
       </form>
 
+      {calcError && <p className="error" style={{ color: '#c0392b' }}>{calcError}</p>}
       {result && (
         <div style={{ marginTop: 20 }}>
           <h3>Sonuçlar</h3>
@@ -532,11 +414,26 @@ function AdvancedReactorCalculator() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>Reaktör Hacmi/Uzunluğu</td>
-                  <td>{result.reactorVolume ? result.reactorVolume.toFixed(3) : '-'}</td>
-                  <td>{result.reactorVolume ? (inputs.reactorType === 'batch' ? 'saat' : 'm³') : '-'}</td>
-                </tr>
+                {result.batchTime != null ? (
+                  <tr>
+                    <td>Reaksiyon Süresi</td>
+                    <td>{result.batchTime.toFixed(3)}</td>
+                    <td>s</td>
+                  </tr>
+                ) : (
+                  <tr>
+                    <td>Reaktör Hacmi</td>
+                    <td>{result.reactorVolume.toFixed(4)}</td>
+                    <td>m³</td>
+                  </tr>
+                )}
+                {result.catalystWeight != null && (
+                  <tr>
+                    <td>Katalizör Kütlesi</td>
+                    <td>{result.catalystWeight.toFixed(2)}</td>
+                    <td>kg</td>
+                  </tr>
+                )}
                 <tr>
                   <td>Uzay Zamanı</td>
                   <td>{result.spaceTime ? result.spaceTime.toFixed(3) : '-'}</td>
@@ -559,7 +456,7 @@ function AdvancedReactorCalculator() {
                 </tr>
                 <tr>
                   <td>Verim</td>
-                  <td>{result.yield}</td>
+                  <td>{result.yield.toFixed(4)}</td>
                   <td>-</td>
                 </tr>
               </tbody>

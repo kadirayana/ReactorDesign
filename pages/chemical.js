@@ -223,7 +223,7 @@ function ChemicalResults({ results, inputs }) {
           </table>
           <p><strong>Reaksiyon ilerlemesi (x):</strong> {Number(results.x).toExponential(4)}</p>
           {typeof results.Kcalc !== 'undefined' && <p><strong>Hesaplanan K (Kcalc):</strong> {Number(results.Kcalc).toExponential(4)}</p>}
-          {typeof results.maxExtent !== 'undefined' && <p style={{ fontSize: 12, color: '#555' }}>Fiziksel maksimum ilerleme: {Number(results.maxExtent).toFixed(4)}</p>}
+          {typeof results.maxExtent !== 'undefined' && <p style={{ fontSize: 12, color: '#555' }}>Fiziksel ilerleme aralığı: {Number(results.minExtent ?? 0).toFixed(4)} … {Number(results.maxExtent).toFixed(4)} (negatif ξ: reaksiyon geri yönde ilerler)</p>}
           <ConcentrationChart results={results} inputs={inputs} />
         </>
       ) : (
@@ -237,11 +237,12 @@ function ChemicalResults({ results, inputs }) {
 
 function ConcentrationChart({ results, inputs }) {
   const maxE = results.maxExtent || Math.max(1, results.x * 2);
+  const minE = Math.min(0, results.minExtent || 0); // reverse reaction => negative extent
   const points = 80;
   const labels = [];
   const Adata = [], Bdata = [], Cdata = [], Ddata = [];
   for (let i = 0; i <= points; i++) {
-    const xi = (i / points) * maxE;
+    const xi = minE + (i / points) * (maxE - minE);
     labels.push(xi.toFixed(4));
     const A = Math.max((inputs?.concA ?? 0) - (inputs?.coefA ?? 0) * xi, 0);
     const B = Math.max((inputs?.concB ?? 0) - (inputs?.coefB ?? 0) * xi, 0);

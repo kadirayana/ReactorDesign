@@ -9,6 +9,7 @@ export default function ConvectionCalculator() {
   const [temps, setTemps] = useState({ T_surface: 80, T_fluid: 20 });
   const [A, setA] = useState(1.0);
   const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
 
   function handleGeomChange(e) {
     const { name, value } = e.target;
@@ -21,10 +22,20 @@ export default function ConvectionCalculator() {
   }
 
   function calculate() {
-    const conv = computeConvection({ type: mode, geometry, fluid: null });
-    const h = conv.h || 10;
-    const Q = h * A * (temps.T_surface - temps.T_fluid);
-    setResult({ ...conv, h, Q });
+    setError('');
+    try {
+      // natural convection needs the surface/fluid temperatures for the Grashof number
+      const conv = computeConvection({
+        type: mode,
+        geometry: { ...geometry, Ts: temps.T_surface, Tinf: temps.T_fluid },
+        fluid: null,
+      });
+      const Q = conv.h * A * (temps.T_surface - temps.T_fluid);
+      setResult({ ...conv, Q });
+    } catch (err) {
+      setResult(null);
+      setError(err.message);
+    }
   }
 
   const chartData = result
@@ -47,7 +58,7 @@ export default function ConvectionCalculator() {
 
       {mode === 'forced-flat' && (
         <>
-          <label>Characteristic length L (m)
+          <label>Plate length in flow direction L (m)
             <input type="number" name="L" value={geometry.L} step="0.01" onChange={handleGeomChange} />
           </label>
           <label>Velocity V (m/s)
@@ -88,8 +99,11 @@ export default function ConvectionCalculator() {
 
       <button onClick={calculate} style={{ marginTop: 8 }}>Calculate</button>
 
+      {error && <p style={{ color: '#c0392b' }}>{error}</p>}
       {result && (
         <div style={{ marginTop: 12 }}>
+          {result.regime && <div><strong>Akış rejimi: </strong>{result.regime}</div>}
+          {result.warning && <div style={{ color: '#b22222' }}>{result.warning}</div>}
           <div><strong>h: </strong>{result.h ? result.h.toFixed(3) + ' W/m²K' : '—'}</div>
           <div><strong>Q: </strong>{result.Q.toFixed(2)} W</div>
           <div style={{ marginTop: 8, fontSize: 13, color: '#555' }}>

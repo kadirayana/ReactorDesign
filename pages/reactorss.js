@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ChartClient from '../components/ChartClient';
 import { calculateReactorss } from '../src/lib/reactorss';
+import { downloadCSV } from '../src/lib/utils';
 
 const defaultInputs = {
   prodName: 'Allyl Klorür',
   prodMolarMass: 76.5,
   prodStoich: 1,
+  coprodStoich: 1, // HCl: C3H6 + Cl2 -> C3H5Cl + HCl
   reactAName: 'Propylene',
   reactAStoich: 1,
   reactBName: 'Chlorine',
@@ -26,6 +28,7 @@ const defaultInputs = {
 export default function ReactorssPage() {
   const [inputs, setInputs] = useState(defaultInputs);
   const [results, setResults] = useState(null);
+  const [error, setError] = useState('');
   const [chartTab, setChartTab] = useState('rate');
   const [sliderIdx, setSliderIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -39,16 +42,13 @@ export default function ReactorssPage() {
   }
 
   function calculateReactor() {
-    const computed = calculateReactorss(inputs);
-    setResults(computed);
-  }
-
-  function downloadCSV(filename, headers, rows) {
-    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    setError('');
+    try {
+      setResults(calculateReactorss(inputs));
+    } catch (err) {
+      setResults(null);
+      setError(err.message);
+    }
   }
 
   return (
@@ -59,6 +59,7 @@ export default function ReactorssPage() {
           <InputRow label="Ürün Adı:" name="prodName" value={inputs.prodName} onChange={handleChange} type="text" />
           <InputRow label="Ürün Molar Kütlesi (kg/kmol):" name="prodMolarMass" value={inputs.prodMolarMass} onChange={handleChange} />
           <InputRow label="Ürün Stoikiometrik Katsayısı (c):" name="prodStoich" value={inputs.prodStoich} onChange={handleChange} />
+          <InputRow label="Yan Ürün Stoikiometrik Katsayısı (d, örn. HCl; yoksa 0):" name="coprodStoich" value={inputs.coprodStoich} onChange={handleChange} />
         </Section>
         <Section title="Reaktan A Bilgileri">
           <InputRow label="Reaktan A Adı:" name="reactAName" value={inputs.reactAName} onChange={handleChange} type="text" />
@@ -93,6 +94,7 @@ export default function ReactorssPage() {
         </Section>
         <button type="submit" style={{ width: 200, margin: '20px auto', display: 'block' }}>Hesaplamayı Yap</button>
       </form>
+      {error && <p className="error" style={{ color: '#c0392b', textAlign: 'center' }}>{error}</p>}
       {results && <ReactorResults results={results} />}
       {results && results.Xpoints && results.rpoints && (
         <div style={{ marginTop: 24 }}>

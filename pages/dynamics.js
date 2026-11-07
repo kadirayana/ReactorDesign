@@ -52,11 +52,13 @@ export default function DynamicsPage() {
     setInputs(i => ({ ...i, [name]: type === 'number' ? Number(value) : value }));
   }
 
-  function calculate() {
+  // Accepts explicit inputs so callers that just updated state (e.g. example loaders)
+  // don't compute with the previous render's values.
+  function calculate(current = inputs) {
 
     const dyn = require('../src/lib/dynamics');
     setError(null);
-    const { simType, C0, kDyn, simTime, tau, Q, deltaG, temp, dT, area, U, Vmax, Km, S0, kA, kB } = inputs;
+    const { simType, C0, kDyn, simTime, tau, Q, deltaG, temp, dT, area, U, Vmax, Km, S0, kA, kB } = current;
 
     if (!isFinite(C0) || C0 <= 0) { setError('Lütfen geçerli pozitif Başlangıç Konsantrasyonu C₀ giriniz.'); return }
     if (!isFinite(kDyn) || kDyn <= 0) { setError('Lütfen geçerli pozitif hız sabiti k giriniz.'); return }
@@ -92,8 +94,8 @@ export default function DynamicsPage() {
       const series = dyn.cstrSeries({ C0, k: kDyn, tau, simTime, points: 201 })
       const C_out = series[series.length - 1].C
       const X = (C0 - C_out) / C0
-      const V = (inputs.v && isFinite(inputs.v) && inputs.v > 0) ? tau * inputs.v : null
-      const n = Number(inputs.n) || 1
+      const V = (current.v && isFinite(current.v) && current.v > 0) ? tau * current.v : null
+      const n = Number(current.n) || 1
       const seriesSteady = []
       for (let i = 1; i <= n; i++) {
         const Cn = C0 / Math.pow(1 + kDyn * tau, i)
@@ -136,8 +138,9 @@ export default function DynamicsPage() {
 
   function loadLibreTextsExample() {
     const example = { simType: 'cstr', C0: 1.0, kDyn: 0.1, tau: 40, v: 0.1, simTime: 200, n: 3 };
-    setInputs(i => ({ ...i, ...example }));
-    setTimeout(() => calculate(), 50);
+    const next = { ...inputs, ...example };
+    setInputs(next);
+    calculate(next);
   }
 
   function renderFields() {

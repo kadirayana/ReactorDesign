@@ -1,5 +1,67 @@
-// Minimal migration of reactor calculation logic extracted from legacy HTML.
-// Export functions that compute reactor sizing and simple profiles.
+// Ideal reactor sizing for a single irreversible reaction A -> products with
+// power-law kinetics  -rA = k * CA^n  (n = 0, 1 or 2), constant density.
+//
+// Units (SI, consistent with the UI):
+//   F_A0 [mol/s], C_A0 [mol/m³], k: n=0 mol/(m³·s), n=1 1/s, n=2 m³/(mol·s)
+//   => v0 = F_A0 / C_A0 [m³/s], tau [s], V [m³], batch time [s]
+//
+// "Plug" reactors (PFR, PBR, batch) integrate the design equation;
+// the CSTR uses the algebraic (mixed-flow) design equation.
+
+const SUPPORTED_ORDERS = [0, 1, 2];
+
+export function rateConstantUnits(order) {
+  if (order === 0) return 'mol/(m³·s)';
+  if (order === 1) return '1/s';
+  if (order === 2) return 'm³/(mol·s)';
+  return '';
+}
+
+/** Units of k' for a packed bed (rate per kg of catalyst). */
+export function catalystRateConstantUnits(order) {
+  if (order === 0) return 'mol/(kg·s)';
+  if (order === 1) return 'm³/(kg·s)';
+  if (order === 2) return 'm⁶/(mol·kg·s)';
+  return '';
+}
+
+/** Space time (or batch time) needed to reach conversion X. */
+export function tauForConversion(kind, order, k, C0, X) {
+  if (kind === 'plug') {
+    if (order === 0) return (C0 * X) / k;
+    if (order === 1) return -Math.log(1 - X) / k;
+    if (order === 2) return X / (k * C0 * (1 - X));
+  } else if (kind === 'mixed') {
+    if (order === 0) return (C0 * X) / k;
+    if (order === 1) return X / (k * (1 - X));
+    if (order === 2) return X / (k * C0 * (1 - X) * (1 - X));
+  }
+  throw new Error(`Desteklenmeyen reaktör/derece: ${kind}, n=${order}`);
+}
+
+/** Conversion reached after space time (or batch time) tau. Inverse of tauForConversion. */
+export function conversionAt(kind, order, k, C0, tau) {
+  if (tau <= 0) return 0;
+  if (order === 0) return Math.min(1, (k * tau) / C0);
+  if (kind === 'plug') {
+    if (order === 1) return 1 - Math.exp(-k * tau);
+    if (order === 2) { const a = k * C0 * tau; return a / (1 + a); }
+  } else if (kind === 'mixed') {
+    if (order === 1) { const a = k * tau; return a / (1 + a); }
+    if (order === 2) {
+      // k*C0*tau*(1-X)^2 = X  ->  root of a X^2 - (2a+1) X + a = 0 lying in [0,1)
+      const a = k * C0 * tau;
+      return ((2 * a + 1) - Math.sqrt(4 * a + 1)) / (2 * a);
+    }
+  }
+  throw new Error(`Desteklenmeyen reaktör/derece: ${kind}, n=${order}`);
+}
+
+function positive(value, message) {
+  const n = Number(value);
+  if (!isFinite(n) || n <= 0) throw new Error(message);
+  return n;
+}
 
 export function calculateBasicReactor(inputs) {
   const {
@@ -11,111 +73,78 @@ export function calculateBasicReactor(inputs) {
     targetConversion,
     catDensity = 1000,
     effectiveRateConstant = 0.1,
-    effectivenessFactor = 0.8
-  } = inputs
+    effectivenessFactor = 0.8,
+    selectivity: selectivityInput = 1,
+    points = 100,
+  } = inputs;
 
-  const inputK = Math.max(1e-12, rateConstant)
-  const inputC0 = Math.max(1e-12, initialConc)
-  const inputF0 = Math.max(1e-12, flowRate)
-  const X = Math.min(Math.max(0.0001, targetConversion), 0.9999)
+  const order = Number(reactionOrder);
+  if (!SUPPORTED_ORDERS.includes(order)) throw new Error('Reaksiyon derecesi 0, 1 veya 2 olmalıdır.');
 
-  let reactorVolume = 0
-  let spaceTime = 0
-  let spaceVelocity = 0
+  const F0 = positive(flowRate, 'Mol akış hızı (>0) girin.');
+  const C0 = positive(initialConc, 'Başlangıç konsantrasyonu (>0) girin.');
+  const X = Number(targetConversion);
+  if (!isFinite(X) || X <= 0 || X >= 1) throw new Error('Hedef dönüşüm 0 < X < 1 aralığında olmalıdır.');
+  const selectivity = Number(selectivityInput);
+  if (!isFinite(selectivity) || selectivity < 0 || selectivity > 1) throw new Error('Seçicilik 0 ile 1 arasında olmalıdır.');
 
-  switch (reactorType) {
-    case 'pfr':
-      if (reactionOrder === 1) {
-        reactorVolume = (inputF0 / inputC0) * Math.log(1 / (1 - X)) / inputK
-      } else if (reactionOrder === 2) {
-        reactorVolume = (inputF0 / inputC0) * (1 / (1 - X) - 1) / (inputK * inputC0)
-      } else {
-        reactorVolume = (inputF0 * X) / (inputK * inputC0)
-      }
-      break
-    case 'cstr':
-      if (reactionOrder === 1) {
-        reactorVolume = (inputF0 * X) / (inputK * inputC0 * (1 - X))
-      } else if (reactionOrder === 2) {
-        reactorVolume = (inputF0 * X) / (inputK * Math.pow(inputC0 * (1 - X), 2))
-      } else {
-        reactorVolume = (inputF0 * X) / inputK
-      }
-      break
-    case 'pbr':
-      const effK = Math.max(1e-12, effectiveRateConstant * effectivenessFactor * catDensity)
-      if (reactionOrder === 1) {
-        reactorVolume = (inputF0 / inputC0) * Math.log(1 / (1 - X)) / effK
-      } else if (reactionOrder === 2) {
-        reactorVolume = (inputF0 / inputC0) * (1 / (1 - X) - 1) / (effK * inputC0)
-      } else {
-        reactorVolume = (inputF0 * X) / effK
-      }
-      break
-    case 'batch':
-      // For batch, what is calculated is residence time (t), not physical volume.
-      if (reactionOrder === 1) {
-        reactorVolume = Math.log(1 / (1 - X)) / inputK
-      } else if (reactionOrder === 2) {
-        reactorVolume = (1 / (1 - X) - 1) / (inputK * inputC0)
-      } else {
-        reactorVolume = X / inputK // correct zero-order batch time: t = C0*X/k_true, where k_true = k*C0
-      }
-      break
-    default:
-      reactorVolume = 0
-  }
-
-  if (reactorType === 'batch') {
-    spaceTime = reactorVolume
-    spaceVelocity = spaceTime === 0 ? 0 : 1 / spaceTime
+  let kind;
+  let k;
+  if (reactorType === 'pbr') {
+    // -r'A = k' * CA^n per kg catalyst; per reactor volume: k' * eta * rho_b
+    const kCat = positive(effectiveRateConstant, 'Katalizöre özgü hız sabiti (>0) girin.');
+    const eta = positive(effectivenessFactor, 'Etkinlik faktörü (>0) girin.');
+    const rhoB = positive(catDensity, 'Katalizör yoğunluğu (>0) girin.');
+    k = kCat * eta * rhoB;
+    kind = 'plug';
   } else {
-    spaceTime = reactorVolume * inputC0 / inputF0 || 0
-    spaceVelocity = spaceTime === 0 ? 0 : 1 / spaceTime
+    k = positive(rateConstant, 'Hız sabiti (>0) girin.');
+    if (reactorType === 'pfr' || reactorType === 'batch') kind = 'plug';
+    else if (reactorType === 'cstr') kind = 'mixed';
+    else throw new Error(`Bilinmeyen reaktör tipi: ${reactorType}`);
   }
 
-  const selectivity = 0.95
-  const yieldVal = targetConversion * selectivity
+  const tau = tauForConversion(kind, order, k, C0, X);
+  const v0 = F0 / C0;
+  const isBatch = reactorType === 'batch';
 
-  // Create simple profiles for charts (conversion and concentration)
-  const points = 100
-  const conversionProfile = []
-  const concentrationA = []
+  const reactorVolume = isBatch ? null : v0 * tau;
+  const batchTime = isBatch ? tau : null;
+  const spaceTime = isBatch ? null : tau;
+  const spaceVelocity = isBatch ? null : 1 / tau;
+  const catalystWeight = reactorType === 'pbr' ? reactorVolume * Number(catDensity) : null;
+
+  // Profiles along the real design axis, ending exactly at the target conversion.
+  let profileAxis;
+  if (isBatch) profileAxis = 'Süre [s]';
+  else if (kind === 'mixed') profileAxis = 'Uzay zamanı τ [s]';
+  else profileAxis = 'Reaktör hacmi [m³]';
+
+  const conversionProfile = [];
+  const concentrationProfile = [];
   for (let i = 0; i <= points; i++) {
-    const z = i / points
-    let conversion = 0
-    if (reactorType === 'pfr' || reactorType === 'pbr') {
-      if (reactionOrder === 1) conversion = 1 - Math.exp(-rateConstant * z * 5)
-      else if (reactionOrder === 2) conversion = (rateConstant * initialConc * z * 5) / (1 + rateConstant * initialConc * z * 5)
-      else conversion = Math.min(1, rateConstant * z * 5 / initialConc)
-    } else if (reactorType === 'cstr') {
-      const numCSTR = 10
-      if (reactionOrder === 1) {
-        const tauTotal = 5
-        const tau = tauTotal / numCSTR
-        conversion = 1 - 1 / Math.pow(1 + rateConstant * tau, Math.floor(z * numCSTR))
-      } else {
-        const tauTotal = 5
-        const tau = tauTotal / numCSTR
-        conversion = (Math.floor(z * numCSTR) * rateConstant * initialConc * tau) / (1 + Math.floor(z * numCSTR) * rateConstant * initialConc * tau)
-      }
-    } else if (reactorType === 'batch') {
-      const t = z * 5
-      if (reactionOrder === 1) conversion = 1 - Math.exp(-rateConstant * t)
-      else if (reactionOrder === 2) conversion = (rateConstant * initialConc * t) / (1 + rateConstant * initialConc * t)
-      else conversion = Math.min(1, rateConstant * t / initialConc)
-    }
-    conversionProfile.push({ x: (reactorType === 'batch' ? (z * 5) : (reactorType === 'cstr' ? Math.floor(z * 10) : z * 5)), y: conversion })
-    concentrationA.push({ x: conversionProfile[i].x, y: initialConc * (1 - conversion) })
+    const z = i / points;
+    const t = tau * z;
+    const conv = conversionAt(kind, order, k, C0, t);
+    const xAxis = isBatch || kind === 'mixed' ? t : reactorVolume * z;
+    conversionProfile.push({ x: xAxis, y: conv });
+    concentrationProfile.push({ x: xAxis, y: C0 * (1 - conv) });
   }
 
   return {
+    order,
+    kind,
+    k,
+    v0,
     reactorVolume,
+    batchTime,
     spaceTime,
     spaceVelocity,
+    catalystWeight,
     selectivity,
-    yield: yieldVal,
+    yield: X * selectivity,
+    profileAxis,
     conversionProfile,
-    concentrationProfile: concentrationA
-  }
+    concentrationProfile,
+  };
 }

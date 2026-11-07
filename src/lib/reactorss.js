@@ -1,62 +1,89 @@
-// Calculation utilities for the customizable reactor page
+// Calculation utilities for the customizable (gas-phase, packed-bed) reactor page.
+//
+// Reaction:  a A + b B -> c P + d D      (D = optional co-product, e.g. HCl)
+// Rate (per kg catalyst, of the limiting reactant):
+//   -r'_lim = k * P_lim^n_lim * P_exc^n_exc,  k = k0 * exp(-E / (R T))
+// Design equation (PBR):  W = F_lim0 * ∫0^X dX / (-r'_lim)
+//
+// Units: annualProd [ton/yr], prodMolarMass [kg/kmol], opHours [h/yr], P_total [atm],
+//        k0 [kmol/(kg_cat·s·atm^n)], E [kJ/mol], T [K]  ->  flows [kmol/h], W [kg]
+
+const R = 8.314; // J/(mol K)
+
+function requirePositive(value, message) {
+  const n = Number(value);
+  if (!isFinite(n) || n <= 0) throw new Error(message);
+  return n;
+}
+
 export function calculateReactorss(inputs) {
   const {
-    prodName, prodMolarMass, prodStoich,
-    reactAName, reactAStoich, reactBName, reactBStoich,
-    conversion, annualProd, opHours, reactionTemp, P_total,
-    k0, E, orderLim, orderExc, feedRatio, limiting
+    prodName,
+    limiting = 'A',
+    orderLim = 1,
+    orderExc = 1,
+    coprodStoich = 0,
   } = inputs;
 
-  // annual production ton -> kg -> kmol/year
-  const annualProdKg = annualProd * 1000;
-  const prodKmolYear = annualProdKg / prodMolarMass;
-  const prodKmolH = prodKmolYear / opHours;
+  const prodMolarMass = requirePositive(inputs.prodMolarMass, 'Ürün molar kütlesi (>0) girin.');
+  const prodStoich = requirePositive(inputs.prodStoich, 'Ürün stoikiometrik katsayısı (>0) girin.');
+  const reactAStoich = requirePositive(inputs.reactAStoich, 'A stoikiometrik katsayısı (>0) girin.');
+  const reactBStoich = requirePositive(inputs.reactBStoich, 'B stoikiometrik katsayısı (>0) girin.');
+  const annualProd = requirePositive(inputs.annualProd, 'Yıllık üretim (>0) girin.');
+  const opHours = requirePositive(inputs.opHours, 'Yıllık çalışma saati (>0) girin.');
+  const reactionTemp = requirePositive(inputs.reactionTemp, 'Reaksiyon sıcaklığı (K, >0) girin.');
+  const P_total = requirePositive(inputs.P_total, 'Toplam basınç (>0) girin.');
+  const k0 = requirePositive(inputs.k0, 'Ön faktör k₀ (>0) girin.');
+  const feedRatio = requirePositive(inputs.feedRatio, 'Besleme oranı (>0) girin.');
+  const conversion = Number(inputs.conversion);
+  if (!isFinite(conversion) || conversion <= 0 || conversion >= 1) {
+    throw new Error('Dönüşüm 0 < X < 1 aralığında olmalıdır.');
+  }
+  const E_kJ = Number(inputs.E);
+  if (!isFinite(E_kJ) || E_kJ < 0) throw new Error('Aktivasyon enerjisi (≥0, kJ/mol) girin.');
+  if (E_kJ > 1000) {
+    throw new Error('Aktivasyon enerjisi kJ/mol cinsinden girilmelidir (ör. 63200 J/mol yerine 63.2).');
+  }
+  const d = Number(coprodStoich) || 0;
+  if (d < 0) throw new Error('Yan ürün stoikiometrik katsayısı negatif olamaz.');
 
-  // Limiting feed flow (kmol/h)
-  let F0_lim;
-  if (limiting === 'A') F0_lim = (prodKmolH * (reactAStoich / prodStoich)) / conversion;
-  else F0_lim = (prodKmolH * (reactBStoich / prodStoich)) / conversion;
-  const F0_exc = F0_lim * feedRatio;
+  // Stoichiometric coefficients of limiting / excess reactant
+  const aLim = limiting === 'A' ? reactAStoich : reactBStoich;
+  const aExc = limiting === 'A' ? reactBStoich : reactAStoich;
+  const excPerLim = aExc / aLim; // mol excess consumed per mol limiting reacted
 
-  // Arrhenius (convert E to J/mol)
-  const R = 8.314; // J/(mol K)
-  // Heuristic: UI expects E in kJ/mol. If the user passed a very large number (>1e4),
-  // assume it's already in J/mol (e.g., 63200 means 63200 J/mol). Otherwise multiply by 1000.
-  const E_num = Number(E);
-  const E_j = E_num > 1e4 ? E_num : E_num * 1000;
-  // compute Arrhenius k here so reactionRate can use k_h
-  const k_val = k0 * Math.exp(-E_j / (R * reactionTemp));
-  const k_h = k_val * 3600;
-
-  function pressuresA_lim(X) {
-    const molesA = 1 - X;
-    const molesB = feedRatio - (reactBStoich / reactAStoich) * X;
-    const totalMoles = (1 + feedRatio) - X * (1 + (reactBStoich / reactAStoich));
-    return { PA: P_total * (molesA / totalMoles), PB: P_total * (molesB / totalMoles) };
+  if (feedRatio - excPerLim * conversion <= 0) {
+    throw new Error('Besleme oranı bu dönüşüm için yetersiz: fazla reaktan tükeniyor. Oranı artırın veya limitleyici reaktanı değiştirin.');
   }
 
-  function pressuresB_lim(X) {
-    const molesB = 1 - X;
-    const molesA = feedRatio - (reactAStoich / reactBStoich) * X;
-    const totalMoles = (1 + feedRatio) - X * (1 + (reactAStoich / reactBStoich));
-    return { PA: P_total * (molesA / totalMoles), PB: P_total * (molesB / totalMoles) };
+  // Production: ton/yr -> kmol/h of product
+  const prodKmolH = (annualProd * 1000) / prodMolarMass / opHours;
+  const F0_lim = (prodKmolH * (aLim / prodStoich)) / conversion; // kmol/h
+  const F0_exc = F0_lim * feedRatio;
+
+  // Arrhenius
+  const k_val = k0 * Math.exp(-(E_kJ * 1000) / (R * reactionTemp)); // per second
+  const k_h = k_val * 3600; // per hour
+
+  // Mole change per mol limiting reacted (products minus reactants), basis 1 mol limiting fed
+  const delta = (prodStoich + d - aLim - aExc) / aLim;
+
+  function composition(X) {
+    const nLim = 1 - X;
+    const nExc = feedRatio - excPerLim * X;
+    const nTot = 1 + feedRatio + delta * X;
+    return { yLim: nLim / nTot, yExc: nExc / nTot };
   }
 
   function reactionRate(X) {
-    let P_lim, P_ex;
-    if (limiting === 'A') {
-      const pressures = pressuresA_lim(X);
-      P_lim = Math.max(1e-6, pressures.PA); P_ex = Math.max(1e-6, pressures.PB);
-    } else {
-      const pressures = pressuresB_lim(X);
-      P_lim = Math.max(1e-6, pressures.PB); P_ex = Math.max(1e-6, pressures.PA);
-    }
-    const rate = k_h * Math.pow(P_lim, orderLim) * Math.pow(P_ex, orderExc);
-    return Math.max(1e-12, rate || 1e-12);
+    const { yLim, yExc } = composition(X);
+    const P_lim = Math.max(1e-12, yLim * P_total);
+    const P_exc = Math.max(1e-12, yExc * P_total);
+    return k_h * Math.pow(P_lim, orderLim) * Math.pow(P_exc, orderExc); // kmol/(kg·h)
   }
 
-  // Integration (trapezoidal) and profiles
-  const N = 200;
+  // Trapezoidal integration of F_lim0 / r' over conversion
+  const N = 400;
   const dX = conversion / N;
   let integral = 0;
   const Xpoints = [];
@@ -68,38 +95,25 @@ export function calculateReactorss(inputs) {
 
   for (let i = 0; i <= N; i++) {
     const X_val = i * dX;
-    const r_val = reactionRate(X_val) || 1e-12;
+    const r_val = reactionRate(X_val);
     const f = F0_lim / r_val;
-
-    // partial pressures and mole fractions
-    let PA = 0, PB = 0;
-    if (limiting === 'A') {
-      const p = pressuresA_lim(X_val); PA = p.PA; PB = p.PB;
-    } else {
-      const p = pressuresB_lim(X_val); PA = p.PA; PB = p.PB;
-    }
-    const xA = PA / P_total; const xB = PB / P_total;
-
-    // approximate species mol flows (kmol/h)
-    const nA = Math.max(0, F0_lim * (1 - X_val));
-    const nB = Math.max(0, F0_exc - (reactBStoich / reactAStoich) * F0_lim * X_val);
+    const { yLim, yExc } = composition(X_val);
 
     Xpoints.push(X_val);
     rpoints.push(r_val);
-    concLim.push(xA);
-    concExc.push(xB);
-    concLim_kmolh.push(nA);
-    concExc_kmolh.push(nB);
+    concLim.push(yLim);
+    concExc.push(yExc);
+    concLim_kmolh.push(F0_lim * (1 - X_val));
+    concExc_kmolh.push(F0_exc - excPerLim * F0_lim * X_val);
 
-    if (i === 0 || i === N) integral += f; else integral += 2 * f;
+    integral += (i === 0 || i === N) ? f : 2 * f;
   }
   integral = (dX / 2) * integral;
   const W = integral;
 
-  // compute r min/max for diagnostics
   const rMin = Math.min(...rpoints);
   const rMax = Math.max(...rpoints);
-  const warning = W > 5000 ? 'Calculated W is very large (>5,000 kg). Check k0 units/magnitude and E (kJ/mol).' : null;
+  const warning = W > 5000 ? 'Hesaplanan W çok büyük (>5.000 kg). k₀ birimini/büyüklüğünü ve E (kJ/mol) değerini kontrol edin.' : null;
 
   return {
     prodName,
@@ -113,7 +127,6 @@ export function calculateReactorss(inputs) {
     concExc,
     concLim_kmolh,
     concExc_kmolh,
-    // diagnostics
-    _diag: { rMin, rMax, integral, k_val, k_h, warning }
+    _diag: { rMin, rMax, integral, k_val, k_h, delta, warning },
   };
 }

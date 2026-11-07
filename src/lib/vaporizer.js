@@ -19,15 +19,17 @@ function computeVaporizer(inputs) {
   const deltaT_water = T_water_in - T_water_out;
   const m_water = deltaT_water > 0 ? Q_total_kW / (Cp_water * deltaT_water) : 0;
 
-  // LMTD
-  const deltaT1 = Math.abs(T_water_in - T_feed_out);
-  const deltaT2 = Math.abs(T_water_out - T_feed_in);
-  let LMTD = 0;
-  if (Math.abs(deltaT1 - deltaT2) < 1e-6) {
-    LMTD = (deltaT1 + deltaT2) / 2;
-  } else {
-    LMTD = (deltaT1 - deltaT2) / Math.log((Math.max(deltaT1, 1e-6)) / (Math.max(deltaT2, 1e-6)));
+  // Counter-current LMTD (hot water in meets feed out). A non-positive terminal
+  // difference means a temperature cross: the design is thermodynamically infeasible.
+  const deltaT1 = T_water_in - T_feed_out;
+  const deltaT2 = T_water_out - T_feed_in;
+  if (deltaT1 <= 0 || deltaT2 <= 0) {
+    throw new Error(`Sıcaklık kesişimi: uç sıcaklık farkları ΔT1 = ${deltaT1.toFixed(2)} °C, ΔT2 = ${deltaT2.toFixed(2)} °C. Her ikisi de pozitif olmalıdır.`);
   }
+  if (!(m_water > 0)) throw new Error('Su giriş sıcaklığı çıkış sıcaklığından yüksek olmalıdır.');
+  const LMTD = Math.abs(deltaT1 - deltaT2) < 1e-9
+    ? deltaT1
+    : (deltaT1 - deltaT2) / Math.log(deltaT1 / deltaT2);
 
   const iterationResults = [];
   let U_current = U_initial;
@@ -40,7 +42,8 @@ function computeVaporizer(inputs) {
     const v_water_current = m_water / (rho_water * N_tubes_current * area_inner);
     const Re_current = (rho_water * v_water_current * di) / mu_water;
     const Pr = ((Cp_water * 1000) * mu_water) / k_water;
-    const Nu_current = 0.024 * Math.pow(Re_current, 0.8) * Math.pow(Pr, 1 / 3);
+    // Dittus-Boelter, fluid being cooled (n = 0.3); valid for Re > 10^4, 0.7 < Pr < 160
+    const Nu_current = 0.023 * Math.pow(Re_current, 0.8) * Math.pow(Pr, 0.3);
     const h_i_current = (Nu_current * k_water) / di;
     const P_reduced = P_operating / Pc_mix;
     const q_flux_current = Q_total_W / A_current;
@@ -66,8 +69,18 @@ function computeVaporizer(inputs) {
     U_current = U_calc_current;
     lastResult = iterationResults[iterationResults.length - 1];
   }
+  const relativeUChange = Math.abs(lastResult.U_calc - lastResult.U) / lastResult.U;
+  const converged = relativeUChange < 0.01;
+  const reWarning = lastResult.Re < 1e4
+    ? `Tüp tarafı Re = ${lastResult.Re.toFixed(0)} < 10.000: Dittus-Boelter korelasyonu geçerlilik aralığı dışında.`
+    : null;
 
-  const Db = d0 * Math.pow(Math.pow(lastResult.N_tubes, 0.249), 1 / 2.207);
+  // Tube bundle diameter: Db = d0 * (Nt / K1)^(1/n1)
+  // (triangular pitch 1.25·d0, 2 tube passes: K1 = 0.249, n1 = 2.207 — Coulson & Richardson Vol. 6, Table 12.4)
+  const K1 = 0.249;
+  const n1 = 2.207;
+  const Db = d0 * Math.pow(lastResult.N_tubes / K1, 1 / n1);
+  // Kettle shell sized with vapour disengagement space (heuristic: Ds ≈ 2·Db)
   const Ds = 2 * Db;
   const freeboard_ratio = freeboard / Ds;
 
@@ -114,7 +127,12 @@ function computeVaporizer(inputs) {
 
   const warning = neededN > packableCount ? `Requested ${neededN} tubes but only ${packableCount} fit in Ds=${(Ds).toFixed(3)} m. Consider larger shell or different pitch.` : null;
 
-  return { Q_total_kJ_h, Q_total_kW, m_water, LMTD, iterationResults, Db, Ds, freeboard_ratio, packedPositions: finalPositions, packedCount: finalPositions.length, packWarning: warning };
+  return {
+    Q_total_kJ_h, Q_total_kW, m_water, LMTD, deltaT1, deltaT2, iterationResults,
+    converged, relativeUChange, reWarning,
+    Db, Ds, freeboard_ratio,
+    packedPositions: finalPositions, packedCount: finalPositions.length, packWarning: warning,
+  };
 }
 
 module.exports = { computeVaporizer };

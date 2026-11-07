@@ -56,7 +56,14 @@ export default function VaporizerPage() {
       Pc_mix, dHvap_mix, Cp_mix, T_water_in, T_water_out, k_water, Cp_water, rho_water, mu_water,
       tubeLength, d0, di, Rf_o, Rf_i, k_tube, U_initial, freeboard, iterations
     } = inputs;
-    const computed = computeVaporizer(inputs);
+    let computed;
+    try {
+      computed = computeVaporizer(inputs);
+    } catch (err) {
+      setErrors([err.message]);
+      setResults(null);
+      return;
+    }
     // attach a unique key and the inputs used so the 3D viewer can remount/update
     setResults({ ...computed, _key: Date.now(), _inputs: { ...inputs } });
   }
@@ -400,6 +407,12 @@ function VaporizerResults({ results }) {
           <p><strong>Hesaplanan U:</strong> {result.U_calc.toFixed(0)} W/m²K</p>
         </div>
       ))}
+      {!results.converged && (
+        <p style={{ color: '#b22222', marginBottom: 6 }}>
+          <strong>UYARI:</strong> U yakınsamadı (son iterasyonda %{(results.relativeUChange * 100).toFixed(1)} değişim). İterasyon sayısını artırın.
+        </p>
+      )}
+      {results.reWarning && <p style={{ color: '#b22222', marginBottom: 6 }}><strong>UYARI:</strong> {results.reWarning}</p>}
       <h3 style={{ fontSize: 16, color: '#00539C', fontWeight: 600, marginTop: 16, marginBottom: 8 }}>Tasarım Kontrolleri</h3>
       <p style={{ marginBottom: 6 }}><strong>Bundle Çapı (Db):</strong> {results.Db.toFixed(3)} m</p>
       <p style={{ marginBottom: 6 }}><strong>Shell Çapı (Ds):</strong> {results.Ds.toFixed(3)} m</p>
